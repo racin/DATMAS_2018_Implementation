@@ -36,7 +36,7 @@ priv_validator_file = "config/priv_validator.json"
 node_key_file = "config/node_key.json"
 
 # Mechanism to connect to the ABCI application: socket | grpc
-abci = "socket"
+abci = "grpc"
 
 # TCP or UNIX socket address for the profiling server to listen on
 prof_laddr = ""
