@@ -1,1 +1,63 @@
-{"genesis_time":"0001-01-01T00:00:00Z","chain_id":"test-chain-TtTf0Q","validators":[{"pub_key":{"type":"ed25519","data":"21B6A86906452802525149451DF11B81C504E7CD6B65A7ECCA739933C788EC58"},"power":10,"name":""}],"app_hash":""}
+{
+  "genesis_time": "2018-03-18T00:00:00Z",
+  "chain_id": "chain-eqYYQiRacin",
+  "validators": [
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "3EE9C81063B0BE9266B459EA4D30DCB22F04FB3E9FCE83E81B57D11E311B10FD"
+      },
+      "power": 10,
+      "name": "pitter21"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "714887FAA0F8D806DE01A1B7D4D56AA1A9E5405C7B2C795B0ECACC6FFFB665F8"
+      },
+      "power": 10,
+      "name": "pitter22"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "08A06390DC1F6BB5B793C1DC0D6A11C5B8209BBAF7D3D6712C4AACBE9214EEC3"
+      },
+      "power": 10,
+      "name": "pitter23"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "21B6A86906452802525149451DF11B81C504E7CD6B65A7ECCA739933C788EC58"
+      },
+      "power": 10,
+      "name": "pitter24"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "5AAA1144FFC25BBCC9886D2E8B2278B2D82D9EF4BFCE393FB73D502D8CF3AA91"
+      },
+      "power": 10,
+      "name": "pitter25"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "96EBC31EBA53AFC907068C8C6224B09EAC36E37517E7DE9B27C8F9B547D9E8E9"
+      },
+      "power": 10,
+      "name": "pitter27"
+    },
+    {
+      "pub_key": {
+        "type": "ed25519",
+        "data": "B73F7F06F15DF88F0ABFED4FB490A2D92509FCD2AEC9C6D7943B379E1C6AC3CC"
+      },
+      "power": 10,
+      "name": "pitter31"
+    }
+  ],
+  "app_hash": ""
+}

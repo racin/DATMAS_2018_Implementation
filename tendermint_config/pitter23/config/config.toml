@@ -8,7 +8,7 @@
 proxy_app = "tcp://127.0.0.1:46658"
 
 # A custom human readable name for this node
-moniker = "pitter23.ux.uis.no"
+moniker = "pitter23"
 
 # If this node is many blocks behind the tip of the chain, FastSync
 # allows them to catchup quickly by downloading blocks in parallel
@@ -70,7 +70,7 @@ laddr = "tcp://0.0.0.0:46656"
 seeds = ""
 
 # Comma separated list of nodes to keep persistent connections to
-persistent_peers = ""
+persistent_peers = "pitter21:46656,pitter22:46656,pitter24:46656,pitter25:46656,pitter27:46656,pitter31:46656"
 
 # Path to address book
 addr_book_file = "config/addrbook.json"
