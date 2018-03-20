@@ -36,7 +36,7 @@ priv_validator_file = "config/priv_validator.json"
 node_key_file = "config/node_key.json"
 
 # Mechanism to connect to the ABCI application: socket | grpc
-abci = "socket"
+abci = "grpc"
 
 # TCP or UNIX socket address for the profiling server to listen on
 prof_laddr = ""
@@ -82,7 +82,7 @@ addr_book_strict = true
 flush_throttle_timeout = 100
 
 # Maximum number of peers to connect to
-max_num_peers = 50
+max_num_peers = 7
 
 # Maximum size of a message packet payload, in bytes
 max_msg_packet_payload_size = 1024
@@ -94,7 +94,7 @@ send_rate = 512000
 recv_rate = 512000
 
 # Set true to enable the peer-exchange reactor
-pex = true
+pex = false
 
 # Seed mode, in which node constantly crawls the network and looks for
 # peers. If another node asks it for addresses, it responds and disconnects.

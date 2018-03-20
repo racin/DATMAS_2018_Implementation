@@ -12,4 +12,5 @@ go get github.com/gogo/protobuf/protoc-gen-gofast
 go get github.com/gogo/protobuf/gogoproto
 protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:. types.proto
 go build main.go
+./main -abci=grpc
 ```
