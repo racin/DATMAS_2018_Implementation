@@ -1,0 +1,5 @@
+
+QK#!/bin/bash
+SUBSTRING=$(echo $(hostname) | cut -d'.' -f 1)
+echo $SUBSTRING
+K

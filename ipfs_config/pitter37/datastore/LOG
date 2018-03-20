@@ -18,3 +18,45 @@
 19:36:52.664766 db@open done T·35.991512ms
 19:36:52.732799 db@close closing
 19:36:52.738482 db@close done T·5.67805ms
+=============== Mar 20, 2018 (CET) ===============
+20:14:19.634188 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+20:14:19.636049 version@stat F·[1] S·211B[211B] Sc·[0.25]
+20:14:19.636085 db@open opening
+20:14:19.636428 journal@recovery F·1
+20:14:19.637673 journal@recovery recovering @3
+20:14:19.644623 memdb@flush created L0@5 N·4 S·1KiB "/F5..DZJ,v5":"/lo..ins,v4"
+20:14:19.648945 version@stat F·[2] S·1KiB[1KiB] Sc·[0.50]
+20:14:19.667360 db@janitor F·4 G·0
+20:14:19.667409 db@open done T·31.299623ms
+20:14:19.678546 db@close closing
+20:14:19.689363 db@close done T·10.81044ms
+=============== Mar 20, 2018 (CET) ===============
+20:14:52.612836 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+20:14:52.614209 version@stat F·[2] S·1KiB[1KiB] Sc·[0.50]
+20:14:52.614245 db@open opening
+20:14:52.614536 journal@recovery F·1
+20:14:52.615680 journal@recovery recovering @6
+20:14:52.627461 memdb@flush created L0@8 N·1 S·162B "/lo..oot,v9":"/lo..oot,v9"
+20:14:52.631568 version@stat F·[3] S·1KiB[1KiB] Sc·[0.75]
+20:14:52.647442 db@janitor F·5 G·0
+20:14:52.647489 db@open done T·33.221427ms
+20:14:52.656799 db@close closing
+20:14:52.662046 db@close done T·5.240015ms
+=============== Mar 20, 2018 (CET) ===============
+21:21:56.513754 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:21:56.515457 version@stat F·[3] S·1KiB[1KiB] Sc·[0.75]
+21:21:56.515493 db@open opening
+21:21:56.515817 journal@recovery F·1
+21:21:56.516886 journal@recovery recovering @9
+21:21:56.522765 memdb@flush created L0@11 N·1 S·162B "/lo..oot,v11":"/lo..oot,v11"
+21:21:56.526626 version@stat F·[4] S·1KiB[1KiB] Sc·[1.00]
+21:21:56.549102 db@janitor F·6 G·0
+21:21:56.549168 db@open done T·33.637488ms
+21:21:56.549334 table@compaction L0·4 -> L1·0 S·1KiB Q·12
+21:21:56.564332 table@build created L1@14 N·4 S·1KiB "/F5..DZJ,v5":"/lo..ins,v4"
+21:21:56.564517 version@stat F·[0 1] S·1KiB[0B 1KiB] Sc·[0.00 0.00]
+21:21:56.574724 table@compaction committed F-3 S-535B Ke·0 D·4 T·25.312792ms
+21:21:56.579667 table@remove removed @11
+21:21:56.584298 table@remove removed @8
+21:21:56.587011 table@remove removed @5
+21:21:56.589483 table@remove removed @2
