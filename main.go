@@ -14,6 +14,7 @@ import (
 	"flag"
 	"os"
 	srv "github.com/racin/DATMAS_2018_Implementation/server"
+	"github.com/racin/DATMAS_2018_Implementation/abci-app"
 	"github.com/tendermint/abci/types"
 	cmn "github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/abci/server"
@@ -44,7 +45,7 @@ func main(){
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 
 	// Create the application - in memory or persisted to disk
-	app := types.NewBaseApplication()
+	app := app.NewApplication()
 
 	// Start the listener
 	srv, err := server.NewServer(*addrPtr, *abciPtr, app)
@@ -58,6 +59,7 @@ func main(){
 		os.Exit(1)
 	}
 	fmt.Println("Racin har started en app! Transport: " + *abciPtr);
+	fmt.Println("Info om app: " + app.Info(types.RequestInfo{Version: "123"}).Data)
 	// Wait forever
 	common.TrapSignal(func() {
 		// Cleanup
