@@ -29,6 +29,7 @@ import (
 	//"github.com/tendermint/merkleeyes/iavl"
 	"github.com/trusch/passchain/state"
 	"github.com/trusch/passchain/transaction"
+	"fmt"
 )
 
 type Application struct {
@@ -45,9 +46,11 @@ func NewApplication() *Application {
 }
 
 func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
+	fmt.Println("Info trigger");
 	return types.ResponseInfo{Data: app.info}
 }
 func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
+	fmt.Println("Deliver trigger");
 	tx := &transaction.Transaction{}
 	if err := tx.FromBytes(txBytes); err != nil {
 		//return types.ErrUnknownRequest
@@ -115,6 +118,7 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 }
 
 func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.Result {
+	fmt.Println("CheckTx trigger");
 	tx := &transaction.Transaction{}
 	if err := tx.FromBytes(txBytes); err != nil {
 		//return types.ErrUnknownRequest
@@ -182,12 +186,15 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 }
 
 func (app *Application) Commit() types.ResponseCommit { //types.Result {
+	fmt.Println("Commit trigger");
+	return types.ResponseCommit{}
 	hash := app.state.Tree.Hash()
 	//return types.NewResultOK(hash, "")
 	return types.ResponseCommit{Data: hash}
 }
 
 func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
+	fmt.Println("Query trigger");
 	log.Print("query")
 	switch reqQuery.Path {
 	case "/account":
