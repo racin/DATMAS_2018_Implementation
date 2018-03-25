@@ -156,30 +156,15 @@ func XOR(a, b []byte) []byte {
 	}
 	return c
 }
+/*
 func main(){
-	/*buf:= []byte("multihash")//hex.DecodeString("0beec7b5ea3f0fdbc95d0dd47f3c5bc275da8a33")
-	// Create a new multihash with it.
-	fmt.Printf("%x\n", sha1.Sum(buf))
-	z := []byte(sha1.Sum(buf))
-	fmt.Println(hex.EncodeToString())
-	mHashBuf, _ := multihash.EncodeName(buf, "sha1")
-	// Print the multihash as hex string
-	fmt.Printf("hex: %s\n", hex.EncodeToString(mHashBuf))
-
-	// Parse the binary multihash to a DecodedMultihash
-	mHash, _ := multihash.Decode(mHashBuf)
-	// Convert the sha1 value to hex string
-	sha1hex := hex.EncodeToString(mHash.Digest)
-	// Print all the information in the multihash
-	fmt.Printf("obj: %v 0x%x %d %s\n", mHash.Name, mHash.Code, mHash.Length, sha1hex)
-	fmt.Println("Wait!")*/
 	data, _ := ioutil.ReadFile("uis.sh")
 	mHash := Hash([]byte("multihash"))
 	fmt.Printf("%s\n", mHash.B58String())
 	mHash2 := Hash(data)
 	fmt.Printf("%s\n", mHash2.B58String())
 	fmt.Printf("File contents: %s", data)
-}
+}*/
 /*
 // Hash is the global IPFS hash function. uses multihash SHA2_256, 256 bits
 func Hash(data []byte) mh.Multihash {

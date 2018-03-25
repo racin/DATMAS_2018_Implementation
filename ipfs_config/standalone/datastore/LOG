@@ -187,3 +187,39 @@
 03:17:09.881017 table@remove removed @14
 03:17:09.928713 db@close closing
 03:17:09.928789 db@close done T·74.059µs
+=============== Mar 25, 2018 (CEST) ===============
+12:24:14.790689 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:24:14.791577 version@stat F·[0 1] S·1KiB[0B 1KiB] Sc·[0.00 0.00]
+12:24:14.791607 db@open opening
+12:24:14.791680 journal@recovery F·1
+12:24:14.793329 journal@recovery recovering @37
+12:24:14.797708 memdb@flush created L0@40 N·1 S·162B "/lo..oot,v32":"/lo..oot,v32"
+12:24:14.798612 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+12:24:14.799349 db@janitor F·4 G·0
+12:24:14.799386 db@open done T·7.761334ms
+12:24:14.859243 db@close closing
+12:24:14.859326 db@close done T·81.285µs
+=============== Mar 25, 2018 (CEST) ===============
+12:47:09.158723 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:47:09.159047 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+12:47:09.159089 db@open opening
+12:47:09.159168 journal@recovery F·1
+12:47:09.159567 journal@recovery recovering @41
+12:47:09.164385 memdb@flush created L0@43 N·1 S·162B "/lo..oot,v34":"/lo..oot,v34"
+12:47:09.165418 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+12:47:09.165788 db@janitor F·5 G·0
+12:47:09.165820 db@open done T·6.702095ms
+12:47:09.192611 db@close closing
+12:47:09.192682 db@close done T·68.178µs
+=============== Mar 25, 2018 (CEST) ===============
+19:32:03.011920 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+19:32:03.012220 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+19:32:03.012256 db@open opening
+19:32:03.012387 journal@recovery F·1
+19:32:03.014100 journal@recovery recovering @44
+19:32:03.018323 memdb@flush created L0@46 N·1 S·162B "/lo..oot,v36":"/lo..oot,v36"
+19:32:03.018835 version@stat F·[3 1] S·1KiB[486B 1KiB] Sc·[0.75 0.00]
+19:32:03.019387 db@janitor F·6 G·0
+19:32:03.019429 db@open done T·7.143692ms
+19:32:03.060905 db@close closing
+19:32:03.061013 db@close done T·104.915µs
