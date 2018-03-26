@@ -335,7 +335,10 @@ You can now check what blocks have been created by:
 
 		defer res.Close()
 		fmt.Printf("Dag Adder: %+v\n", fileAdder)
-		fileAdder.blockstore
+		rootnode, _ := fileAdder.RootNode()
+		fmt.Printf("CID root Adder: %+v\n", rootnode.Cid())
+		fmt.Printf("CID root raw: %s\n", rootnode.RawData())
+
 		err = res.Emit(outChan)
 		if err != nil {
 			log.Error(err)

@@ -1,0 +1,32 @@
+
+Datass Hash: QmX2aMQtxnvmm5T3DFQTzSBXLSUfbNsysKnh2SEUjBTt4X
+goroutine 39 [running]:
+runtime/debug.Stack(0x10, 0xc42006ab90, 0x1)
+	/usr/lib/go-1.10/src/runtime/debug/stack.go:24 +0xa7
+runtime/debug.PrintStack()
+	/usr/lib/go-1.10/src/runtime/debug/stack.go:16 +0x22
+github.com/ipfs/go-ipfs/merkledag.(*ProtoNode).Cid(0xc42007e070, 0x30)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/merkledag/node.go:324 +0x161
+github.com/ipfs/go-ipfs/blockservice.(*blockService).AddBlock(0xc420345ef0, 0x7fd26e3fc468, 0xc42007e070, 0x7fd26e3fc468, 0xc42007e070)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/blockservice/blockservice.go:133 +0x35
+github.com/ipfs/go-ipfs/merkledag.(*dagService).Add(0xc42015fe70, 0x1494ae0, 0xc4200341b0, 0x149ca40, 0xc42007e070, 0xc420294038, 0xc42006acf8)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/merkledag/merkledag.go:52 +0x8c
+github.com/ipfs/go-ipfs/importer/helpers.(*DagBuilderHelper).Add(0xc420294000, 0xc4203ac060, 0x0, 0x0, 0x0, 0x0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/importer/helpers/dagbuilder.go:208 +0x8e
+github.com/ipfs/go-ipfs/importer/balanced.Layout(0xc420294000, 0x14855e0, 0xc4203ac030, 0xc420294000, 0x14855e0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/importer/balanced/builder.go:57 +0x3ac
+github.com/ipfs/go-ipfs/core/coreunix.(*Adder).add(0xc4200b94a0, 0x1480fe0, 0xc4203ae000, 0x7fd26e4a4ff8, 0xc4200b6fa0, 0x1de613b002e7701, 0xc4200703f0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/coreunix/add.go:153 +0x169
+github.com/ipfs/go-ipfs/core/coreunix.(*Adder).addFile(0xc4200b94a0, 0x14989e0, 0xc4200b6fa0, 0xc42036f500, 0xc4201f55c0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/coreunix/add.go:495 +0x35c
+github.com/ipfs/go-ipfs/core/coreunix.(*Adder).AddFile(0xc4200b94a0, 0x14989e0, 0xc4200b6fa0, 0x0, 0x0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/coreunix/add.go:438 +0x79
+github.com/ipfs/go-ipfs/core/commands.glob..func6.1(0x1498a40, 0xc4201f5080, 0xc420180780, 0xc4203327a0)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/commands/add.go:310 +0x83
+github.com/ipfs/go-ipfs/core/commands.glob..func6.2(0xc4203a29c0, 0xc420180780, 0xc420226f20, 0xc42020a460)
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/commands/add.go:333 +0x9f
+created by github.com/ipfs/go-ipfs/core/commands.glob..func6
+	/home/gob/go/src/github.com/ipfs/go-ipfs/core/commands/add.go:329 +0xd2e
+
+gob@stop ~/go/src/github.com/ipfs/go-ipfs $ 
+
