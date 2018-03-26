@@ -26,25 +26,39 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"context"
+	"github.com/ipfs/go-ipfs/repo"
+	"github.com/ipfs/go-ipfs/repo/config"
+	//"io"
+	"io/ioutil"
+	//"github.com/ipfs/go-ipfs/pin/gc"
 
 	mbase "github.com/multiformats/go-multibase"
 	//mh "github.com/multiformats/go-multihash"
 	mh "gx/ipfs/QmZyZDi491cCNTLfAhwcaDii2Kg4pwKRkhqQzURGDvY6ua/go-multihash"
-	"io/ioutil"
 	blocks "gx/ipfs/Qmej7nf81hi2x2tvjRBF3mcp74sQyuDH4VMYDGd1YtXjb2/go-block-format"
-	bstore "gx/ipfs/QmTVDM4LCSUMFNQzbDLL9zQwp8usE6QHymFdh3h8vL9v6b/go-ipfs-blockstore"
 	//cid "github.com/ipfs/go-cid"
 	cid "gx/ipfs/QmcZfnkapfECQGcLZaf9B79NRg7cRa9EnZh4LSbkCzwNvY/go-cid"
 	file "github.com/ipfs/go-ipfs-cmdkit/files"
-	blockservice "github.com/ipfs/go-ipfs/blockservice"
+
 	"os"
 	//"github.com/ipfs/go-ipfs/blockservice"
 	//"github.com/ipfs/go-ipfs/commands"
 	//core "github.com/ipfs/go-ipfs/core"
-	dag "github.com/ipfs/go-ipfs/merkledag"
+	//dag "github.com/ipfs/go-ipfs/merkledag"
+
+	//"time"
+	ds2 "github.com/ipfs/go-ipfs/thirdparty/datastore2"
+	"github.com/ipfs/go-ipfs/core"
+	coreunix "github.com/ipfs/go-ipfs/core/coreunix"
+	files "gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit/files"
+
+/*
+	bstore "gx/ipfs/QmTVDM4LCSUMFNQzbDLL9zQwp8usE6QHymFdh3h8vL9v6b/go-ipfs-blockstore"
+	blockservice "github.com/ipfs/go-ipfs/blockservice"
 	"github.com/ipfs/go-ipfs-blockstore"
 	"github.com/ipfs/go-datastore"
-	cmds "gx/ipfs/QmfAkMSt9Fwzk48QDJecPcwCUjnf2uG7MLnmCGTp4C6ouL/go-ipfs-cmds"
+	cmds "gx/ipfs/QmfAkMSt9Fwzk48QDJecPcwCUjnf2uG7MLnmCGTp4C6ouL/go-ipfs-cmds"*/
 )
 
 // UnsupportedVersionString just holds an error message
@@ -137,6 +151,12 @@ var CodecToStr = map[uint64]string{
 	ZcashBlock:         "zcash-block",
 	ZcashTx:            "zcash-tx",
 }
+type AddedObject struct {
+	Name  string
+	Hash  string `json:",omitempty"`
+	Bytes int64  `json:",omitempty"`
+	Size  string `json:",omitempty"`
+}
 // DefaultIpfsHash is the current default hash function used by IPFS.
 const DefaultIpfsHash = mh.SHA2_256
 
@@ -190,6 +210,8 @@ func main(){
 	p2 := NewPrefixV0(mh.SHA2_256)
 	s2, _ := p2.Sum(data)
 	fmt.Printf("%s\n", s2.hash.B58String())
+
+	HashFiles(filePath)
 /*
 	c := NewCidV1( 	0x01A5, s.hash)
 	sc, _ :=
@@ -198,14 +220,137 @@ func main(){
 	sc2, _ := p2.Sum(mHash2)
 	fmt.Printf("%s\n", s2.hash.B58String())*/
 	//bserv := blockservice.New(addblockstore, exch) // hash security 001
-	env := cmds.Environment
+	/*env := cmds.Environment
 	addblockstore := bstore.NewGCBlockstore(blockstore.NewBlockstore( datastore.Batching(data)))
 	bserv := blockservice.New()
 	//a := dag.NewRawNode(data)
 	//fmt.Printf("%s\n", a.Cid())
 	dserv := dag.NewDAGService(bserv)
 	y := make(chan <-)
-	z :=
+	z :=*/
+}
+type error interface {
+	Error() string
+}
+const testPeerID = "QmTFauExutTsy4XP6JbMFcw2Wa9645HJt2bTqL6qYDCKfe"
+func HashFiles(filePath string) error{
+	r := &repo.Mock{
+		C: config.Config{
+			Identity: config.Identity{
+				PeerID: testPeerID, // required by offline node
+			},
+		},
+		D: ds2.ThreadSafeCloserMapDatastore(),
+	}
+	node, err := core.NewNode(context.Background(), &core.BuildCfg{Repo: r})
+	if err != nil {
+		return err
+	}
+
+	out := make(chan interface{})
+	adder, err := coreunix.NewAdder(context.Background(), node.Pinning, node.Blockstore, node.DAG)
+	if err != nil {
+		return err
+	}
+	adder.Out = out
+
+	//dataa := ioutil.NopCloser(bytes.NewBufferString("testfileA"))
+	//files.NewSerialFile()
+	stat, _ := os.Lstat(filePath)
+	rfa, _ := files.NewSerialFile(filePath,filePath,false, stat)
+
+/*	// make two files with pipes so we can 'pause' the add for timing of the test
+	piper, pipew := io.Pipe()
+	hangfile := files.NewReaderFile("b", "b", piper, nil)
+
+	datad := ioutil.NopCloser(bytes.NewBufferString("testfileD"))
+	rfd := files.NewReaderFile("d", "d", datad, nil)
+
+	slf := files.NewSliceFile("files", "files", []files.File{rfa, hangfile, rfd})*/
+
+	addDone := make(chan struct{})
+	go func() {
+		defer close(addDone)
+		defer close(out)
+		err := adder.AddFile(rfa)
+
+		if err != nil {
+			return
+		}
+
+	}()
+	fmt.Println("Racin")
+	select {
+	case o := <-out:
+		fmt.Println("Got hash: ", o.(*coreunix.AddedObject).Hash)
+	case <-addDone:
+		return ErrVarintTooBig
+	}
+	/*addedHashes := make(map[string]struct{})
+	select {
+	case o := <-out:
+		addedHashes[o.(*coreunix.AddedObject).Hash] = struct{}{}
+	case <-addDone:
+		return ErrVarintTooBig
+	}
+	fmt.Printf("Addedhashes: %s\n", addedHashes)*/
+	fmt.Println("Racin 2")
+	/*var gcout <-chan gc.Result
+	gcstarted := make(chan struct{})
+	go func() {
+		defer close(gcstarted)
+		gcout = gc.GC(context.Background(), node.Blockstore, node.Repo.Datastore(), node.Pinning, nil)
+	}()
+
+	// gc shouldnt start until we let the add finish its current file.
+	//pipew.Write([]byte("some data for file b"))
+
+	select {
+	case <-gcstarted:
+		return ErrCidTooShort
+	default:
+	}
+
+	time.Sleep(time.Millisecond * 100) // make sure gc gets to requesting lock
+
+	// finish write and unblock gc
+	//pipew.Close()
+
+	// receive next object from adder
+	o := <-out
+	addedHashes[o.(*coreunix.AddedObject).Hash] = struct{}{}
+
+	<-gcstarted
+
+	for r := range gcout {
+		if r.Error != nil {
+			return err
+		}
+		if _, ok := addedHashes[r.KeyRemoved.String()]; ok {
+			return errors.New("gc'ed a hash we just added")
+		}
+	}
+
+	var last *cid.Cid
+	for a := range out {
+		// wait for it to finish
+		c, err := cid.Decode(a.(*coreunix.AddedObject).Hash)
+		if err != nil {
+			return err
+		}
+		last = c
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*5)
+	defer cancel()
+
+	set := cid.NewSet()
+	err = dag.EnumerateChildren(ctx, dag.GetLinksWithDAG(node.DAG), last, set.Visit)
+	if err != nil {
+		return err
+	}
+*/
+	return nil
 }/*
 func GetNode2(env interface{}) (*core.IpfsNode, error) {
 	ctx, ok := env.(*commands.Context)

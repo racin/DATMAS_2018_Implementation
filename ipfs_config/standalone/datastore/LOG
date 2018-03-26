@@ -700,3 +700,27 @@
 09:59:03.668130 table@remove removed @143
 09:59:03.688664 db@close closing
 09:59:03.688733 db@close done T·68.348µs
+=============== Mar 26, 2018 (CEST) ===============
+20:32:02.261422 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+20:32:02.262139 version@stat F·[0 1] S·1KiB[0B 1KiB] Sc·[0.00 0.00]
+20:32:02.262160 db@open opening
+20:32:02.262216 journal@recovery F·1
+20:32:02.263531 journal@recovery recovering @154
+20:32:02.273646 memdb@flush created L0@157 N·1 S·162B "/lo..oot,v104":"/lo..oot,v104"
+20:32:02.274202 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+20:32:02.275339 db@janitor F·4 G·0
+20:32:02.275372 db@open done T·13.197607ms
+20:32:02.325395 db@close closing
+20:32:02.325493 db@close done T·94.793µs
+=============== Mar 26, 2018 (CEST) ===============
+20:32:10.464639 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+20:32:10.464842 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+20:32:10.464867 db@open opening
+20:32:10.464988 journal@recovery F·1
+20:32:10.465457 journal@recovery recovering @158
+20:32:10.480225 memdb@flush created L0@160 N·1 S·162B "/lo..oot,v106":"/lo..oot,v106"
+20:32:10.480760 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+20:32:10.481372 db@janitor F·5 G·0
+20:32:10.481405 db@open done T·16.509857ms
+20:32:56.024763 db@close closing
+20:32:56.024876 db@close done T·110.468µs

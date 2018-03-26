@@ -30,3 +30,8 @@ created by github.com/ipfs/go-ipfs/core/commands.glob..func6
 
 gob@stop ~/go/src/github.com/ipfs/go-ipfs $ 
 
+
+
+gob@stop ~ $ ipfs add -n Downloads/ubuntu-16.04.3-desktop-amd64.iso 
+added QmbLdSnTd3ujyS9Ku512mT5LZFQtPB2mZAqCxqmBNpesD2 ubuntu-16.04.3-desktop-amd64.iso
+Hash: QmbLdSnTd3ujyS9Ku512mT5LZFQtPB2mZAqCxqmBNpesD2
