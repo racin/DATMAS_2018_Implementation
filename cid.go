@@ -28,12 +28,23 @@ import (
 	"strings"
 
 	mbase "github.com/multiformats/go-multibase"
-	mh "github.com/multiformats/go-multihash"
+	//mh "github.com/multiformats/go-multihash"
+	mh "gx/ipfs/QmZyZDi491cCNTLfAhwcaDii2Kg4pwKRkhqQzURGDvY6ua/go-multihash"
 	"io/ioutil"
 	blocks "gx/ipfs/Qmej7nf81hi2x2tvjRBF3mcp74sQyuDH4VMYDGd1YtXjb2/go-block-format"
-	cid "github.com/ipfs/go-cid"
+	bstore "gx/ipfs/QmTVDM4LCSUMFNQzbDLL9zQwp8usE6QHymFdh3h8vL9v6b/go-ipfs-blockstore"
+	//cid "github.com/ipfs/go-cid"
+	cid "gx/ipfs/QmcZfnkapfECQGcLZaf9B79NRg7cRa9EnZh4LSbkCzwNvY/go-cid"
 	file "github.com/ipfs/go-ipfs-cmdkit/files"
+	blockservice "github.com/ipfs/go-ipfs/blockservice"
 	"os"
+	//"github.com/ipfs/go-ipfs/blockservice"
+	//"github.com/ipfs/go-ipfs/commands"
+	//core "github.com/ipfs/go-ipfs/core"
+	dag "github.com/ipfs/go-ipfs/merkledag"
+	"github.com/ipfs/go-ipfs-blockstore"
+	"github.com/ipfs/go-datastore"
+	cmds "gx/ipfs/QmfAkMSt9Fwzk48QDJecPcwCUjnf2uG7MLnmCGTp4C6ouL/go-ipfs-cmds"
 )
 
 // UnsupportedVersionString just holds an error message
@@ -186,7 +197,24 @@ func main(){
 	c2 := NewPrefixV0(mh.SHA2_256)
 	sc2, _ := p2.Sum(mHash2)
 	fmt.Printf("%s\n", s2.hash.B58String())*/
-}
+	//bserv := blockservice.New(addblockstore, exch) // hash security 001
+	env := cmds.Environment
+	addblockstore := bstore.NewGCBlockstore(blockstore.NewBlockstore( datastore.Batching(data)))
+	bserv := blockservice.New()
+	//a := dag.NewRawNode(data)
+	//fmt.Printf("%s\n", a.Cid())
+	dserv := dag.NewDAGService(bserv)
+	y := make(chan <-)
+	z :=
+}/*
+func GetNode2(env interface{}) (*core.IpfsNode, error) {
+	ctx, ok := env.(*commands.Context)
+	if !ok {
+		return nil, fmt.Errorf("expected env to be of type %T, got %T", ctx, env)
+	}
+
+	return ctx.GetNode()
+}*/
 // NewCidV0 returns a Cid-wrapped multihash.
 // They exist to allow IPFS to work with Cids while keeping
 // compatibility with the plain-multihash format used used in IPFS.
