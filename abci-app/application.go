@@ -50,8 +50,8 @@ func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
 	return types.ResponseInfo{Data: app.info}
 }
 func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
-
-	fmt.Println("Deliver trigger");
+	txHash, _ := crypto.IPFSHashData(txBytes)
+	fmt.Println("Deliver trigger. Hash of data: " + txHash);
 	tx := &transaction.Transaction{}
 	if err := tx.FromBytes(txBytes); err != nil {
 		//return types.ErrUnknownRequest
@@ -119,7 +119,8 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 }
 
 func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.Result {
-	fmt.Println("CheckTx trigger");
+	txHash, _ := crypto.IPFSHashData(txBytes)
+	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	tx := &transaction.Transaction{}
 	if err := tx.FromBytes(txBytes); err != nil {
 		//return types.ErrUnknownRequest

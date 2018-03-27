@@ -838,3 +838,72 @@
 19:10:48.411177 db@open done T·12.338987ms
 19:10:48.476977 db@close closing
 19:10:48.477066 db@close done T·87.616µs
+=============== Mar 27, 2018 (CEST) ===============
+21:06:33.823640 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:06:33.824320 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+21:06:33.824360 db@open opening
+21:06:33.824516 journal@recovery F·1
+21:06:33.824695 journal@recovery recovering @187
+21:06:33.829323 memdb@flush created L0@189 N·1 S·162B "/lo..oot,v124":"/lo..oot,v124"
+21:06:33.829905 version@stat F·[3 1] S·1KiB[486B 1KiB] Sc·[0.75 0.00]
+21:06:33.830496 db@janitor F·6 G·0
+21:06:33.830531 db@open done T·6.147451ms
+21:06:33.864450 db@close closing
+21:06:33.864624 db@close done T·171.307µs
+=============== Mar 27, 2018 (CEST) ===============
+21:29:54.842098 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:29:54.842613 version@stat F·[3 1] S·1KiB[486B 1KiB] Sc·[0.75 0.00]
+21:29:54.842660 db@open opening
+21:29:54.842827 journal@recovery F·1
+21:29:54.843354 journal@recovery recovering @190
+21:29:54.847645 memdb@flush created L0@192 N·1 S·162B "/lo..oot,v126":"/lo..oot,v126"
+21:29:54.848333 version@stat F·[4 1] S·1KiB[648B 1KiB] Sc·[1.00 0.00]
+21:29:54.848873 db@janitor F·7 G·0
+21:29:54.848922 db@open done T·6.223897ms
+21:29:54.849254 table@compaction L0·4 -> L1·1 S·1KiB Q·127
+21:29:54.854526 table@build created L1@195 N·4 S·1KiB "/F5..KR7,v5":"/lo..ins,v27"
+21:29:54.854586 version@stat F·[0 1] S·1KiB[0B 1KiB] Sc·[0.00 0.00]
+21:29:54.863238 table@compaction committed F-4 S-648B Ke·0 D·4 T·13.933472ms
+21:29:54.863334 table@remove removed @192
+21:29:54.863396 table@remove removed @189
+21:29:54.863452 table@remove removed @186
+21:29:54.863688 table@remove removed @183
+21:29:54.863738 table@remove removed @182
+21:29:54.874242 db@close closing
+21:29:54.874453 db@close done T·206.07µs
+=============== Mar 27, 2018 (CEST) ===============
+21:30:48.021641 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:30:48.022234 version@stat F·[0 1] S·1KiB[0B 1KiB] Sc·[0.00 0.00]
+21:30:48.022293 db@open opening
+21:30:48.022447 journal@recovery F·1
+21:30:48.025667 journal@recovery recovering @193
+21:30:48.030868 memdb@flush created L0@196 N·1 S·162B "/lo..oot,v128":"/lo..oot,v128"
+21:30:48.033571 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+21:30:48.034336 db@janitor F·4 G·0
+21:30:48.034371 db@open done T·12.041143ms
+21:30:48.087652 db@close closing
+21:30:48.087744 db@close done T·97.751µs
+=============== Mar 27, 2018 (CEST) ===============
+21:46:48.558455 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:46:48.558666 version@stat F·[1 1] S·1KiB[162B 1KiB] Sc·[0.25 0.00]
+21:46:48.558688 db@open opening
+21:46:48.558793 journal@recovery F·1
+21:46:48.559457 journal@recovery recovering @197
+21:46:48.569166 memdb@flush created L0@199 N·1 S·162B "/lo..oot,v130":"/lo..oot,v130"
+21:46:48.570076 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+21:46:48.570701 db@janitor F·5 G·0
+21:46:48.570885 db@open done T·12.143465ms
+21:46:48.615736 db@close closing
+21:46:48.615850 db@close done T·109.054µs
+=============== Mar 27, 2018 (CEST) ===============
+21:49:26.237242 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:49:26.237460 version@stat F·[2 1] S·1KiB[324B 1KiB] Sc·[0.50 0.00]
+21:49:26.237484 db@open opening
+21:49:26.237566 journal@recovery F·1
+21:49:26.238151 journal@recovery recovering @200
+21:49:26.242802 memdb@flush created L0@202 N·1 S·162B "/lo..oot,v132":"/lo..oot,v132"
+21:49:26.243345 version@stat F·[3 1] S·1KiB[486B 1KiB] Sc·[0.75 0.00]
+21:49:26.244037 db@janitor F·6 G·0
+21:49:26.244092 db@open done T·6.583208ms
+21:49:26.290029 db@close closing
+21:49:26.290131 db@close done T·98.331µs

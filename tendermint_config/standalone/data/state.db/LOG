@@ -33,3 +33,29 @@
 18:35:34.289043 version@stat F·[2] S·835B[835B] Sc·[0.50]
 18:35:34.321045 db@janitor F·4 G·0
 18:35:34.321045 db@open done T·66.0038ms
+=============== Mar 27, 2018 (CEST) ===============
+21:51:15.144764 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:51:15.145683 version@stat F·[2] S·835B[835B] Sc·[0.50]
+21:51:15.145725 db@open opening
+21:51:15.146208 version@stat F·[2] S·835B[835B] Sc·[0.50]
+21:51:15.154158 db@janitor F·4 G·0
+21:51:15.154210 db@open done T·8.452431ms
+=============== Mar 27, 2018 (CEST) ===============
+21:51:58.397287 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:51:58.397540 version@stat F·[2] S·835B[835B] Sc·[0.50]
+21:51:58.397570 db@open opening
+21:51:58.397678 journal@recovery F·1
+21:51:58.397869 journal@recovery recovering @10
+21:51:58.398669 version@stat F·[2] S·835B[835B] Sc·[0.50]
+21:51:58.412583 db@janitor F·4 G·0
+21:51:58.412635 db@open done T·15.04125ms
+=============== Mar 27, 2018 (CEST) ===============
+21:58:59.962936 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:58:59.963124 version@stat F·[2] S·835B[835B] Sc·[0.50]
+21:58:59.963157 db@open opening
+21:58:59.963962 journal@recovery F·1
+21:58:59.964672 journal@recovery recovering @12
+21:58:59.975170 memdb@flush created L0@14 N·4 S·408B "abc..y:1,v8":"val..y:2,v9"
+21:58:59.977338 version@stat F·[3] S·1KiB[1KiB] Sc·[0.75]
+21:58:59.986512 db@janitor F·5 G·0
+21:58:59.986593 db@open done T·23.416648ms

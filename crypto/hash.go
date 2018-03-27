@@ -41,9 +41,8 @@ func IPFSHashData(data []byte) (string, error){
 		buffer := ioutil.NopCloser(bytes.NewBuffer(data))
 
 		fileBuf := files.NewReaderFile("a", "a", buffer, nil)
-		sliceF := files.NewSliceFile("files", "files", []files.File{fileBuf})
 
-		err = adder.AddFile(sliceF)
+		err = adder.AddFile(fileBuf)
 		if err != nil {
 			return
 		}

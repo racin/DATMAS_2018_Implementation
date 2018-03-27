@@ -16,7 +16,6 @@ import (
 
 	srv "github.com/racin/DATMAS_2018_Implementation/server"
 	"github.com/racin/DATMAS_2018_Implementation/abci-app"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
 
 	"github.com/tendermint/abci/types"
 	cmn "github.com/tendermint/tmlibs/common"
@@ -44,7 +43,7 @@ func NewServer(protoAddr, transport string, app types.Application) (cmn.Service,
 
 func main(){
 	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
-	abciPtr := flag.String("abci", "socket", "socket | grpc")
+	abciPtr := flag.String("abci", "grpc", "grpc | socket")
 	//storePtr := flag.String("store", "app.ldb", "store path")
 	flag.Parse()
 
