@@ -68,9 +68,9 @@ func main(){
 	}
 	fmt.Println("Racin har started en app! Transport: " + *abciPtr);
 	fmt.Println("Info om app: " + app.Info(types.RequestInfo{Version: "123"}).Data)
-	hash, _ := IPFSHashFile("/home/gob/Downloads/ubuntu-16.04.3-desktop-amd64.iso")
+	hash, _ := IPFSHashFile("uis.sh")
 	fmt.Println("Hash: " + hash)
-	hash2, _ := IPFSHashFile("uis.sh")
+	hash2, _ := IPFSHashFile("hash.go")
 	fmt.Println("Hash: " + hash2)
 
 	// Wait forever
