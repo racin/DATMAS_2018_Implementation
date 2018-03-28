@@ -1,35 +1,16 @@
-/*
- * Copyright (C) 2017 Tino Rusch
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy of
- * this software and associated documentation files (the "Software"), to deal in
- * the Software without restriction, including without limitation the rights to
- * use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of
- * the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in all
- * copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- * FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
- * COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
- * IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
- * CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
- */
-
 package app
 
 import (
 	"encoding/json"
 	"log"
+	"io"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/tendermint/abci/types"
 	//"github.com/tendermint/merkleeyes/iavl"
 	"github.com/trusch/passchain/state"
-	"github.com/trusch/passchain/transaction"
 	"fmt"
+	"net/http"
+	"os"
 )
 
 type Application struct {
@@ -38,13 +19,58 @@ type Application struct {
 	info string
 	//tree *iavl.IAVLTree
 	state *state.State
+	uploadAddr string
 }
 
-func NewApplication() *Application {
+func NewApplication(uploadAddr string) *Application {
 	// tree : iavl.NewIAVLTree(0, nil)
-	return &Application{info: "____racin"}
+	return &Application{info: "____racin", uploadAddr: uploadAddr}
 }
 
+func (app *Application) StartUploadHandler(){
+	http.HandleFunc("/", app.UploadHandler)
+	http.ListenAndServe(app.uploadAddr, nil)
+}
+func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request){
+	err := r.ParseMultipartForm(200000) // grab the multipart form
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	formdata := r.MultipartForm // ok, no problem so far, read the Form data
+
+	//get the *fileheaders
+	files := formdata.File["multiplefiles"] // grab the filenames
+
+	for i, _ := range files { // loop through the files one by one
+		file, err := files[i].Open()
+		defer file.Close()
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		out, err := os.Create("/tmp/" + files[i].Filename)
+
+		defer out.Close()
+		if err != nil {
+			fmt.Fprintf(w, "Unable to create the file for writing. Check your write access privilege")
+			return
+		}
+
+		_, err = io.Copy(out, file) // file not files[i] !
+
+		if err != nil {
+			fmt.Fprintln(w, err)
+			return
+		}
+
+		fmt.Fprintf(w, "Files uploaded successfully : ")
+		fmt.Fprintf(w, files[i].Filename+"\n")
+
+	}
+}
 func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
 	fmt.Println("Info trigger");
 	return types.ResponseInfo{Data: app.info}
@@ -52,58 +78,45 @@ func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
 func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("Deliver trigger. Hash of data: " + txHash);
-	tx := &transaction.Transaction{}
-	if err := tx.FromBytes(txBytes); err != nil {
-		//return types.ErrUnknownRequest
-		return types.ResponseDeliverTx{Info: "Error"};
+	tx := &Transaction{}
+	if err := json.Unmarshal(txBytes, tx); err != nil {
+		return types.ResponseDeliverTx{Info: "Error"}
 	}
+	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 	switch tx.Type {
-	case transaction.AccountAdd:
+	case DownloadData:
 		{
 			/*if err := deliverAccountAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+			fmt.Println("Downloaddata")
 			return types.ResponseDeliverTx{Info: "Error"};
 		}
 
-	case transaction.AccountDel:
+	case UploadData:
 		{
 			/*if err := deliverAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return types.ResponseDeliverTx{Info: "Error"};
 		}
-	case transaction.ReputationGive:
+	case RemoveData:
 		{
 			/*if err := deliverReputationGiveTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return types.ResponseDeliverTx{Info: "Error"};
 		}
-	case transaction.SecretAdd:
+	case VerifyStorage:
 		{
 			/*if err := deliverSecretAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return types.ResponseDeliverTx{Info: "Error"};
 		}
-	case transaction.SecretUpdate:
+	case ChangeContentAccess:
 		{
 			/*if err := deliverSecretUpdateTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
-		}
-	case transaction.SecretDel:
-		{
-			/*if err := deliverSecretDelTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
-		}
-	case transaction.SecretShare:
-		{
-			/*if err := deliverSecretShareTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return types.ResponseDeliverTx{Info: "Error"};
@@ -121,60 +134,53 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.Result {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
-	tx := &transaction.Transaction{}
-	if err := tx.FromBytes(txBytes); err != nil {
-		//return types.ErrUnknownRequest
+	fmt.Println("Data received: " + string(txBytes))
+	tx := &Transaction{}
+	if err := json.Unmarshal(txBytes, tx); err != nil {
+		fmt.Println(err.Error())
 		return types.ResponseCheckTx{Info: "Error"}
 	}
+	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 	switch tx.Type {
-	case transaction.AccountAdd:
+	case DownloadData:
 		{
 			/*if err := checkAccountAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+			fmt.Println("DownloadData")
 			return types.ResponseCheckTx{Info: "Error"}
 		}
 
-	case transaction.AccountDel:
+	case UploadData:
 		{
 			/*if err := checkAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+			fmt.Println("UploadData")
 			return types.ResponseCheckTx{Info: "Error"}
 		}
-	case transaction.ReputationGive:
+	case RemoveData:
 		{
 			/*if err := checkReputationGiveTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+			fmt.Println("RemoveData")
 			return types.ResponseCheckTx{Info: "Error"}
 		}
-	case transaction.SecretAdd:
+	case VerifyStorage:
 		{
 			/*if err := checkSecretAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+			fmt.Println("VerifyStorage")
 			return types.ResponseCheckTx{Info: "Error"};
 		}
-	case transaction.SecretUpdate:
+	case ChangeContentAccess:
 		{
 			/*if err := checkSecretUpdateTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
-			return types.ResponseCheckTx{Info: "Error"}
-		}
-	case transaction.SecretDel:
-		{
-			/*if err := checkSecretDelTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return types.ResponseCheckTx{Info: "Error"}
-		}
-	case transaction.SecretShare:
-		{
-			/*if err := checkSecretShareTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
+			fmt.Println("ChangeContentAccess")
 			return types.ResponseCheckTx{Info: "Error"}
 		}
 	default:

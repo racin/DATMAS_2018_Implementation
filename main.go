@@ -1,12 +1,3 @@
-/*
-Package server is used to start a new ABCI server.
-
-It contains two server implementation:
- * gRPC server
- * socket server
-
-*/
-
 package main
 
 import (
@@ -44,13 +35,14 @@ func NewServer(protoAddr, transport string, app types.Application) (cmn.Service,
 func main(){
 	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
 	abciPtr := flag.String("abci", "grpc", "grpc | socket")
+	uploadAddrPtr := flag.String("uploadaddr", ":46659", "Upload address")
 	//storePtr := flag.String("store", "app.ldb", "store path")
 	flag.Parse()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 
 	// Create the application - in memory or persisted to disk
-	app := app.NewApplication()
+	app := app.NewApplication(*uploadAddrPtr)
 
 	// Start the listener
 	srv, err := server.NewServer(*addrPtr, *abciPtr, app)
@@ -63,6 +55,9 @@ func main(){
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
+	// Start the handler for uploading files.
+	app.StartUploadHandler()
+
 	fmt.Println("Racin har started en app! Transport: " + *abciPtr);
 	fmt.Println("Info om app: " + app.Info(types.RequestInfo{Version: "123"}).Data)
 
