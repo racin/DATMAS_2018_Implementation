@@ -9,11 +9,11 @@ func TestHash(t *testing.T){
 	if err != nil {
 		t.Fatal("IPFSHash failed: " + err.Error())
 	}
-	assert.Equal(t, "QmRFq5YyyNai59Pvxfd5pGJY6HzpubyzpDp6ceqbJfDUBp", fileHash, "Hash did not match")
+	assert.Equal(t, "QmRFq5YyyNai59Pvxfd5pGJY6HzpubyzpDp6ceqbJfDUBp", fileHash, "File hash did not match")
 
 	textHash, err := IPFSHashData([]byte("racin\n"))
 	if err != nil {
 		t.Fatal("IPFSHash failed: " + err.Error())
 	}
-	assert.Equal(t, "QmdeVbypiSbW24Uhjdvdhczpv1gxDXA9nPYKGiPaAnQs5F", textHash, "Hash did not match")
+	assert.Equal(t, "QmdeVbypiSbW24Uhjdvdhczpv1gxDXA9nPYKGiPaAnQs5F", textHash, "Data hash did not match")
 }
