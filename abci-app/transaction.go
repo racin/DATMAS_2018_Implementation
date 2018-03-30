@@ -3,7 +3,8 @@ package app
 import (
 	"time"
 
-	"github.com/trusch/passchain/crypto"
+	//"github.com/trusch/passchain/crypto"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
 
 	mh "github.com/multiformats/go-multihash"
 	"fmt"
@@ -12,7 +13,7 @@ import (
 type Transaction struct {
 	Type      TransactionType `json:"type"`
 	Timestamp time.Time       `json:"timestamp"`
-	Signature string          `json:"signature"`
+	Signature []byte          `json:"signature"`
 	Data      interface{}     `json:"data"`
 }
 
@@ -46,19 +47,17 @@ func (t *Transaction) Hash() string {
 	return ret.B58String()
 }
 
-func (t *Transaction) Sign(key *crypto.Key) error {
-	hash := t.Hash()
-	signature, err := key.Sign([]byte(hash))
-	if err != nil {
+func (t *Transaction) Sign(keys *crypto.Keys) error {
+	if signature, err := keys.Sign(t.Hash()); err != nil {
 		return err
+	} else {
+		t.Signature = signature
+		return nil
 	}
-	t.Signature = signature
-	return nil
 }
 
-func (t *Transaction) Verify(key *crypto.Key) error {
-	hash := t.Hash()
-	return key.Verify([]byte(hash), t.Signature)
+func (t *Transaction) Verify(keys *crypto.Keys) bool {
+	return keys.Verify(t.Hash(), t.Signature)
 }
 /*
 func (t *Transaction) ProofOfWork(cost byte) error {
