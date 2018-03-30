@@ -7,7 +7,6 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/tendermint/abci/types"
 	//"github.com/tendermint/merkleeyes/iavl"
-	"github.com/trusch/passchain/state"
 	"fmt"
 	"net/http"
 	"os"
@@ -18,7 +17,6 @@ type Application struct {
 
 	info string
 	//tree *iavl.IAVLTree
-	state *state.State
 	uploadAddr string
 }
 
@@ -190,15 +188,12 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 		}
 	}
 	//return types.OK
-	return types.ResponseCheckTx{Info: "All good"}
+	return types.ResponseCheckTx{Info: "All good", Code: types.CodeTypeOK}
 }
 
 func (app *Application) Commit() types.ResponseCommit { //types.Result {
 	fmt.Println("Commit trigger");
 	return types.ResponseCommit{}
-	hash := app.state.Tree.Hash()
-	//return types.NewResultOK(hash, "")
-	return types.ResponseCommit{Data: hash}
 }
 
 func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
@@ -212,10 +207,8 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				err    error
 			)
 			if reqQuery.Data == nil {
-				result, err = app.state.ListAccounts()
 				log.Printf("got account list: %+v", result)
 			} else {
-				result, err = app.state.GetAccount(string(reqQuery.Data))
 				log.Printf("got account: %+v", result)
 			}
 			if err != nil {
@@ -233,10 +226,8 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 				err    error
 			)
 			if reqQuery.Data == nil {
-				result, err = app.state.ListSecrets()
 				log.Printf("got secret list: %+v", result)
 			} else {
-				result, err = app.state.GetSecret(string(reqQuery.Data))
 				log.Printf("got secret: %+v", result)
 			}
 			if err != nil {

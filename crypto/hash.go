@@ -5,8 +5,8 @@ import (
 	"context"
 
 	"github.com/ipfs/go-ipfs/core"
-	coreunix "github.com/ipfs/go-ipfs/core/coreunix"
-	files "gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit/files"
+	"github.com/ipfs/go-ipfs/core/coreunix"
+	"gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit/files"
 	"github.com/ipfs/go-ipfs/repo"
 	"github.com/ipfs/go-ipfs/repo/config"
 	ds2 "github.com/ipfs/go-ipfs/thirdparty/datastore2"
@@ -14,7 +14,7 @@ import (
 	"bytes"
 )
 
-func IPFSHashData(data []byte) (string, error){
+func IPFSHashData(data []byte) (string, error) {
 	var hash string
 	r := &repo.Mock{
 		C: config.Config{
@@ -56,7 +56,7 @@ func IPFSHashData(data []byte) (string, error){
 	return hash, err
 }
 
-func IPFSHashFile(filePath string) (string, error){
+func IPFSHashFile(filePath string) (string, error) {
 	var hash string
 	r := &repo.Mock{
 		C: config.Config{
@@ -83,10 +83,9 @@ func IPFSHashFile(filePath string) (string, error){
 		return hash, err
 	}
 
-
 	go func() {
 		defer close(out)
-		file, _ := files.NewSerialFile(filePath,filePath,false, stat)
+		file, _ := files.NewSerialFile(filePath, filePath, false, stat)
 
 		err = adder.AddFile(file)
 		if err != nil {
