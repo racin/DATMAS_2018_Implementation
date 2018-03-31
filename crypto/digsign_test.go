@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func TestSignature(t *testing.T) {
+func TestSignData(t *testing.T) {
 	// Generate a set of random keys
 	keypair, _ := rsa.GenerateKey(rand.Reader, 2048)
 	key := &Keys{private: keypair, public: &keypair.PublicKey}
@@ -24,4 +24,8 @@ func TestSignature(t *testing.T) {
 	} else {
 		t.Fatal("Could not sign data. Error: " + err.Error())
 	}
+}
+
+func TestLoadSignature(t *testing.T) {
+	LoadKeys()
 }

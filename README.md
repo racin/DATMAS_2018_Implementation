@@ -14,3 +14,9 @@ protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf
 go build main.go
 ./main -abci=grpc
 ```
+
+## Generate Certificate:
+```
+openssl req -x509 -nodes -newkey rsa:4196 -keyout mycert.pem -out mycert.pem (All questions can be skipped)
+openssl rsa -in mycert.pem -pubout > mycert.pub
+```
