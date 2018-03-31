@@ -27,5 +27,11 @@ func TestSignData(t *testing.T) {
 }
 
 func TestLoadSignature(t *testing.T) {
-	LoadKeys()
+	if _, err := LoadPrivateKey("test_certificate/mycert_test.pem"); err != nil {
+		t.Fatal("Could not load private key. Error: " + err.Error())
+	}
+
+	if _, err := LoadPublicKey("test_certificate/mycert_test.pub"); err != nil {
+		t.Fatal("Could not load public key. Error: " + err.Error())
+	}
 }
