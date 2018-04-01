@@ -85,28 +85,47 @@ func LoadPrivateKey(path string) (*Keys, error) {
 
 	return nil, fmt.Errorf("Could not unmarshal public key.")
 }
-func GenerateKeyPair(path string, bits int) (error){
+func GenerateKeyPair(path, name string, bits int) (*Keys, error){
+	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
+		return nil, err
+	}
+
 	keypair, err := rsa.GenerateKey(rand.Reader, bits)
 	if err != nil {
-		return err;
+		return nil, err;
 	}
 
-	keypair_marshal, err := x509.MarshalPKCS8PrivateKey(keypair)
+	privatekey_marshal, err := x509.MarshalPKCS8PrivateKey(keypair)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	keypair_pem := pem.EncodeToMemory(
+	privatekeypair_pem := pem.EncodeToMemory(
 		&pem.Block{
 			Type:  "RSA PRIVATE KEY",
-			Bytes: keypair_marshal,
+			Bytes: privatekey_marshal,
 		},
 	)
 
-	err = os.MkdirAll(filepath.Dir(path), 0700)
-	if err != nil {
-		return err
+	if err = ioutil.WriteFile(path+"/"+name+".pem", privatekeypair_pem, 0600); err != nil {
+		return nil, err
 	}
 
-	return ioutil.WriteFile(path, keypair_pem, 0600)
+	publickey_marshal, err := x509.MarshalPKIXPublicKey(&keypair.PublicKey)
+	if err != nil {
+		return nil, err
+	}
+
+	publickeypair_pem := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PUBLIC KEY",
+			Bytes: publickey_marshal,
+		},
+	)
+
+	if err = ioutil.WriteFile(path+"/"+name+".pub", publickeypair_pem, 0600); err != nil {
+		return nil, err
+	}
+
+	return &Keys{private:keypair, public:&keypair.PublicKey}, nil
 }

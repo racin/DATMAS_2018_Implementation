@@ -8,17 +8,36 @@ import (
 	"os/user"
 )
 
+const (
+	keyPath = "/.bcfs/"
+	certName = "mycert_test"
+)
 func TestSignature(t *testing.T){
 	var privKey *Keys
 	var pubKey *Keys
 	var err error
+	var certPath string
+	t.Run("TestGenerateKeys", func(t *testing.T){
+		usr, err := user.Current()
+		if err != nil {
+			t.Fatal("Could not get current user")
+			return
+		}
+		if _, err := GenerateKeyPair(usr.HomeDir + keyPath, certName , 1024); err != nil {
+			certPath = "test_certificate/mycert_test"
+			t.Fatal("Error: " + err.Error())
+		} else {
+			certPath = usr.HomeDir + keyPath + certName
+		}
+	})
+	
 	t.Run("LoadSignature", func(t *testing.T){
-		privKey, err = LoadPrivateKey("test_certificate/mycert_test.pem")
+		privKey, err = LoadPrivateKey(certPath + ".pem")
 		if err != nil {
 			t.Fatal("Could not load private key. Error: " + err.Error())
 		}
 
-		pubKey, err = LoadPublicKey("test_certificate/mycert_test.pub")
+		pubKey, err = LoadPublicKey(certPath + ".pub")
 		if err != nil {
 			t.Fatal("Could not load public key. Error: " + err.Error())
 		}
@@ -44,12 +63,4 @@ func TestSignature(t *testing.T){
 			t.Fatal("Could not sign data. Error: " + err.Error())
 		}
 	})
-}
-
-func TestGenerateKeys(t *testing.T){
-	if usr, err := user.Current(); err != nil {
-		t.Fatal("Could not get current user")
-	} else if err := GenerateKeyPair(usr.HomeDir + "/.bcfs/mycert.pem", 1024); err != nil {
-		t.Fatal("Error: " + err.Error())
-	}
 }
