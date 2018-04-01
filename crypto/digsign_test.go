@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"github.com/stretchr/testify/assert"
 	"testing"
+	"os/user"
 )
 
 func TestSignature(t *testing.T){
@@ -43,4 +44,12 @@ func TestSignature(t *testing.T){
 			t.Fatal("Could not sign data. Error: " + err.Error())
 		}
 	})
+}
+
+func TestGenerateKeys(t *testing.T){
+	if usr, err := user.Current(); err != nil {
+		t.Fatal("Could not get current user")
+	} else if err := GenerateKeyPair(usr.HomeDir + "/.bcfs/mycert.pem", 1024); err != nil {
+		t.Fatal("Error: " + err.Error())
+	}
 }

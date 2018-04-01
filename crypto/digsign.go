@@ -9,6 +9,8 @@ import (
 	"crypto/x509"
 	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
 )
 
 type Keys struct {
@@ -82,4 +84,29 @@ func LoadPrivateKey(path string) (*Keys, error) {
 	}
 
 	return nil, fmt.Errorf("Could not unmarshal public key.")
+}
+func GenerateKeyPair(path string, bits int) (error){
+	keypair, err := rsa.GenerateKey(rand.Reader, bits)
+	if err != nil {
+		return err;
+	}
+
+	keypair_marshal, err := x509.MarshalPKCS8PrivateKey(keypair)
+	if err != nil {
+		return err
+	}
+
+	keypair_pem := pem.EncodeToMemory(
+		&pem.Block{
+			Type:  "RSA PRIVATE KEY",
+			Bytes: keypair_marshal,
+		},
+	)
+
+	err = os.MkdirAll(filepath.Dir(path), 0700)
+	if err != nil {
+		return err
+	}
+
+	return ioutil.WriteFile(path, keypair_pem, 0600)
 }
