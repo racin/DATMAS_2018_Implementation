@@ -8,8 +8,6 @@ import (
 	"encoding/pem"
 	"crypto/x509"
 	"fmt"
-	"crypto/dsa"
-	"crypto/ecdsa"
 	"io/ioutil"
 )
 
@@ -18,7 +16,7 @@ type Keys struct {
 	public  *rsa.PublicKey
 }
 
-func convertDataHash(dataHash interface {}) []byte {
+func convertDataHash(dataHash interface{}) []byte {
 	switch val := dataHash.(type) {
 	case string:
 		// First check if its a Base58 encoded multihash string
@@ -36,71 +34,52 @@ func convertDataHash(dataHash interface {}) []byte {
 	}
 }
 
-func (k *Keys) Sign(dh interface {}) ([]byte, error){
+func (k *Keys) Sign(dh interface{}) ([]byte, error) {
 	return rsa.SignPSS(rand.Reader, k.private, crypto.SHA256,
-		convertDataHash(dh), &rsa.PSSOptions{SaltLength:rsa.PSSSaltLengthAuto})
+		convertDataHash(dh), &rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto})
 }
 
-func (k *Keys) Verify(dh interface{}, signature []byte) (bool){
+func (k *Keys) Verify(dh interface{}, signature []byte) (bool) {
 	if err := rsa.VerifyPSS(k.public, crypto.SHA256, convertDataHash(dh), signature,
-		&rsa.PSSOptions{SaltLength:rsa.PSSSaltLengthAuto}); err != nil {
-			return false;
+		&rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}); err != nil {
+		return false;
 	}
 	return true
 }
 
-func LoadPublicKey(path string) (*Keys, error){
-	dat, _ := ioutil.ReadFile("test_certificate/mycert_test.pub")
-	fmt.Println(dat)
-	//block, _ := pem.Decode([]byte(pubPEM))
+func LoadPublicKey(path string) (*Keys, error) {
+	dat, _ := ioutil.ReadFile(path)
 	block, _ := pem.Decode(dat)
 	if block == nil {
-		panic("failed to parse PEM block containing the public key")
+		return nil, fmt.Errorf("failed to parse PEM block containing the public key")
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		panic("failed to parse DER encoded public key: " + err.Error())
+		return nil, fmt.Errorf("failed to parse DER encoded public key: %s", err.Error())
 	}
 
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		fmt.Println("pub is of type RSA:", pub)
-	case *dsa.PublicKey:
-		fmt.Println("pub is of type DSA:", pub)
-	case *ecdsa.PublicKey:
-		fmt.Println("pub is of type ECDSA:", pub)
-	default:
-		panic("unknown type of public key")
+	if pk, ok := pub.(*rsa.PublicKey); ok {
+		return &Keys{public: pk}, nil
 	}
-	return &Keys{}
+
+	return nil, fmt.Errorf("Could not unmarshal public key.")
 }
-func LoadPrivateKey(path string) (*Keys, error){
-	dat, _ := ioutil.ReadFile("test_certificate/mycert_test.pub")
-	fmt.Println(dat)
-	//block, _ := pem.Decode([]byte(pubPEM))
+func LoadPrivateKey(path string) (*Keys, error) {
+	dat, _ := ioutil.ReadFile(path)
 	block, _ := pem.Decode(dat)
 	if block == nil {
-		panic("failed to parse PEM block containing the public key")
+		return nil, fmt.Errorf("failed to parse PEM block containing the private key")
 	}
 
-	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
+	priv, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		panic("failed to parse DER encoded public key: " + err.Error())
+		return nil, fmt.Errorf("failed to parse DER encoded private key: %s", err.Error())
 	}
 
-	switch pub := pub.(type) {
-	case *rsa.PublicKey:
-		fmt.Println("pub is of type RSA:", pub)
-	case *dsa.PublicKey:
-		fmt.Println("pub is of type DSA:", pub)
-	case *ecdsa.PublicKey:
-		fmt.Println("pub is of type ECDSA:", pub)
-	default:
-		panic("unknown type of public key")
+	if pk, ok := priv.(*rsa.PrivateKey); ok {
+		return &Keys{private: pk, public: &pk.PublicKey}, nil
 	}
-	return &Keys{}
+
+	return nil, fmt.Errorf("Could not unmarshal public key.")
 }
-
-
-
