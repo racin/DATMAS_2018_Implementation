@@ -151,6 +151,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 
 	case UploadData:
 		{
+
 			/*if err := checkAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/

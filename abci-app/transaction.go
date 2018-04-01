@@ -11,10 +11,11 @@ import (
 )
 
 type Transaction struct {
-	Type      TransactionType `json:"type"`
-	Timestamp time.Time       `json:"timestamp"`
-	Signature []byte          `json:"signature"`
-	Data      interface{}     `json:"data"`
+	Type      	TransactionType `json:"type"`
+	Timestamp 	time.Time       `json:"timestamp"`
+	Signature 	[]byte          `json:"signature"`
+	Data      	interface{}     `json:"data"`
+	Identity
 }
 
 type Hashable interface {

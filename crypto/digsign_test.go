@@ -30,7 +30,7 @@ func TestSignature(t *testing.T){
 			certPath = usr.HomeDir + keyPath + certName
 		}
 	})
-	
+
 	t.Run("LoadSignature", func(t *testing.T){
 		privKey, err = LoadPrivateKey(certPath + ".pem")
 		if err != nil {
