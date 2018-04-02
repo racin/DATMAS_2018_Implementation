@@ -1,0 +1,8 @@
+{
+	"identities": {
+		"clientA": 1,
+		"clientB": 1,
+        "storageA": 3,
+        "consensusA": 4
+	}
+}

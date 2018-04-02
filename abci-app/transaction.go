@@ -2,11 +2,7 @@ package app
 
 import (
 	"time"
-
-	//"github.com/trusch/passchain/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
-
-	mh "github.com/multiformats/go-multihash"
 	"fmt"
 )
 
@@ -15,7 +11,7 @@ type Transaction struct {
 	Timestamp 	time.Time       `json:"timestamp"`
 	Signature 	[]byte          `json:"signature"`
 	Data      	interface{}     `json:"data"`
-	Identity
+	Identity	string			`json:"identity"`
 }
 
 type Hashable interface {
@@ -44,8 +40,8 @@ func (t *Transaction) ToBytes() ([]byte, error) {
 
 func (t *Transaction) Hash() string {
 	data := []byte(fmt.Sprintf("%v", t))
-	ret, _ := mh.Sum(data, mh.SHA2_256, -1)
-	return ret.B58String()
+	hash, _ := crypto.HashData(data)
+	return hash
 }
 
 func (t *Transaction) Sign(keys *crypto.Keys) error {
