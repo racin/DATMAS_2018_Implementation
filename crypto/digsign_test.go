@@ -9,8 +9,9 @@ import (
 )
 
 const (
-	keyPath = "/.bcfs/"
-	certName = "mycert_test"
+	keyPath 		= "/.bcfs/"
+	certName 		= "mycert_test"
+	certPathTest 	= "test_certificate/mycert_test"
 )
 func TestSignature(t *testing.T){
 	var privKey *Keys
@@ -24,7 +25,7 @@ func TestSignature(t *testing.T){
 			return
 		}
 		if _, err := GenerateKeyPair(usr.HomeDir + keyPath, certName , 1024); err != nil {
-			certPath = "test_certificate/mycert_test"
+			certPath = certPathTest
 			t.Fatal("Error: " + err.Error())
 		} else {
 			certPath = usr.HomeDir + keyPath + certName

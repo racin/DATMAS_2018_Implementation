@@ -15,8 +15,17 @@ go build main.go
 ./main -abci=grpc
 ```
 
-## Generate Certificate:
+## Generate certificate:
 ```
+mkdir $HOME/.bcfs
+cd $HOME/.bcfs
 openssl req -x509 -nodes -newkey rsa:4196 -keyout mycert.pem -out mycert.pem (All questions can be skipped)
 openssl rsa -in mycert.pem -pubout > mycert.pub
+```
+
+## Get fingerprint of certificate
+```
+openssl rsa -pubin -inform PEM -in mycert_test.pub -pubout -outform PEM | openssl md5 -c
+
+ssh-keygen -E MD5 -lf /dev/stdin <<< $( ssh-keygen -im PKCS8 -f mycert_test.pub ) | sed s/[0-9]+ MD5://g
 ```

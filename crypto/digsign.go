@@ -102,7 +102,7 @@ func GenerateKeyPair(path, name string, bits int) (*Keys, error){
 
 	privatekeypair_pem := pem.EncodeToMemory(
 		&pem.Block{
-			Type:  "RSA PRIVATE KEY",
+			Type:  "PRIVATE KEY",
 			Bytes: privatekey_marshal,
 		},
 	)
@@ -118,7 +118,7 @@ func GenerateKeyPair(path, name string, bits int) (*Keys, error){
 
 	publickeypair_pem := pem.EncodeToMemory(
 		&pem.Block{
-			Type:  "RSA PUBLIC KEY",
+			Type:  "PUBLIC KEY",
 			Bytes: publickey_marshal,
 		},
 	)

@@ -1,8 +1,24 @@
 {
 	"identities": {
-		"clientA": 1,
-		"clientB": 1,
-        "storageA": 3,
-        "consensusA": 4
+        "clientA": {
+            "name": "clientA",
+            "level": 1,
+            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+        },
+        "clientB": {
+            "name": "clientB",
+            "level": 1,
+            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+        },
+        "storageA": {
+            "name": "storageA",
+            "level": 3,
+            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+        },
+        "consensusA": {
+            "name": "consensusA",
+            "level": 4,
+            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+        }
 	}
 }
