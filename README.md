@@ -20,17 +20,18 @@ go build main.go
 mkdir $HOME/.bcfs
 cd $HOME/.bcfs
 echo -ne '\n' | openssl req -x509 -nodes -newkey rsa:4196 -keyout mycert.pem -out mycert.pem
+chmod 0600 mycert.pem
 openssl rsa -in mycert.pem -pubout > mycert.pub
 ```
 
 ## Get fingerprint of certificate
 ### From Private key
 ```
-ssh-keygen -yf mycert_test.pem > mycert_test_ssh.pub
-ssh-keygen -E md5 -lf mycert_test_ssh.pub | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
+ssh-keygen -yf mycert.pem > mycert_ssh.pub
+ssh-keygen -E md5 -lf mycert_ssh.pub | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
 ```
 
 ### From Public key
 ```
-ssh-keygen -E MD5 -lf /dev/stdin <<< $( ssh-keygen -im PKCS8 -f mycert_test.pub ) | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
+ssh-keygen -E MD5 -lf /dev/stdin <<< $( ssh-keygen -im PKCS8 -f mycert.pub ) | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
 ```

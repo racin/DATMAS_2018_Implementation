@@ -13,41 +13,18 @@ import (
 	"github.com/ipfs/go-ipfs/repo/config"
 	ds2 "github.com/ipfs/go-ipfs/thirdparty/datastore2"
 	mh "github.com/multiformats/go-multihash"
-	"encoding/binary"
 	"fmt"
 	"crypto/md5"
 	"golang.org/x/crypto/ssh"
 )
 const HashFunction = mh.SHA2_256
 
-func GetFingerPrint(key *Keys) (string, error) {
-	if key.public == nil {
-		return "", fmt.Errorf("Missing public key parameter")
+func GetFingerPrint(key *Keys) (string, error){
+	if k, err := ssh.NewPublicKey(key.public); err != nil {
+		return "", fmt.Errorf("Problems type asserting Public key: %s\n", err.Error())
+	} else {
+		return fmt.Sprintf("%x", md5.Sum(k.Marshal())), nil
 	}
-
-	// Prefix
-	buf := bytes.NewBuffer(encodeByteSlice([]byte("ssh-rsa")))
-
-	// E parameter (Public exponent)
-	e := make([]byte, 4)
-	binary.BigEndian.PutUint32(e, uint32(key.public.E))
-	buf.Write(encodeByteSlice(bytes.TrimLeft(e, "\x00")))
-
-	// N parameter (Public modulus)
-	buf.Write(encodeByteSlice([]byte{0}, key.public.N.Bytes()))
-
-	output := fmt.Sprintf("%x", md5.Sum(buf.Bytes()))
-	fmt.Printf("%x\n", md5.Sum(buf.Bytes()))
-	return output, nil
-}
-func GetFingerPrintShort(key *Keys) (string){
-	k, err := ssh.NewPublicKey(key.public)
-	if err != nil {
-		fmt.Printf("%s\n", err.Error())
-	}
-	fmt.Println(ssh.FingerprintLegacyMD5(k))
-	fmt.Printf("%x\n", md5.Sum(k.Marshal()))
-	return fmt.Sprintf("%x", ssh.FingerprintLegacyMD5(k))
 }
 func HashData(data []byte) (string, error) {
 	var err error
@@ -81,41 +58,6 @@ func IPFSHashFile(filePath string) (string, error) {
 	file, _ := files.NewSerialFile(filePath, filePath, false, stat)
 
 	return ipfsHash(file)
-}
-
-func decodeByteSlice(in []byte) ([]byte, []byte) {
-	l := len(in)
-	if l < 4 {
-		return nil, in
-	}
-
-	stop := 4 + int(binary.BigEndian.Uint32(in))
-	if l < stop {
-		return nil, in
-	}
-
-	return in[4:stop], in[stop:l]
-}
-func encodeByteSlice(in ...[]byte) []byte {
-	l := 0
-	for _, v := range in {
-		l += len(v)
-	}
-	if l > 4294967295 {
-		panic(fmt.Errorf("input byte slice is too long"))
-	}
-
-	out := make([]byte, 4+l)
-	binary.BigEndian.PutUint32(out, uint32(l))
-
-	start := 4 + copy(out[4:], in[0])
-	if len(in) > 1 {
-		for _, v := range in[1:] {
-			copy(out[start:], v)
-		}
-	}
-
-	return out
 }
 
 func ipfsHash(file files.File) (string, error){
