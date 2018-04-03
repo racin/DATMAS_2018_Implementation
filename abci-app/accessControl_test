@@ -1,9 +1,9 @@
 {
 	"identities": {
-        "clientA": {
+        "95c73e8028118d18a961dd1da6b5e7c3": {
             "name": "clientA",
             "level": 1,
-            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+            "keypath": "../crypto/test_certificate/mycert_test.pub"
         },
         "clientB": {
             "name": "clientB",

@@ -11,6 +11,33 @@ import "github.com/tendermint/tmlibs/common/types.proto";
 // https://github.com/gogo/protobuf/blob/master/custom_types.md#warnings-and-issues
 
 //----------------------------------------
+// Code types
+
+enum CodeType {
+  OK                    = 0;
+
+  // General response codes, 0 ~ 99
+  InternalError         = 1;
+  EncodingError         = 2;
+  BadNonce              = 3;
+  Unauthorized          = 4;
+  InsufficientFunds     = 5;
+  UnknownRequest        = 6;
+
+  // Reserved for BCFS, 300 ~ 399
+  BCFSDuplicateAddress  = 101;
+  BCFSEncodingError     = 102;
+  BCFSInvalidInput      = 106;
+  BCFSInvalidOutput     = 107;
+  BCFSInvalidPubKey     = 108;
+  BCFSInvalidSignature  = 110;
+  BCFSUnknownAddress    = 111;
+  BCFSUnknownPubKey     = 112;
+  BCFSUnknownPlugin     = 113;
+
+}
+
+//----------------------------------------
 // Request types
 
 message Request {

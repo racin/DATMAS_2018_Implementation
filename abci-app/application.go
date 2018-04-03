@@ -6,6 +6,7 @@ import (
 	"io"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/tendermint/abci/types"
+	//mp "github.com/tendermint/tendermint/mempool"
 	//"github.com/tendermint/merkleeyes/iavl"
 	"fmt"
 	"net/http"
@@ -18,19 +19,23 @@ type Application struct {
 	info string
 	//tree *iavl.IAVLTree
 	uploadAddr string
+
+	tempUploads map[string]bool
 }
+
+
 
 func NewApplication(uploadAddr string) *Application {
 	// tree : iavl.NewIAVLTree(0, nil)
-	return &Application{info: "____racin", uploadAddr: uploadAddr}
+	return &Application{info: "____racin", uploadAddr: uploadAddr, tempUploads: make(map[string]bool)}
 }
 
 func (app *Application) StartUploadHandler(){
 	http.HandleFunc("/", app.UploadHandler)
 	http.ListenAndServe(app.uploadAddr, nil)
 }
-func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request){
-	err := r.ParseMultipartForm(200000) // grab the multipart form
+func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
@@ -38,36 +43,45 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request){
 
 	formdata := r.MultipartForm // ok, no problem so far, read the Form data
 
-	//get the *fileheaders
-	files := formdata.File["multiplefiles"] // grab the filenames
-
-	for i, _ := range files { // loop through the files one by one
-		file, err := files[i].Open()
-		defer file.Close()
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		out, err := os.Create("/tmp/" + files[i].Filename)
-
-		defer out.Close()
-		if err != nil {
-			fmt.Fprintf(w, "Unable to create the file for writing. Check your write access privilege")
-			return
-		}
-
-		_, err = io.Copy(out, file) // file not files[i] !
-
-		if err != nil {
-			fmt.Fprintln(w, err)
-			return
-		}
-
-		fmt.Fprintf(w, "Files uploaded successfully : ")
-		fmt.Fprintf(w, files[i].Filename+"\n")
-
+	datahash, ok := formdata.Value["datahash"]
+	if !ok {
+		return // Missing data hash
 	}
+	if _, ok := app.tempUploads[datahash[0]]; !ok {
+		return // Data hash not in the list of pending uploads
+	}
+
+	files, ok := formdata.File["multiplefiles"]
+	if !ok || len(files) > 1 {
+		return // Missing files or more than one file
+	}
+
+
+	file := files[0]
+	fopen, err := file.Open()
+	defer fopen.Close()
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	out, err := os.Create("/tmp/" + file.Filename)
+
+	defer out.Close()
+	if err != nil {
+		fmt.Fprintf(w, "Unable to create the file for writing. Check your write access privilege")
+		return
+	}
+
+	_, err = io.Copy(out, fopen) // file not files[i] !
+
+	if err != nil {
+		fmt.Fprintln(w, err)
+		return
+	}
+
+	fmt.Fprintf(w, "Files uploaded successfully : ")
+	fmt.Fprintf(w, file.Filename+"\n")
 }
 func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
 	fmt.Println("Info trigger");
@@ -155,8 +169,40 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 			/*if err := checkAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
+
+
+			// Check if data hash is already in the list of uploads pending
+			dataHash, ok := tx.Data.(string)
+			if !ok {
+				return types.ResponseCheckTx{Info: "Could not type assert Data to string"}
+			} else if _, ok := app.tempUploads[dataHash]; ok {
+				return types.ResponseCheckTx{Info: "Data hash is already in the list of pending uploads"}
+			}
+
+			// Check if uploader is allowed to upload data.
+			acl := GetAccessList()
+			identity, ok := acl.Identities[tx.Identity];
+
+			if !ok || identity.AccessLevel < 1{
+				return types.ResponseCheckTx{Info: "Insufficient access level"}
+			}
+
+			// Check if public key exists and if message is signed.
+			pk, err := crypto.LoadPublicKey(identity.KeyPath)
+			if err != nil {
+				return types.ResponseCheckTx{Info: "Could not locate public key"}
+			}
+
+			// Check if transaction is signed.
+			if !pk.Verify(tx.Hash(), tx.Signature) {
+				return types.ResponseCheckTx{Info: "Could not verify signature"}
+			}
+
+			// Add data hash to the list of pending uploads
+			app.tempUploads[dataHash] = true
+
 			fmt.Println("UploadData")
-			return types.ResponseCheckTx{Info: "Error"}
+			return types.ResponseCheckTx{Code: types.CodeTypeOK, Info: "Data hash added to list of pending uploads"}
 		}
 	case RemoveData:
 		{
@@ -246,5 +292,8 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 			return
 		}
 	}
+
+	sumBlock := app.EndBlock(types.RequestEndBlock{Height:-1})
+	fmt.Printf("%+v\n", sumBlock.GetValidatorUpdates())
 	return
 }

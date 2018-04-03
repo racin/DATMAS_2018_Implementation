@@ -50,15 +50,19 @@ func (k *Keys) Verify(dh interface{}, signature []byte) (bool) {
 }
 
 func LoadPublicKey(path string) (*Keys, error) {
-	dat, _ := ioutil.ReadFile(path)
+	dat, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read file. %s", err.Error())
+	}
+
 	block, _ := pem.Decode(dat)
 	if block == nil {
-		return nil, fmt.Errorf("failed to parse PEM block containing the public key")
+		return nil, fmt.Errorf("Failed to parse PEM block. %s", err.Error())
 	}
 
 	pub, err := x509.ParsePKIXPublicKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse DER encoded public key: %s", err.Error())
+		return nil, fmt.Errorf("Failed to parse public key: %s", err.Error())
 	}
 
 	if pk, ok := pub.(*rsa.PublicKey); ok {
@@ -68,15 +72,19 @@ func LoadPublicKey(path string) (*Keys, error) {
 	return nil, fmt.Errorf("Could not unmarshal public key.")
 }
 func LoadPrivateKey(path string) (*Keys, error) {
-	dat, _ := ioutil.ReadFile(path)
+	dat, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("Failed to read file. %s", err.Error())
+	}
+
 	block, _ := pem.Decode(dat)
 	if block == nil {
-		return nil, fmt.Errorf("failed to parse PEM block containing the private key")
+		return nil, fmt.Errorf("Failed to parse PEM block. %s", err.Error())
 	}
 
 	priv, err := x509.ParsePKCS8PrivateKey(block.Bytes)
 	if err != nil {
-		return nil, fmt.Errorf("failed to parse DER encoded private key: %s", err.Error())
+		return nil, fmt.Errorf("Failed to parse private key: %s", err.Error())
 	}
 
 	if pk, ok := priv.(*rsa.PrivateKey); ok {
