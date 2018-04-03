@@ -8,8 +8,9 @@ import (
 	"io/ioutil"
 	"strings"
 	"encoding/base64"
-	"github.com/yosida95/golang-sshkey"
+	/*"github.com/yosida95/golang-sshkey"
 	"crypto"
+	"crypto/rsa"*/
 )
 func TestIPFSHash(t *testing.T){
 	fileHash, err := IPFSHashFile("hash_test.txt")
@@ -30,13 +31,13 @@ func TestHash(t *testing.T){
 	if err != nil {
 		t.Fatal("Hash failed: " + err.Error())
 	}
-	assert.Equal(t, "QmWimMR7o684LGMTHRrCptBDbK3sP3m2ocYwmUUzYVKwfm", fileHash, "Hash output did not match.")
+	assert.Equal(t, "QmWimMR7o684LGMTHRrCptBDbK3sP3m2ocYwmUUzYVKwfm", fileHash, "File hash did not match")
 
 	textHash, err := HashData([]byte("racin"))
 	if err != nil {
 		t.Fatal("Hash failed: " + err.Error())
 	}
-	assert.Equal(t, "QmP4eE9BBqDRHrPbwFN75M9cX84Rm3G8B2fKtxZCtREUyC", textHash, "Hash output did not match.")
+	assert.Equal(t, "QmP4eE9BBqDRHrPbwFN75M9cX84Rm3G8B2fKtxZCtREUyC", textHash, "Data hash did not match")
 }
 
 func TestHash2(t *testing.T){
@@ -49,7 +50,7 @@ func TestHash2(t *testing.T){
 
 	data, _ := ioutil.ReadFile(certPathTest+".pub")
 	fmt.Printf("%x\n", md5.Sum(data))
-	pubkey2, _ := LoadPublicKey(certPathTest+".pem")
+	pubkey2, _ := LoadPublicKey(certPathTest+".pub")
 	hd3 :=  md5.Sum([]byte(fmt.Sprintf("%v", pubkey2.public)))
 	fmt.Printf("%x\n", hd3)
 
@@ -71,8 +72,14 @@ func TestHash2(t *testing.T){
 		}
 	}
 	fmt.Println()
+/*
+	privkey, _ := LoadPrivateKey(certPathTest+".pem")
+	a, _ := sshkey.Fingerprint(privkey.private.Public().(sshkey.PublicKey), crypto.MD5)
+	fmt.Printf("%x\n", a)*/
 
-	a, _ := sshkey.Fingerprint(pubkey2.private.Public().(sshkey.PublicKey), crypto.MD5)
-	fmt.Printf("%x\n", a)
+	fp2, _ := GetFingerPrint(pubkey)
+	fmt.Printf("%s\n", fp2)
 
+	fps := GetFingerPrintShort(pubkey)
+	fmt.Printf("%s\n", fps)
 }

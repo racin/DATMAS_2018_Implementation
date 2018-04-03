@@ -26,8 +26,8 @@ openssl rsa -in mycert.pem -pubout > mycert.pub
 ## Get fingerprint of certificate
 ### From Private key
 ```
-ssh-keygen -yf mycert.pem > mycert_ssh.pub
-ssh-keygen -E md5 -lf mycert_ssh.pub | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
+ssh-keygen -yf mycert_test.pem > mycert_test_ssh.pub
+ssh-keygen -E md5 -lf mycert_test_ssh.pub | egrep -o '([0-9a-f]{2}:){15}.{2}' | sed -E 's/://g'
 ```
 
 ### From Public key
