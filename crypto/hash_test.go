@@ -6,6 +6,10 @@ import (
 	"fmt"
 	"crypto/md5"
 	"io/ioutil"
+	"strings"
+	"encoding/base64"
+	"github.com/yosida95/golang-sshkey"
+	"crypto"
 )
 func TestIPFSHash(t *testing.T){
 	fileHash, err := IPFSHashFile("hash_test.txt")
@@ -44,5 +48,31 @@ func TestHash2(t *testing.T){
 	fmt.Printf("%+v\n", hd2)
 
 	data, _ := ioutil.ReadFile(certPathTest+".pub")
-	fmt.Printf("%x", md5.Sum(data))
+	fmt.Printf("%x\n", md5.Sum(data))
+	pubkey2, _ := LoadPublicKey(certPathTest+".pem")
+	hd3 :=  md5.Sum([]byte(fmt.Sprintf("%v", pubkey2.public)))
+	fmt.Printf("%x\n", hd3)
+
+	key, _ := ioutil.ReadFile(certPathTest+".pub")
+
+
+	parts := strings.Fields(string(key))
+
+
+	k, _ := base64.StdEncoding.DecodeString(parts[1])
+
+
+	fp := md5.Sum([]byte(k))
+	fmt.Print("MD5:")
+	for i, b := range fp {
+		fmt.Printf("%02x", b)
+		if i < len(fp)-1 {
+			fmt.Print(":")
+		}
+	}
+	fmt.Println()
+
+	a, _ := sshkey.Fingerprint(pubkey2.private.Public().(sshkey.PublicKey), crypto.MD5)
+	fmt.Printf("%x\n", a)
+
 }
