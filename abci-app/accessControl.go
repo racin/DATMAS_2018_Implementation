@@ -32,7 +32,7 @@ func GetAccessList(test ...bool) (*accessList){
 		panic("Could not get current user")
 	}
 
-	if (len(test) > 0 && test[0]) {
+	if len(test) > 0 && test[0] {
 		path = listPathTest
 	} else {
 		path = usr.HomeDir + listPath
@@ -55,35 +55,3 @@ func WriteAccessList(acl *accessList){
 		ioutil.WriteFile(listPath, data, 0600)
 	}
 }
-
-/*
-var acl accessList
-func GetAccessList(params ...bool) (*accessList){
-	lenP := len(params)
-	if (lenP == 0 || (lenP > 0 && params[0] == false)) &&
-		acl.Identities != nil {
-			return &acl
-	}
-
-	usr, err := user.Current()
-	if err != nil {
-		panic("Could not get current user")
-	}
-
-	var path string
-	if lenP > 1 && params[1] == true {
-		path = listPathTest
-	} else {
-		path = usr.HomeDir + listPath
-	}
-
-	var z accessList = accessList{Identities:make(map[string]int)}
-	if data, err := ioutil.ReadFile(path); err == nil {
-		json.Unmarshal(data, &z)
-	}
-	if path == listPath {
-		acl = z
-	}
-
-	return &z
-}*/
