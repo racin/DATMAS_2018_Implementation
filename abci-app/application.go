@@ -91,6 +91,7 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("Deliver trigger. Hash of data: " + txHash);
 	tx := &Transaction{}
+	tx.Data = "abc"
 	if err := json.Unmarshal(txBytes, tx); err != nil {
 		return types.ResponseDeliverTx{Info: "Error"}
 	}

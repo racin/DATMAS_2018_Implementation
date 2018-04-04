@@ -6,12 +6,16 @@ import (
 	"fmt"
 )
 
-type Transaction struct {
-	Type      	TransactionType `json:"type"`
-	Timestamp 	time.Time       `json:"timestamp"`
+type BasicTransaction struct {
 	Signature 	[]byte          `json:"signature"`
 	Data      	interface{}     `json:"data"`
 	Identity	string			`json:"identity"`
+}
+
+type Transaction struct {
+	BasicTransaction
+	Type      	TransactionType `json:"type"`
+	Timestamp 	time.Time       `json:"timestamp"`
 }
 
 type Hashable interface {
@@ -69,7 +73,8 @@ func (t *Transaction) ProofOfWork(cost byte) error {
 
 
 func New(t TransactionType, data interface{}) *Transaction {
-	return &Transaction{Type: t, Timestamp: time.Now(), Data: data}
+	return &Transaction{BasicTransaction: BasicTransaction{Data:data}, Type: t, Timestamp: time.Now(), }
+
 }
 /*
 func hashStringMap(m map[string]interface{}) []byte {

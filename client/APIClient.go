@@ -1,45 +1,38 @@
 package client
 
 import (
+	"io"
 	"errors"
 	"fmt"
 	"log"
-
+	"github.com/racin/DATMAS_2018_Implementation/abci-app"
 	"github.com/trusch/passchain/crypto"
 	"github.com/trusch/passchain/state"
 )
 
-// API is the high level interface for passchain client applications
 type API interface {
-	As(accountID string) (API, error)
-	AccountAPI
-	ReputationAPI
-	SecretAPI
+	ProofAPI
+	DataAPI
+	AccessAPI
 }
 
-// AccountAPI describes all account related functions
-type AccountAPI interface {
-	CreateAccount(id string) (pub, priv string, err error)
-	GetAccount(id string) (*state.Account, error)
-	DeleteAccount(id string) error
-	ListAccounts(idPrefix string) ([]*state.Account, error)
+type ProofAPI interface {
+	GenerateProof(challenge string) ([]byte, error)
+	VerifyProof(proof []byte) (bool, error)
 }
 
-// ReputationAPI describes the reputation related function
-type ReputationAPI interface {
-	GiveReputation(receiver string, value int) error
+type DataAPI interface {
+	DownloadData(tx app.BasicTransaction) error
+	RemoveData(tx app.BasicTransaction) error
+	BeginUploadData(tx app.BasicTransaction) error
+	EndUploadData(values map[string]io.Reader) error
 }
 
-// SecretAPI describes operations on secrets
-type SecretAPI interface {
-	CreateSecret(sid string, value string) error
-	GetSecret(sid string) (*state.Secret, error)
-	DeleteSecret(sid string) error
-	ListSecrets(sidPrefix string) ([]*state.Secret, error)
-	ShareSecret(sid, accountID string, ownerRights bool) error
-	UpdateSecret(sid, value string) error
-	UnshareSecret(sid, accountID string) error
+type AccessAPI interface {
+	ChangeContentAccess(dataHash, readers []string) error
 }
+
+
 
 // NewAPI constructs a new API instances based on an http transport
 func NewAPI(endpoint string, key *crypto.Key, account string) API {
