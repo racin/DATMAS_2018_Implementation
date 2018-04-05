@@ -5,6 +5,7 @@ package types;
 // https://github.com/gogo/protobuf/blob/master/extensions.md
 import "github.com/gogo/protobuf/gogoproto/gogo.proto";
 import "github.com/tendermint/tmlibs/common/types.proto";
+//import "github.com/tendermint/abci/types/types.proto";
 
 // This file is copied from http://github.com/tendermint/abci
 // NOTE: When using custom types, mind the warnings.
@@ -181,6 +182,7 @@ message ResponseCheckTx {
   // int64 gas_used = 6;
   repeated common.KVPair tags = 7 [(gogoproto.nullable)=false, (gogoproto.jsontag)="tags,omitempty"];
   common.KI64Pair fee = 8 [(gogoproto.nullable)=false];
+  string error = 9;
 }
 
 message ResponseDeliverTx {
@@ -192,6 +194,7 @@ message ResponseDeliverTx {
   int64 gas_used = 6;
   repeated common.KVPair tags = 7 [(gogoproto.nullable)=false, (gogoproto.jsontag)="tags,omitempty"];
   // common.KI64Pair fee = 8;
+  string error = 9;
 }
 
 message ResponseEndBlock {

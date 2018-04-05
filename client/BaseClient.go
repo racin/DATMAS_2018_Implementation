@@ -1,28 +1,50 @@
 package client
 
 import (
-	"encoding/json"
-	"errors"
-	"log"
-
 	"github.com/tendermint/tendermint/rpc/client"
+	"github.com/racin/DATMAS_2018_Implementation/app"
+	bt "github.com/racin/DATMAS_2018_Implementation/types"
 	"github.com/tendermint/tendermint/types"
-	"github.com/trusch/passchain/crypto"
-	"github.com/trusch/passchain/state"
-	"github.com/trusch/passchain/transaction"
+	"encoding/json"
+	"github.com/tendermint/tendermint/rpc/core/types"
+	"github.com/pkg/errors"
 )
 
 type BaseClient struct {
-	Key       *crypto.Key
-	AccountID string
-	tm        client.Client
+	TM        client.Client
 }
 
-func NewHTTPClient(endpoint string, key *crypto.Key, account string) *BaseClient {
+func NewHTTPClient(endpoint string) *BaseClient {
 	tm := client.NewHTTP(endpoint, "/websocket")
-	return &BaseClient{key, account, tm}
+	return &BaseClient{tm}
 }
 
+func checkBroadcastResult(commit interface{}, err error) error {
+	if c, ok := commit.(*core_types.ResultBroadcastTxCommit); ok {
+		if err != nil {
+			return err
+		} else if c.CheckTx.IsErr() {
+			return errors.New(c.CheckTx.String())
+		} else if c.DeliverTx.IsErr() {
+			return errors.New(c.DeliverTx.String())
+		}
+	} else if c, ok := commit.(*core_types.ResultBroadcastTx); ok {
+		if bt.CodeType(c.Code) == bt.CodeType_OK {
+			return nil
+		} else {
+			return errors.New("Error with CheckTx: " + bt.CodeType_name[int32(c.Code)])
+		}
+	}
+	/**/
+	return errors.New("Could not type assert result.")
+}
+
+func (c *BaseClient) BeginUploadData(btx *app.BasicTransaction) error {
+	tx := app.New(btx, app.UploadData)
+	byteArr, _ := json.Marshal(tx)
+	return checkBroadcastResult(c.TM.BroadcastTxSync(types.Tx(byteArr)))
+}
+/*
 func (c *BaseClient) AddAccount(acc *state.Account) error {
 	tx := transaction.New(transaction.AccountAdd, &transaction.AccountAddData{Account: acc})
 	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
@@ -221,3 +243,4 @@ func (c *BaseClient) UpdateSecret(acc *state.Secret) error {
 	}
 	return nil
 }
+*/

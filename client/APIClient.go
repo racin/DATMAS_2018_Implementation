@@ -1,40 +1,33 @@
 package client
 
 import (
-	"io"
-	"errors"
-	"fmt"
-	"log"
-	"github.com/racin/DATMAS_2018_Implementation/abci-app"
+	"github.com/racin/DATMAS_2018_Implementation/app"
 	"github.com/trusch/passchain/crypto"
-	"github.com/trusch/passchain/state"
 )
 
 type API interface {
-	ProofAPI
+	//ProofAPI
 	DataAPI
-	AccessAPI
+	//AccessAPI
 }
-
+/*
 type ProofAPI interface {
-	GenerateProof(challenge string) ([]byte, error)
-	VerifyProof(proof []byte) (bool, error)
-}
+	GenerateProof(tx app.BasicTransaction) ([]byte, error)
+	VerifyProof(tx app.BasicTransaction) (bool, error)
+}*/
 
 type DataAPI interface {
-	DownloadData(tx app.BasicTransaction) error
-	RemoveData(tx app.BasicTransaction) error
+	/*DownloadData(tx app.BasicTransaction) error
+	RemoveData(tx app.BasicTransaction) error*/
 	BeginUploadData(tx app.BasicTransaction) error
-	EndUploadData(values map[string]io.Reader) error
+	/*EndUploadData(values map[string]io.Reader) error*/
 }
-
+/*
 type AccessAPI interface {
-	ChangeContentAccess(dataHash, readers []string) error
-}
+	ChangeContentAccess(tx app.BasicTransaction) error
+}*/
 
 
-
-// NewAPI constructs a new API instances based on an http transport
 func NewAPI(endpoint string, key *crypto.Key, account string) API {
 	base := NewHTTPClient(endpoint, key, account)
 	return &apiClient{endpoint, base}
@@ -45,35 +38,19 @@ type apiClient struct {
 	base     *BaseClient
 }
 
-func (api *apiClient) As(accountID string) (API, error) {
-	asAccount, err := api.GetAccount(accountID)
-	if err != nil {
-		return nil, fmt.Errorf("cannot find account: %v", err)
-	}
-	privkeySecret, err := api.GetSecret(accountID)
-	if err != nil {
-		return nil, fmt.Errorf("cannot find shared account secret: %v", err)
-	}
-	encryptedAESKey, ok := privkeySecret.Shares[api.base.AccountID]
-	if !ok {
-		return nil, errors.New("no share for us on this secret")
-	}
-	aesKey, err := api.base.Key.DecryptString(encryptedAESKey)
-	if err != nil {
-		return nil, err
-	}
-	err = privkeySecret.Decrypt(aesKey)
-	if err != nil {
-		return nil, err
-	}
-	key, err := crypto.NewFromStrings(asAccount.PubKey, string(privkeySecret.Value))
-	if err != nil {
-		return nil, err
-	}
-	return NewAPI(api.endpoint, key, accountID), nil
+/** Proof API **/
+/*
+func (api *apiClient) GenerateProof(tx app.BasicTransaction) ([]byte, error) {
+	return api.base.GetAccount(id)
 }
 
-func (api *apiClient) CreateAccount(id string) (pub, priv string, err error) {
+func (api *apiClient) VerifyProof(tx app.BasicTransaction) ([]byte, error) {
+	return api.base.DelAccount(id)
+}*/
+
+/** Data API **/
+/*
+func (api *apiClient) DownloadData(tx app.BasicTransaction) (error) {
 	key, err := crypto.CreateKeyPair()
 	if err != nil {
 		return "", "", err
@@ -85,19 +62,26 @@ func (api *apiClient) CreateAccount(id string) (pub, priv string, err error) {
 	return key.GetPubString(), key.GetPrivString(), nil
 }
 
-func (api *apiClient) GetAccount(id string) (*state.Account, error) {
+func (api *apiClient) RemoveData(tx app.BasicTransaction) (error) {
 	return api.base.GetAccount(id)
 }
-
-func (api *apiClient) DeleteAccount(id string) error {
-	return api.base.DelAccount(id)
+*/
+func (api *apiClient) BeginUploadData(tx app.BasicTransaction) (error) {
+	return api.base.BeginUploadData(tx)
 }
-
-func (api *apiClient) ListAccounts(idPrefix string) ([]*state.Account, error) {
+/*
+func (api *apiClient) EndUploadData(tx app.BasicTransaction) (error) {
 	return api.base.ListAccounts()
-}
+}*/
 
-func (api *apiClient) CreateSecret(sid string, value string) error {
+/** Access API **/
+/*
+func (api *apiClient) ChangeContentAccess(tx app.BasicTransaction) (error) {
+
+}
+*/
+/*
+func (api *apiClient) EndUploadData(sid string, value string) error {
 	s := &state.Secret{
 		ID:     sid,
 		Value:  value,
@@ -232,3 +216,4 @@ func (api *apiClient) UnshareSecret(sid, accountID string) error {
 func (api *apiClient) GiveReputation(receiver string, value int) error {
 	return api.base.GiveReputation(api.base.AccountID, receiver, value)
 }
+*/

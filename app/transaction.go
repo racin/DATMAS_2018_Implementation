@@ -70,10 +70,12 @@ func (t *Transaction) ProofOfWork(cost byte) error {
 	}
 	return errors.New("can not find pow")
 }*/
+func NewBasic(signature [] byte, data interface{}, identity string) *BasicTransaction{
+	return &BasicTransaction{Signature:signature, Data:data, Identity:identity}
+}
 
-
-func New(t TransactionType, data interface{}) *Transaction {
-	return &Transaction{BasicTransaction: BasicTransaction{Data:data}, Type: t, Timestamp: time.Now(), }
+func New(btx *BasicTransaction, t TransactionType) *Transaction {
+	return &Transaction{BasicTransaction: *btx, Type: t, Timestamp: time.Now(), }
 
 }
 /*

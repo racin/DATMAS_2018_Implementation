@@ -6,7 +6,7 @@ import (
 	"os"
 
 	srv "github.com/racin/DATMAS_2018_Implementation/server"
-	"github.com/racin/DATMAS_2018_Implementation/abci-app"
+	"github.com/racin/DATMAS_2018_Implementation/app"
 
 	"github.com/tendermint/abci/types"
 	cmn "github.com/tendermint/tmlibs/common"
