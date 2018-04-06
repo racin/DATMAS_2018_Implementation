@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	cfg "github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 type Application struct {
@@ -25,14 +26,16 @@ type Application struct {
 
 
 
-func NewApplication(uploadAddr string) *Application {
+func NewApplication() *Application {
 	// tree : iavl.NewIAVLTree(0, nil)
-	return &Application{info: "____racin", uploadAddr: uploadAddr, tempUploads: make(map[string]bool)}
+	return &Application{info: cfg.AppConfig().Info, uploadAddr: cfg.AppConfig().UploadAddr, tempUploads: make(map[string]bool)}
 }
 
 func (app *Application) StartUploadHandler(){
 	http.HandleFunc("/", app.UploadHandler)
-	http.ListenAndServe(app.uploadAddr, nil)
+	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
+		panic("Error setting up upload handler. Error: " + err.Error())
+	}
 }
 func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.

@@ -2,7 +2,7 @@ package main
 
 import (
 	"fmt"
-	"flag"
+	//"flag"
 	"os"
 
 	srv "github.com/racin/DATMAS_2018_Implementation/server"
@@ -14,8 +14,7 @@ import (
 	"github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/tmlibs/log"
 
-
-
+	"github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 func NewServer(protoAddr, transport string, app types.Application) (cmn.Service, error) {
@@ -33,19 +32,24 @@ func NewServer(protoAddr, transport string, app types.Application) (cmn.Service,
 }
 
 func main(){
-	addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
+	// Load the configuration.
+	appconf, err := configuration.LoadAppConfig()
+	if err != nil {
+		panic("Could not get configuration. Error: " + err.Error())
+	}
+	/*addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
 	abciPtr := flag.String("abci", "grpc", "grpc | socket")
-	uploadAddrPtr := flag.String("uploadaddr", ":46659", "Upload address")
+	uploadAddrPtr := flag.String("uploadaddr", ":46659", "Upload address")*/
 	//storePtr := flag.String("store", "app.ldb", "store path")
-	flag.Parse()
+	//flag.Parse()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 
 	// Create the application - in memory or persisted to disk
-	app := app.NewApplication(*uploadAddrPtr)
+	app := app.NewApplication()
 
 	// Start the listener
-	srv, err := server.NewServer(*addrPtr, *abciPtr, app)
+	srv, err := server.NewServer(appconf.ListenAddr, appconf.RpcType, app)
 	if err != nil {
 		logger.Error(err.Error())
 		os.Exit(1)
@@ -55,10 +59,10 @@ func main(){
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	// Start the handler for uploading files.
-	app.StartUploadHandler()
+	// Start the handler for uploading files in separate go routine.
+	go app.StartUploadHandler()
 
-	fmt.Println("Racin har started en app! Transport: " + *abciPtr);
+	fmt.Println("Racin har started en app! Transport: " + appconf.RpcType);
 	fmt.Println("Info om app: " + app.Info(types.RequestInfo{Version: "123"}).Data)
 
 	// Wait forever
