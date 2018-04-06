@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/tendermint/tendermint/rpc/client"
 	"github.com/racin/DATMAS_2018_Implementation/app"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	bt "github.com/racin/DATMAS_2018_Implementation/types"
 	"github.com/tendermint/tendermint/types"
 	"encoding/json"
@@ -15,7 +16,7 @@ type BaseClient struct {
 }
 
 func NewHTTPClient(endpoint string) *BaseClient {
-	tm := client.NewHTTP(endpoint, "/websocket")
+	tm := client.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
 	return &BaseClient{tm}
 }
 
@@ -39,9 +40,8 @@ func checkBroadcastResult(commit interface{}, err error) error {
 	return errors.New("Could not type assert result.")
 }
 
-func (c *BaseClient) BeginUploadData(btx *app.BasicTransaction) error {
-	tx := app.New(btx, app.UploadData)
-	byteArr, _ := json.Marshal(tx)
+func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) error {
+	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(types.Tx(byteArr)))
 }
 /*

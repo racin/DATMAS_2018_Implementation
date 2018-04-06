@@ -2,7 +2,6 @@ package client
 
 import (
 	"github.com/racin/DATMAS_2018_Implementation/app"
-	"github.com/trusch/passchain/crypto"
 )
 
 type API interface {
@@ -19,7 +18,7 @@ type ProofAPI interface {
 type DataAPI interface {
 	/*DownloadData(tx app.BasicTransaction) error
 	RemoveData(tx app.BasicTransaction) error*/
-	BeginUploadData(tx app.BasicTransaction) error
+	BeginUploadData(tx *app.SignedTransaction) error
 	/*EndUploadData(values map[string]io.Reader) error*/
 }
 /*
@@ -28,8 +27,8 @@ type AccessAPI interface {
 }*/
 
 
-func NewAPI(endpoint string, key *crypto.Key, account string) API {
-	base := NewHTTPClient(endpoint, key, account)
+func NewAPI(endpoint string) API {
+	base := NewHTTPClient(endpoint)
 	return &apiClient{endpoint, base}
 }
 
@@ -66,7 +65,7 @@ func (api *apiClient) RemoveData(tx app.BasicTransaction) (error) {
 	return api.base.GetAccount(id)
 }
 */
-func (api *apiClient) BeginUploadData(tx app.BasicTransaction) (error) {
+func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (error) {
 	return api.base.BeginUploadData(tx)
 }
 /*

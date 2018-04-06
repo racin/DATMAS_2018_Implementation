@@ -4,23 +4,32 @@ import (
 	"os/user"
 	"io/ioutil"
 	"encoding/json"
+	"strings"
 )
 
 const (
-	appConf 	= "/.bcfs/appConfig"
-	clientConf	= "/.bcfs/clientConfig"
+	appConf 		= "/.bcfs/appConfig"
+	clientConf		= "/.bcfs/clientConfig"
 )
 var appConfig AppConfiguration
 type AppConfiguration struct {
+	BasePath 		string		`json:"basePath"`
 	ListenAddr 		string		`json:"listenAddr"`
 	UploadAddr 		string		`json:"uploadAddr"`
 	RpcType 		string		`json:"rpcType"`
 	Info			string		`json:"appInfo"`
+	PrivateKey		string		`json:"privateKey"`
+	PublicKeys		string		`json:"publicKeys"`
+	AccessList		string		`json:"accessList"`
 }
 
 var clientConfig ClientConfiguration
 type ClientConfiguration struct {
-	EndPoint		string		`json:"endPoint"`
+	BasePath 				string		`json:"basePath"`
+	RemoteEndPoint			string		`json:"remoteEndPoint"`
+	WebsocketEndPoint		string		`json:"websocketEndPoint"`
+	PrivateKey				string		`json:"privateKey"`
+	PublicKeys				string		`json:"publicKeys"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {
@@ -42,6 +51,10 @@ func LoadAppConfig(path ...string) (*AppConfiguration, error) {
 
 	if err = json.Unmarshal(conf, &appConfig); err != nil {
 		return nil, err
+	}
+
+	if strings.Contains(appConfig.BasePath,"$HOME") {
+		appConfig.BasePath = strings.Replace(appConfig.BasePath, "$HOME", usr.HomeDir, 1)
 	}
 
 	return &appConfig, nil
@@ -69,6 +82,10 @@ func LoadClientConfig(path ...string) (*ClientConfiguration, error){
 
 	if err = json.Unmarshal(conf, &clientConfig); err != nil {
 		return nil, err
+	}
+
+	if strings.Contains(clientConfig.BasePath,"$HOME") {
+		clientConfig.BasePath = strings.Replace(clientConfig.BasePath, "$HOME", usr.HomeDir, 1)
 	}
 
 	return &clientConfig, nil

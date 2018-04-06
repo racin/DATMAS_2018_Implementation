@@ -1,4 +1,10 @@
 {
+  "basePath": "$HOME/.bcfs/",
+  "privateKey": "mycert.pem",
+  "publicKeys": "PubKeys/",
+  "accessList": "accessList",
+
+
   "listenAddr": "tcp://0.0.0.0:46658",
   "uploadAddr": ":46659",
   "rpcType": "grpc",

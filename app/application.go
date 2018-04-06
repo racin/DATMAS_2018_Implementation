@@ -151,7 +151,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	fmt.Println("Data received: " + string(txBytes))
-	tx := &Transaction{}
+	tx := &SignedTransaction{}
 	if err := json.Unmarshal(txBytes, tx); err != nil {
 		fmt.Println(err.Error())
 		return types.ResponseCheckTx{Info: "Error"}
@@ -192,7 +192,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 			}
 
 			// Check if public key exists and if message is signed.
-			pk, err := crypto.LoadPublicKey(identity.KeyPath)
+			pk, err := crypto.LoadPublicKey(identity.PublicKey)
 			if err != nil {
 				return types.ResponseCheckTx{Info: "Could not locate public key"}
 			}

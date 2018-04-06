@@ -6,21 +6,18 @@ import (
 	"fmt"
 )
 
-type BasicTransaction struct {
-	Signature 	[]byte          `json:"signature"`
+type Transaction struct {
 	Data      	interface{}     `json:"data"`
 	Identity	string			`json:"identity"`
-}
-
-type Transaction struct {
-	BasicTransaction
 	Type      	TransactionType `json:"type"`
 	Timestamp 	time.Time       `json:"timestamp"`
 }
 
-type Hashable interface {
-	Hash() []byte
+type SignedTransaction struct {
+	Transaction
+	Signature 	[]byte          `json:"signature"`
 }
+
 
 type TransactionType string
 
@@ -48,16 +45,15 @@ func (t *Transaction) Hash() string {
 	return hash
 }
 
-func (t *Transaction) Sign(keys *crypto.Keys) error {
+func (t *Transaction) Sign(keys *crypto.Keys) (*SignedTransaction, error) {
 	if signature, err := keys.Sign(t.Hash()); err != nil {
-		return err
+		return nil, err
 	} else {
-		t.Signature = signature
-		return nil
+		return &SignedTransaction{Transaction: *t, Signature: signature}, nil
 	}
 }
 
-func (t *Transaction) Verify(keys *crypto.Keys) bool {
+func (t *SignedTransaction) Verify(keys *crypto.Keys) bool {
 	return keys.Verify(t.Hash(), t.Signature)
 }
 /*
@@ -70,12 +66,9 @@ func (t *Transaction) ProofOfWork(cost byte) error {
 	}
 	return errors.New("can not find pow")
 }*/
-func NewBasic(signature [] byte, data interface{}, identity string) *BasicTransaction{
-	return &BasicTransaction{Signature:signature, Data:data, Identity:identity}
-}
 
-func New(btx *BasicTransaction, t TransactionType) *Transaction {
-	return &Transaction{BasicTransaction: *btx, Type: t, Timestamp: time.Now(), }
+func NewTx(data interface{}, identity string, t TransactionType) *Transaction {
+	return &Transaction{Data: data, Identity: identity, Type: t, Timestamp: time.Now()}
 
 }
 /*

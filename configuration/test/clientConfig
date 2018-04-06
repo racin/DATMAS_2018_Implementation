@@ -1,3 +1,9 @@
 {
-  "endPoint": "/websocket"
+  "basePath": "$HOME/.bcfs/",
+  "privateKey": "mycert.pem",
+  "publicKeys": "PubKeys/",
+
+
+  "websocketEndPoint": "/websocket",
+  "remoteEndPoint": "http://localhost:46657"
 }

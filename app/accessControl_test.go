@@ -3,9 +3,14 @@ package app
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 func TestAccessControl (t *testing.T){
+	if _, err := configuration.LoadAppConfig("../configuration/test/appConfig"); err != nil {
+		t.Fatal("Error loading app config: " + err.Error())
+	}
+
 	acl := GetAccessList(true)
 	assert.NotEmpty(t, acl.Identities, "Access list empty")
 

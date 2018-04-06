@@ -5,30 +5,27 @@ import (
 	"crypto/rand"
 	"github.com/stretchr/testify/assert"
 	"testing"
-	"os/user"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 const (
-	keyPath 		= "/.bcfs/"
 	certName 		= "mycert_test"
 	certPathTest 	= "test_certificate/mycert_test"
 )
 func TestSignature(t *testing.T){
+	if _, err := conf.LoadAppConfig("../configuration/test/appConfig"); err != nil {
+		t.Fatal("Error loading app config: " + err.Error())
+	}
 	var privKey *Keys
 	var pubKey *Keys
 	var err error
 	var certPath string
 	t.Run("TestGenerateKeys", func(t *testing.T){
-		usr, err := user.Current()
-		if err != nil {
-			t.Fatal("Could not get current user")
-			return
-		}
-		if _, err := GenerateKeyPair(usr.HomeDir + keyPath, certName , 1024); err != nil {
+		if _, err := GenerateKeyPair(conf.AppConfig().BasePath, certName , 1024); err != nil {
 			certPath = certPathTest
 			t.Fatal("Error: " + err.Error())
 		} else {
-			certPath = usr.HomeDir + keyPath + certName
+			certPath = conf.AppConfig().BasePath + certName
 		}
 	})
 

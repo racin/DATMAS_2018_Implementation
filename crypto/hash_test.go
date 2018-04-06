@@ -43,4 +43,15 @@ func TestFingerprint(t *testing.T){
 	}
 
 	assert.Equal(t, "95c73e8028118d18a961dd1da6b5e7c3", fp, "Fingerprint of Public key not correct")
+
+	privkey, err := LoadPrivateKey(certPathTest+".pem")
+	if err != nil {
+		t.Fatal("Could not load private key. Error: " + err.Error())
+	}
+	fp2, err := GetFingerPrint(privkey)
+	if err != nil {
+		t.Fatal("Could not get fingerprint. Error: " + err.Error())
+	}
+
+	assert.Equal(t, fp2, fp, "Fingerprint of Public key and Private key not equal")
 }

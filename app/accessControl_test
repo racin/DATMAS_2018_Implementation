@@ -3,22 +3,22 @@
         "95c73e8028118d18a961dd1da6b5e7c3": {
             "name": "clientA",
             "level": 1,
-            "keypath": "../crypto/test_certificate/mycert_test.pub"
+            "publickey": "../crypto/test_certificate/mycert_test.pub"
         },
         "clientB": {
             "name": "clientB",
             "level": 1,
-            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+            "publickey": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
         },
         "storageA": {
             "name": "storageA",
             "level": 3,
-            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+            "publickey": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
         },
         "consensusA": {
             "name": "consensusA",
             "level": 4,
-            "keypath": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
+            "publickey": "PubKeys/QmPKqgJAkj5SyjUnQ2W1kbvj9G88Q3RSehJBGRebg7yoMV.pub"
         }
 	}
 }
