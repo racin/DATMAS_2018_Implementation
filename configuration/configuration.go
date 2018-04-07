@@ -26,8 +26,11 @@ type AppConfiguration struct {
 var clientConfig ClientConfiguration
 type ClientConfiguration struct {
 	BasePath 				string		`json:"basePath"`
-	RemoteEndPoint			string		`json:"remoteEndPoint"`
+	RemoteAddr				string		`json:"remoteAddr"`
+	UploadAddr				string		`json:"uploadAddr"`
+	TendermintNodes			[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint		string		`json:"websocketEndPoint"`
+	UploadEndPoint			string		`json:"uploadEndPoint"`
 	PrivateKey				string		`json:"privateKey"`
 	PublicKeys				string		`json:"publicKeys"`
 }

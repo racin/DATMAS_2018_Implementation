@@ -22,6 +22,25 @@ var rootCmd = &cobra.Command{
 	},
 }
 
+var cfgFile string
+func init() {
+	cobra.OnInitialize(initConfig)
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.bcfs/clientConfig)")
+}
+
+func initConfig() {
+	var err error
+	if cfgFile != "" {
+		_, err = conf.LoadClientConfig(cfgFile);
+	} else {
+		_, err = conf.LoadClientConfig();
+	}
+	if err != nil {
+		fmt.Println("Could not load configuration:", err)
+		os.Exit(1)
+	}
+}
+
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
 		fmt.Println(err)
@@ -31,14 +50,20 @@ func Execute() {
 
 func main() {
 	fmt.Println("a")
-	cfg, err := conf.LoadClientConfig()
-	if err != nil {
-		panic("Could not load configuration. Error: " + err.Error())
-	}
 	fmt.Println("Main client")
-	fmt.Printf("%+v\n", cfg.RemoteEndPoint)
 
-	keys, err := crypto.LoadPrivateKey(cfg.BasePath + cfg.PrivateKey)
+	stranc := getSignedTransaction(app.UploadData,"Racin test")
+	result := getAPI().BeginUploadData(stranc)
+	if result != nil {
+		panic("Error with result. Error: " + result.Error())
+	} else {
+		fmt.Println("CheckTx successfully passed.")
+	}
+
+}
+
+func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
+	keys, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey)
 	if err != nil {
 		panic("Could not load private key. Use the --generateKeys option to generate a new one. Error: " + err.Error())
 	}
@@ -48,22 +73,20 @@ func main() {
 		panic("Could not load fingerprint of public key. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}
 
-	tranc := app.NewTx("test", fp, app.UploadData)
-	stranc, err := tranc.Sign(keys)
+	stranc, err = app.NewTx(data, fp, txtype).Sign(keys);
 	if err != nil {
 		panic("Could not sign transaction. Private/Public key pair may not match. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}
-
-	api := getAPI()
-	result := api.BeginUploadData(stranc)
-	if result != nil {
-		panic("Error with result. Error: " + result.Error())
-	} else {
-		fmt.Println("CheckTx successfully passed.")
-	}
-
+	return
 }
-
 func getAPI() client.API {
+	var tm *rpcClient.HTTP
+	for _, addr := range conf.ClientConfig().TendermintNodes {
+
+		tm := rpcClient.NewHTTP(addr, conf.ClientConfig().WebsocketEndPoint)
+		if tm.IsRunning() {
+			break;
+		}
+	}
 	return client.NewAPI(conf.ClientConfig().RemoteEndPoint)
 }

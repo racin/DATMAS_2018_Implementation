@@ -32,13 +32,14 @@ func TestLoadClientConfig(t *testing.T) {
 	}
 
 	assert.NotEmpty(t, conf, "App config is empty")
-	oldVal := (*conf).RemoteEndPoint
-	(*conf).RemoteEndPoint = "Testing__"
+	oldVal := (*conf).RemoteAddr
+	(*conf).RemoteAddr = "Testing__"
 
 	conf2 := ClientConfig()
 
-	assert.Equal(t, "Testing__", conf2.RemoteEndPoint, "Could not set attribute in config")
-	conf.RemoteEndPoint = oldVal
+	assert.Equal(t, "Testing__", conf2.RemoteAddr, "Could not set attribute in config")
+	conf.RemoteAddr = oldVal
 
 	assert.Equal(t, &conf, &conf2, "Pointer not equal")
+	fmt.Printf("%+v", *ClientConfig())
 }

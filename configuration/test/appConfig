@@ -7,6 +7,7 @@
 
   "listenAddr": "tcp://0.0.0.0:46658",
   "uploadAddr": ":46659",
+  "uploadEndPoint": "/upload",
   "rpcType": "grpc",
   "appInfo": "__bcfs"
 }

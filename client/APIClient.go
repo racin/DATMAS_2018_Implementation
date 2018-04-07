@@ -70,7 +70,7 @@ func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (error) {
 }
 
 func (api *apiClient) EndUploadData(tx *app.SignedTransaction) (error) {
-	return api.base.ListAccounts()
+	return api.base.EndUploadData(tx)
 }
 
 /** Access API **/

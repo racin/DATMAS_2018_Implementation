@@ -52,6 +52,10 @@ func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) error {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
+func (c *BaseClient) EndploadData(stx *app.SignedTransaction) error {
+	byteArr, _ := json.Marshal(stx)
+	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
+}
 /*
 func (c *BaseClient) AddAccount(acc *state.Account) error {
 	tx := transaction.New(transaction.AccountAdd, &transaction.AccountAddData{Account: acc})

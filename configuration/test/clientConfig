@@ -3,7 +3,9 @@
   "privateKey": "mycert.pem",
   "publicKeys": "PubKeys/",
 
-
+  "tendermintNodes": ["testingoffline","localhost"],
   "websocketEndPoint": "/websocket",
-  "remoteEndPoint": "http://localhost:46657"
+  "uploadEndPoint": "/upload",
+  "remoteAddr": "http://$TmNode:46657",
+  "uploadAddr": "http://$TmNode:46659"
 }
