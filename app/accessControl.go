@@ -27,7 +27,6 @@ type accessList struct {
 
 func GetAccessList(test ...bool) (*accessList){
 	var path string
-	fmt.Printf("%+v", conf.AppConfig())
 	if len(test) > 0 && test[0] {
 		path = listPathTest
 	} else {

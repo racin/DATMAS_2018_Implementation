@@ -5,17 +5,19 @@ import (
 	"log"
 	"io"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
-	"github.com/tendermint/abci/types"
+	"github.com/racin/DATMAS_2018_Implementation/types"
+	abci "github.com/tendermint/abci/types"
 	//mp "github.com/tendermint/tendermint/mempool"
 	//"github.com/tendermint/merkleeyes/iavl"
 	"fmt"
 	"net/http"
 	"os"
-	cfg "github.com/racin/DATMAS_2018_Implementation/configuration"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+
 )
 
 type Application struct {
-	types.BaseApplication
+	abci.BaseApplication
 
 	info string
 	//tree *iavl.IAVLTree
@@ -28,7 +30,7 @@ type Application struct {
 
 func NewApplication() *Application {
 	// tree : iavl.NewIAVLTree(0, nil)
-	return &Application{info: cfg.AppConfig().Info, uploadAddr: cfg.AppConfig().UploadAddr, tempUploads: make(map[string]bool)}
+	return &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr, tempUploads: make(map[string]bool)}
 }
 
 func (app *Application) StartUploadHandler(){
@@ -86,17 +88,17 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	fmt.Fprintf(w, "Files uploaded successfully : ")
 	fmt.Fprintf(w, file.Filename+"\n")
 }
-func (app *Application) Info(types.RequestInfo) (resInfo types.ResponseInfo) {
+func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	fmt.Println("Info trigger");
-	return types.ResponseInfo{Data: app.info}
+	return abci.ResponseInfo{Data: app.info}
 }
-func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
+func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("Deliver trigger. Hash of data: " + txHash);
 	tx := &Transaction{}
 	tx.Data = "abc"
 	if err := json.Unmarshal(txBytes, tx); err != nil {
-		return types.ResponseDeliverTx{Info: "Error"}
+		return abci.ResponseDeliverTx{Info: "Error"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 	switch tx.Type {
@@ -106,7 +108,7 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			fmt.Println("Downloaddata")
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 
 	case UploadData:
@@ -114,49 +116,67 @@ func (app *Application) DeliverTx(txBytes []byte)  types.ResponseDeliverTx {
 			/*if err := deliverAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	case RemoveData:
 		{
 			/*if err := deliverReputationGiveTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	case VerifyStorage:
 		{
 			/*if err := deliverSecretAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	case ChangeContentAccess:
 		{
 			/*if err := deliverSecretUpdateTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	default:
 		{
 			//return types.Result{Code: types.CodeType_BaseInvalidInput, Log: "unknown transaction type"}
-			return types.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	}
 	//return types.OK
-	return types.ResponseDeliverTx{Info: "All good"};
+	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
-func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.Result {
+func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	fmt.Println("Data received: " + string(txBytes))
 	tx := &SignedTransaction{}
 	if err := json.Unmarshal(txBytes, tx); err != nil {
 		fmt.Println(err.Error())
-		return types.ResponseCheckTx{Info: "Error"}
+		return abci.ResponseCheckTx{Info: "Error"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
+
+	acl := GetAccessList()
+	identity, ok := acl.Identities[tx.Identity];
+	if !ok {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
+	}
+
+	// Check if public key exists and if message is signed.
+	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
+	if err != nil {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidPubKey), Log: "Could not locate public key"}
+	}
+
+	// Check if transaction is signed.
+	if !pk.Verify(tx.Hash(), tx.Signature) {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
+	}
+
 	switch tx.Type {
 	case DownloadData:
 		{
@@ -164,49 +184,32 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			fmt.Println("DownloadData")
-			return types.ResponseCheckTx{Info: "Error"}
+			return abci.ResponseCheckTx{Info: "Error"}
 		}
 
 	case UploadData:
 		{
+			// Check if uploader is allowed to upload data.
+			if identity.AccessLevel < 1 {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Insufficient access level"}
+			}
 
-			/*if err := checkAccountDelTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-
-
-			// Check if data hash is already in the list of uploads pending
 			dataHash, ok := tx.Data.(string)
 			if !ok {
-				return types.ResponseCheckTx{Info: "Could not type assert Data to string"}
-			} else if _, ok := app.tempUploads[dataHash]; ok {
-				return types.ResponseCheckTx{Info: "Data hash is already in the list of pending uploads"}
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}
 			}
 
-			// Check if uploader is allowed to upload data.
-			acl := GetAccessList()
-			identity, ok := acl.Identities[tx.Identity];
+			// Check if data hash is already in the list of uploads pending
+			if val, ok := app.tempUploads[dataHash]; ok && val {
+				// Check if data is stored on disk. Return CodeType_OK
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Data hash is already in the list of pending uploads"}
+			} else {
+				// Add data hash to the list of pending uploads
+				app.tempUploads[dataHash] = true
 
-			if !ok || identity.AccessLevel < 1{
-				return types.ResponseCheckTx{Info: "Insufficient access level"}
+				fmt.Println("UploadData")
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSBeginUploadOK), Log: "Data hash added to list of pending uploads"}
 			}
-
-			// Check if public key exists and if message is signed.
-			pk, err := crypto.LoadPublicKey(identity.PublicKey)
-			if err != nil {
-				return types.ResponseCheckTx{Info: "Could not locate public key"}
-			}
-
-			// Check if transaction is signed.
-			if !pk.Verify(tx.Hash(), tx.Signature) {
-				return types.ResponseCheckTx{Info: "Could not verify signature"}
-			}
-
-			// Add data hash to the list of pending uploads
-			app.tempUploads[dataHash] = true
-
-			fmt.Println("UploadData")
-			return types.ResponseCheckTx{Code: types.CodeTypeOK, Info: "Data hash added to list of pending uploads"}
 		}
 	case RemoveData:
 		{
@@ -214,7 +217,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			fmt.Println("RemoveData")
-			return types.ResponseCheckTx{Info: "Error"}
+			return abci.ResponseCheckTx{Info: "Error"}
 		}
 	case VerifyStorage:
 		{
@@ -222,7 +225,7 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			fmt.Println("VerifyStorage")
-			return types.ResponseCheckTx{Info: "Error"};
+			return abci.ResponseCheckTx{Info: "Error"};
 		}
 	case ChangeContentAccess:
 		{
@@ -230,24 +233,24 @@ func (app *Application) CheckTx(txBytes []byte) types.ResponseCheckTx { //types.
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			fmt.Println("ChangeContentAccess")
-			return types.ResponseCheckTx{Info: "Error"}
+			return abci.ResponseCheckTx{Info: "Error"}
 		}
 	default:
 		{
 			//return types.Result{Code: types.CodeType_BaseInvalidInput, Log: "unknown transaction type"}
-			return types.ResponseCheckTx{Info: "Error"}
+			return abci.ResponseCheckTx{Info: "Error"}
 		}
 	}
 	//return types.OK
-	return types.ResponseCheckTx{Info: "All good", Code: types.CodeTypeOK}
+	return abci.ResponseCheckTx{Info: "All good", Code: uint32(types.CodeType_OK)}
 }
 
-func (app *Application) Commit() types.ResponseCommit { //types.Result {
+func (app *Application) Commit() abci.ResponseCommit { //types.Result {
 	fmt.Println("Commit trigger");
-	return types.ResponseCommit{}
+	return abci.ResponseCommit{}
 }
 
-func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.ResponseQuery) {
+func (app *Application) Query(reqQuery abci.RequestQuery) (resQuery abci.ResponseQuery) {
 	fmt.Println("Query trigger");
 	log.Print("query")
 	switch reqQuery.Path {
@@ -297,7 +300,7 @@ func (app *Application) Query(reqQuery types.RequestQuery) (resQuery types.Respo
 		}
 	}
 
-	sumBlock := app.EndBlock(types.RequestEndBlock{Height:-1})
+	sumBlock := app.EndBlock(abci.RequestEndBlock{Height:-1})
 	fmt.Printf("%+v\n", sumBlock.GetValidatorUpdates())
 	return
 }

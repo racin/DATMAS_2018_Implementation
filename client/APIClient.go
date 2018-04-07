@@ -68,10 +68,10 @@ func (api *apiClient) RemoveData(tx app.BasicTransaction) (error) {
 func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (error) {
 	return api.base.BeginUploadData(tx)
 }
-/*
-func (api *apiClient) EndUploadData(tx app.BasicTransaction) (error) {
+
+func (api *apiClient) EndUploadData(tx *app.SignedTransaction) (error) {
 	return api.base.ListAccounts()
-}*/
+}
 
 /** Access API **/
 /*

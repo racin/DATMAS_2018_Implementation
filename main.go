@@ -8,7 +8,7 @@ import (
 	srv "github.com/racin/DATMAS_2018_Implementation/server"
 	"github.com/racin/DATMAS_2018_Implementation/app"
 
-	"github.com/tendermint/abci/types"
+	abci "github.com/tendermint/abci/types"
 	cmn "github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/abci/server"
 	"github.com/tendermint/tmlibs/common"
@@ -17,14 +17,14 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
-func NewServer(protoAddr, transport string, app types.Application) (cmn.Service, error) {
+func NewServer(protoAddr, transport string, app abci.Application) (cmn.Service, error) {
 	var s cmn.Service
 	var err error
 	switch transport {
 	case "socket":
 		s = srv.NewSocketServer(protoAddr, app)
 	case "grpc":
-		s = srv.NewGRPCServer(protoAddr, types.NewGRPCApplication(app))
+		s = srv.NewGRPCServer(protoAddr, abci.NewGRPCApplication(app))
 	default:
 		err = fmt.Errorf("Unknown server type %s", transport)
 	}
@@ -63,7 +63,7 @@ func main(){
 	go app.StartUploadHandler()
 
 	fmt.Println("Racin har started en app! Transport: " + appconf.RpcType);
-	fmt.Println("Info om app: " + app.Info(types.RequestInfo{Version: "123"}).Data)
+	fmt.Println("Info om app: " + app.Info(abci.RequestInfo{Version: "123"}).Data)
 
 	// Wait forever
 	common.TrapSignal(func() {

@@ -10,7 +10,7 @@ type Transaction struct {
 	Data      	interface{}     `json:"data"`
 	Identity	string			`json:"identity"`
 	Type      	TransactionType `json:"type"`
-	Timestamp 	time.Time       `json:"timestamp"`
+	Timestamp 	string       	`json:"timestamp"`
 }
 
 type SignedTransaction struct {
@@ -42,6 +42,7 @@ func (t *Transaction) ToBytes() ([]byte, error) {
 func (t *Transaction) Hash() string {
 	data := []byte(fmt.Sprintf("%v", t))
 	hash, _ := crypto.HashData(data)
+	fmt.Println(hash)
 	return hash
 }
 
@@ -68,7 +69,7 @@ func (t *Transaction) ProofOfWork(cost byte) error {
 }*/
 
 func NewTx(data interface{}, identity string, t TransactionType) *Transaction {
-	return &Transaction{Data: data, Identity: identity, Type: t, Timestamp: time.Now()}
+	return &Transaction{Data: data, Identity: identity, Type: t, Timestamp: time.Now().Format(time.RFC3339)}
 
 }
 /*

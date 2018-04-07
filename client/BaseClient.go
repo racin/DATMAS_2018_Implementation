@@ -1,39 +1,47 @@
 package client
 
 import (
-	"github.com/tendermint/tendermint/rpc/client"
+	rpcClient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/racin/DATMAS_2018_Implementation/app"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	bt "github.com/racin/DATMAS_2018_Implementation/types"
-	"github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"encoding/json"
-	"github.com/tendermint/tendermint/rpc/core/types"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/pkg/errors"
+	"fmt"
 )
 
 type BaseClient struct {
-	TM        client.Client
+	TM        rpcClient.Client
 }
 
 func NewHTTPClient(endpoint string) *BaseClient {
-	tm := client.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
+	tm := rpcClient.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
 	return &BaseClient{tm}
 }
 
+
 func checkBroadcastResult(commit interface{}, err error) error {
-	if c, ok := commit.(*core_types.ResultBroadcastTxCommit); ok {
+	fmt.Printf("Data: %+v\n", commit)
+	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
 		if err != nil {
 			return err
 		} else if c.CheckTx.IsErr() {
 			return errors.New(c.CheckTx.String())
 		} else if c.DeliverTx.IsErr() {
 			return errors.New(c.DeliverTx.String())
+		} else {
+			fmt.Printf("Data: %+v\n", c)
+			return nil;
 		}
-	} else if c, ok := commit.(*core_types.ResultBroadcastTx); ok {
+	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
+		fmt.Printf("Data: %+v\n", c)
 		if bt.CodeType(c.Code) == bt.CodeType_OK {
+			fmt.Printf("Data: %+v\n", c)
 			return nil
 		} else {
-			return errors.New("Error with CheckTx: " + bt.CodeType_name[int32(c.Code)])
+			return errors.New("CheckTx: " + bt.CodeType_name[int32(c.Code)])
 		}
 	}
 	/**/
@@ -42,7 +50,7 @@ func checkBroadcastResult(commit interface{}, err error) error {
 
 func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) error {
 	byteArr, _ := json.Marshal(stx)
-	return checkBroadcastResult(c.TM.BroadcastTxSync(types.Tx(byteArr)))
+	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 /*
 func (c *BaseClient) AddAccount(acc *state.Account) error {
