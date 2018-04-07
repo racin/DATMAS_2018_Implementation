@@ -13,14 +13,15 @@ const (
 )
 var appConfig AppConfiguration
 type AppConfiguration struct {
-	BasePath 		string		`json:"basePath"`
-	ListenAddr 		string		`json:"listenAddr"`
-	UploadAddr 		string		`json:"uploadAddr"`
-	RpcType 		string		`json:"rpcType"`
-	Info			string		`json:"appInfo"`
-	PrivateKey		string		`json:"privateKey"`
-	PublicKeys		string		`json:"publicKeys"`
-	AccessList		string		`json:"accessList"`
+	BasePath 			string		`json:"basePath"`
+	ListenAddr 			string		`json:"listenAddr"`
+	UploadAddr 			string		`json:"uploadAddr"`
+	UploadEndpoint		string		`json:"uploadEndPoint"`
+	RpcType 			string		`json:"rpcType"`
+	Info				string		`json:"appInfo"`
+	PrivateKey			string		`json:"privateKey"`
+	PublicKeys			string		`json:"publicKeys"`
+	AccessList			string		`json:"accessList"`
 }
 
 var clientConfig ClientConfiguration

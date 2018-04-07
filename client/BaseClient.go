@@ -52,7 +52,8 @@ func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) error {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
-func (c *BaseClient) EndploadData(stx *app.SignedTransaction) error {
+func (c *BaseClient) EndUploadData(stx *app.SignedTransaction) error {
+	//data := map[string]io.Reader
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }

@@ -5,6 +5,7 @@ import (
 )
 
 type API interface {
+	GetBase() *BaseClient
 	//ProofAPI
 	DataAPI
 	//AccessAPI
@@ -19,7 +20,8 @@ type DataAPI interface {
 	/*DownloadData(tx app.BasicTransaction) error
 	RemoveData(tx app.BasicTransaction) error*/
 	BeginUploadData(tx *app.SignedTransaction) error
-	/*EndUploadData(values map[string]io.Reader) error*/
+	EndUploadData(tx *app.SignedTransaction) error
+	//EndUploadData(values map[string]io.Reader) error
 }
 /*
 type AccessAPI interface {
@@ -37,6 +39,9 @@ type apiClient struct {
 	base     *BaseClient
 }
 
+func (api *apiClient) GetBase() (*BaseClient) {
+	return api.base
+}
 /** Proof API **/
 /*
 func (api *apiClient) GenerateProof(tx app.BasicTransaction) ([]byte, error) {

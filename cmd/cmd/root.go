@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"os"
+	"strings"
 )
 
 var rootCmd = &cobra.Command{
@@ -18,7 +19,7 @@ var rootCmd = &cobra.Command{
 			Master Thesis in Computer Science at UiS 2018.
 			Written by Racin Nygaard.	`,
 	Run: func(cmd *cobra.Command, args []string) {
-		// Do Stuff Here
+		main()
 	},
 }
 
@@ -63,7 +64,7 @@ func main() {
 }
 
 func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
-	keys, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey)
+	keys, err := crypto.LoadPrivateKey(conf.ClientConfig().BasePath + conf.ClientConfig().PrivateKey)
 	if err != nil {
 		panic("Could not load private key. Use the --generateKeys option to generate a new one. Error: " + err.Error())
 	}
@@ -80,13 +81,27 @@ func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc 
 	return
 }
 func getAPI() client.API {
-	var tm *rpcClient.HTTP
+	var api client.API
+	var apiOk bool = false
+	var remoteAddr string
+	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, addr := range conf.ClientConfig().TendermintNodes {
-
-		tm := rpcClient.NewHTTP(addr, conf.ClientConfig().WebsocketEndPoint)
-		if tm.IsRunning() {
-			break;
+		api = client.NewAPI(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
+		fmt.Println("Trying to connect to: " + strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
+		if api.GetBase().TM.IsRunning() {
+			remoteAddr = addr
+			apiOk = true
+			break
 		}
+
+
 	}
-	return client.NewAPI(conf.ClientConfig().RemoteEndPoint)
+
+	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
+	conf.ClientConfig().UploadAddr = strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", remoteAddr, 1)
+	if !apiOk {
+		panic("Fatal: Could not estabilsh connection with API.")
+	}
+
+	return api
 }

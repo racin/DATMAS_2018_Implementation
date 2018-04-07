@@ -34,7 +34,7 @@ func NewApplication() *Application {
 }
 
 func (app *Application) StartUploadHandler(){
-	http.HandleFunc("/", app.UploadHandler)
+	http.HandleFunc(conf.AppConfig().UploadEndpoint, app.UploadHandler)
 	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
 		panic("Error setting up upload handler. Error: " + err.Error())
 	}
