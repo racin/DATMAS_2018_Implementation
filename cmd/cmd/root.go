@@ -10,9 +10,11 @@ import (
 
 	"os"
 	"strings"
-	"io/ioutil"
 	"io"
 	"math/rand"
+	"time"
+	"strconv"
+	"github.com/racin/DATMAS_2018_Implementation/types"
 )
 
 var RootCmd = &cobra.Command{
@@ -70,51 +72,55 @@ func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc 
 	}
 	return
 }
+
+var rootAPI client.API
 func getAPI() client.API {
-	var api client.API
+	if rootAPI != nil {
+		return rootAPI
+	}
 	var apiOk bool = false
 	var remoteAddr string
+	s1 := rand.NewSource(time.Now().UnixNano())
 	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, addr := range conf.ClientConfig().TendermintNodes {
-		api = client.NewTM_API(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
+		rootAPI = client.NewTM_API(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
 		fmt.Println("Trying to connect to: " + strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
-		if _, err := api.GetBase().TM.Status(); err == nil {
+		if _, err := rootAPI.GetBase().TM.Status(); err == nil {
 			remoteAddr = addr
 			apiOk = true
 			break
 		}
-
-
 	}
+
+	if !apiOk {
+		panic("Fatal: Could not estabilsh connection with API.")
+	}
+	apiOk = false
+
 	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
 	for _, addr := range conf.ClientConfig().TendermintNodes {
 		uploadAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", addr, 1)
 		fmt.Println("Trying to connect to: " + uploadAddr)
-
-		reqNum := string(rand.Int())
+		reqNum := strconv.Itoa(rand.New(s1).Int())
 		values := map[string]io.Reader{
 			"Status":    strings.NewReader(reqNum),
 		}
-		if response, err := api.GetBase().UploadClient.Post(uploadAddr + conf.ClientConfig().UploadEndPoint,
-			"multipart/form-data", ); err == nil {
-				dat, err := ioutil.ReadAll(response.Body)
-				if err != nil {
-					continue
-				}
-				fmt.Printf("Response: %+v\n", string(dat))
-				/*remoteAddr = addr
+
+		response := rootAPI.GetBase().SendMultipartFormData(uploadAddr, &values);
+		if response.Codetype == types.CodeType_OK  && response.Message == reqNum{
+				remoteAddr = addr
 				apiOk = true
 				break
-				UploadHandlerOnline.*/
+		} else{
+			fmt.Printf("Error Response: %+v\n", response)
 		}
-
-
 	}
+
 	//NewUploadHTTPClient
 	conf.ClientConfig().UploadAddr = strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", remoteAddr, 1)
 	if !apiOk {
 		panic("Fatal: Could not estabilsh connection with API.")
 	}
 
-	return api
+	return rootAPI
 }

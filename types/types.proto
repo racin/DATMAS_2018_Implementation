@@ -112,6 +112,11 @@ message RequestCommit {
 //----------------------------------------
 // Response types
 
+message ResponseUpload {
+  CodeType codetype = 1;
+  string message = 2;
+}
+
 message Response {
   oneof value {
     ResponseException exception = 1;

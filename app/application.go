@@ -38,35 +38,52 @@ func (app *Application) StartUploadHandler(){
 	}
 }
 
-const UploadHandlerOnline = "Upload handler online."
 func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
 		fmt.Fprintln(w, err)
 		return
 	}
-
 	formdata := r.MultipartForm // ok, no problem so far, read the Form data
 
-	_, ok := formdata.Value["Status"]
-	if ok {
-		fmt.Fprintf(w, UploadHandlerOnline)
+	if val, ok := formdata.Value["Status"]; ok {
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:val[0], Codetype:types.CodeType_OK})
+		fmt.Fprintf(w, "%s", byteArr)
 		return
 	}
 
-	datahash, ok := formdata.Value["datahash"]
+	txString, ok := formdata.Value["transaction"]
 	if !ok {
-		fmt.Fprintf(w, "Missing data hash parameter.")
-		return // Missing data hash
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Missing transaction parameter.", Codetype:types.CodeType_BCFSInvalidInput})
+		fmt.Fprintf(w, "%s", byteArr)
+		return
 	}
-	if _, ok := app.tempUploads[datahash[0]]; !ok {
-		fmt.Fprintf(w, "Data hash not in the list of pending uploads.")
+
+	tx := &SignedTransaction{}
+	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Could not Marshal transaction", Codetype:types.CodeType_BCFSInvalidInput})
+		fmt.Fprintf(w, "%s", byteArr)
+		return
+	}
+
+	fileHash, ok := tx.Data.(string)
+	if (!ok) {
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Missing data hash parameter.", Codetype:types.CodeType_BCFSInvalidInput})
+		fmt.Fprintf(w, "%s", byteArr)
+		return
+	}
+	if _, ok := app.tempUploads[fileHash]; !ok {
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Data hash not in the list of pending uploads.",
+			Codetype:types.CodeType_BCFSInvalidInput})
+		fmt.Fprintf(w, "%s", byteArr)
 		return // Data hash not in the list of pending uploads
 	}
 
 	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
-		fmt.Fprintf(w, "File parameter should contain exactly one file.")
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"File parameter should contain exactly one file.",
+			Codetype:types.CodeType_BCFSInvalidInput})
+		fmt.Fprintf(w, "%s", byteArr)
 		return // Missing files or more than one file
 	}
 
@@ -83,19 +100,24 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	defer out.Close()
 	if err != nil {
-		fmt.Fprintf(w, "Unable to create the file for writing. Check your write access privilege")
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Unable to create the file for writing." +
+			" Check your write access privilege", Codetype:types.CodeType_Unauthorized})
+		fmt.Fprintf(w, "%s", byteArr)
 		return
 	}
 
 	_, err = io.Copy(out, fopen) // file not files[i] !
 
 	if err != nil {
-		fmt.Fprintln(w, err)
+		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:err.Error(), Codetype:types.CodeType_InternalError})
+		fmt.Fprintf(w, "%s", byteArr)
 		return
 	}
 
-	fmt.Fprintf(w, "Files uploaded successfully : ")
-	fmt.Fprintf(w, file.Filename+"\n")
+	byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Files uploaded successfully : " + file.Filename, Codetype:types.CodeType_OK})
+	fmt.Fprintf(w, "%s", byteArr)
+
+	// Replay transaction to CheckTx?
 }
 func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	fmt.Println("Info trigger");

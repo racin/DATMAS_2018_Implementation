@@ -3,6 +3,7 @@ package client
 import (
 	"github.com/racin/DATMAS_2018_Implementation/app"
 	bt "github.com/racin/DATMAS_2018_Implementation/types"
+	"io"
 )
 
 type API interface {
@@ -21,7 +22,7 @@ type DataAPI interface {
 	/*DownloadData(tx app.BasicTransaction) error
 	RemoveData(tx app.BasicTransaction) error*/
 	BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, error)
-	EndUploadData(tx *app.SignedTransaction) (bt.CodeType, error)
+	EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload)
 	//EndUploadData(values map[string]io.Reader) error
 }
 /*
@@ -75,8 +76,8 @@ func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, e
 	return api.base.BeginUploadData(tx)
 }
 
-func (api *apiClient) EndUploadData(tx *app.SignedTransaction) (bt.CodeType, error) {
-	return api.base.EndUploadData(tx)
+func (api *apiClient) EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
+	return api.base.EndUploadData(values)
 }
 
 /** Access API **/

@@ -9,7 +9,8 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"io"
-	"strings"
+	"encoding/json"
+	"bytes"
 )
 
 // getAccountCmd represents the getAccount command
@@ -25,33 +26,33 @@ var uploadCmd = &cobra.Command{
 		filePath := args[0];
 		file, err := openFile(filePath)
 		if err != nil {
-			fmt.Println("Could not open file. Error: ", err.Error())
+			log.Fatal("Could not open file. Error: ", err.Error())
 		}
 
 		fileHash, err := crypto.IPFSHashFile(filePath)
 		if err != nil {
-			fmt.Println("Could not hash file. Error: ", err.Error())
+			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
 		stranc := getSignedTransaction(app.UploadData, fileHash)
 		result, err := getAPI().BeginUploadData(stranc)
 
 		if result != types.CodeType_BCFSBeginUploadOK {
-			fmt.Println(err.Error())
-			return;
+			log.Fatal(err.Error())
 
 		}
+
+		byteArr, _ := json.Marshal(stranc)
 		fmt.Println("Data hash registered in application")
 		values := map[string]io.Reader{
-			"files":    file,
-			"dataHash": strings.NewReader(fileHash),
+			"file":    file,
+			"transaction": bytes.NewReader(byteArr),
 		}
-		stranc = getSignedTransaction(app.UploadData, values)
-		result, err = getAPI().EndUploadData(stranc)
 
-		if result != types.CodeType_OK {
-			fmt.Println("Error with upload. ", err)
-			return
+		res := getAPI().EndUploadData(&values)
+
+		if res.Codetype != types.CodeType_OK {
+			log.Fatal("Error with upload. ", res.Message)
 		}
 
 		// Start timeout to wait for the transaction be put on the ledger.
@@ -67,6 +68,10 @@ func openFile(filePath string) (*os.File, error){
 
 	return file, nil
 }
+
 func init() {
 	dataCmd.AddCommand(uploadCmd)
 }
+
+
+

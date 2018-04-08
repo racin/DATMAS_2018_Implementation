@@ -12,6 +12,11 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+	"io"
+	"bytes"
+	"mime/multipart"
+	"os"
+	"io/ioutil"
 )
 
 type BaseClient struct {
@@ -24,6 +29,59 @@ func NewTMHTTPClient(endpoint string) *BaseClient {
 	tm := rpcClient.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
 	httpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
 	return &BaseClient{TM: tm, UploadClient: httpClient}
+}
+
+func (c *BaseClient) SendMultipartFormData(uploadAddr string, values *map[string]io.Reader) (bt.ResponseUpload) {
+	buffer, boundary := getMultipartValues(values)
+	var result bt.ResponseUpload
+
+	response, err := c.UploadClient.Post(uploadAddr + conf.ClientConfig().UploadEndPoint, boundary, buffer)
+	if err == nil {
+		if dat, err := ioutil.ReadAll(response.Body); err == nil {
+			fmt.Printf("Got response: %#v\n", string(dat))
+			if err := json.Unmarshal(dat, &result); err != nil {
+				result = bt.ResponseUpload{Codetype:bt.CodeType_InternalError, Message:err.Error()}
+			}
+		}
+	} else {
+		result = bt.ResponseUpload{Codetype:bt.CodeType_InternalError, Message:err.Error()}
+	}
+	fmt.Printf("The result: %#v\n", result)
+	return result
+}
+
+func getMultipartValues(values *map[string]io.Reader) (buffer *bytes.Buffer, boundary string){
+	var b bytes.Buffer
+	var err error
+	w := multipart.NewWriter(&b)
+	defer w.Close()
+
+	for index, element := range *values {
+		var writer io.Writer
+		// If file has a close method.
+		if file, ok := element.(io.Closer); ok {
+			defer file.Close()
+		}
+
+		// Check if a file is added. Else add it as a regular data element.
+		if file, ok := element.(*os.File); ok {
+			writer, err = w.CreateFormFile(index, file.Name());
+		} else {
+			writer, err = w.CreateFormField(index);
+		}
+
+		// If there are problems with adding an element, continue to the next one.
+		if err != nil {
+			continue
+		}
+
+		if _, err = io.Copy(writer, element); err != nil {
+			continue
+		}
+
+	}
+
+	return &b, w.FormDataContentType()
 }
 
 func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
@@ -57,10 +115,11 @@ func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) (bt.CodeType, e
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
-func (c *BaseClient) EndUploadData(stx *app.SignedTransaction) (bt.CodeType, error) {
+func (c *BaseClient) EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
 	//data := map[string]io.Reader
-	byteArr, _ := json.Marshal(stx)
-	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
+	fmt.Println("Uploadendpoint: " + conf.ClientConfig().UploadAddr)
+	return c.SendMultipartFormData(conf.ClientConfig().UploadAddr, values)
+	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 /*
 func (c *BaseClient) AddAccount(acc *state.Account) error {
