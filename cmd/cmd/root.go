@@ -12,21 +12,17 @@ import (
 	"strings"
 )
 
-var rootCmd = &cobra.Command{
+var RootCmd = &cobra.Command{
 	Use:   "bcfs",
 	Short: "Block Chain File System",
-	Long: `Implementation of Block Chain File System for 
-			Master Thesis in Computer Science at UiS 2018.
-			Written by Racin Nygaard.	`,
-	Run: func(cmd *cobra.Command, args []string) {
-		main()
-	},
+	Long: `Implementation of Block Chain File System for Master Thesis in Computer Science at UiS 2018.
+Written by Racin Nygaard.	`,
 }
 
 var cfgFile string
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.bcfs/clientConfig)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.bcfs/clientConfig)")
 }
 
 func initConfig() {
@@ -43,7 +39,7 @@ func initConfig() {
 }
 
 func Execute() {
-	if err := rootCmd.Execute(); err != nil {
+	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 	}
@@ -52,15 +48,6 @@ func Execute() {
 func main() {
 	fmt.Println("a")
 	fmt.Println("Main client")
-
-	stranc := getSignedTransaction(app.UploadData,"Racin test")
-	result := getAPI().BeginUploadData(stranc)
-	if result != nil {
-		panic("Error with result. Error: " + result.Error())
-	} else {
-		fmt.Println("CheckTx successfully passed.")
-	}
-
 }
 
 func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
