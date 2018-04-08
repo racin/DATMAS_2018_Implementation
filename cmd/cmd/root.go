@@ -88,13 +88,11 @@ func getAPI() client.API {
 	for _, addr := range conf.ClientConfig().TendermintNodes {
 		api = client.NewAPI(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
 		fmt.Println("Trying to connect to: " + strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
-		if api.GetBase().TM.IsRunning() {
+		if _, err := api.GetBase().TM.Status(); err == nil {
 			remoteAddr = addr
 			apiOk = true
 			break
 		}
-
-
 	}
 
 	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
