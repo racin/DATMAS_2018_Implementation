@@ -82,11 +82,8 @@ func ipfsHash(file files.File) (string, error){
 	out := make(chan interface{})
 	adder.Out = out
 
-
-
 	go func() {
 		defer close(out)
-
 
 		err = adder.AddFile(file)
 		if err != nil {
@@ -94,10 +91,5 @@ func ipfsHash(file files.File) (string, error){
 		}
 	}()
 
-	select {
-	case o := <-out:
-		hash = o.(*coreunix.AddedObject).Hash
-	}
-
-	return hash, err
+	return (<-out).(*coreunix.AddedObject).Hash, err
 }

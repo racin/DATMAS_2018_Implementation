@@ -7,5 +7,6 @@
   "websocketEndPoint": "/websocket",
   "uploadEndPoint": "/upload",
   "remoteAddr": "http://$TmNode:46657",
-  "uploadAddr": "http://$TmNode:46659"
+  "uploadAddr": "http://$TmNode:46659",
+  "uploadTimeoutSeconds" : 30
 }

@@ -10,6 +10,9 @@ import (
 
 	"os"
 	"strings"
+	"io/ioutil"
+	"io"
+	"math/rand"
 )
 
 var RootCmd = &cobra.Command{
@@ -73,16 +76,41 @@ func getAPI() client.API {
 	var remoteAddr string
 	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, addr := range conf.ClientConfig().TendermintNodes {
-		api = client.NewAPI(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
+		api = client.NewTM_API(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
 		fmt.Println("Trying to connect to: " + strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
 		if _, err := api.GetBase().TM.Status(); err == nil {
 			remoteAddr = addr
 			apiOk = true
 			break
 		}
-	}
 
+
+	}
 	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
+	for _, addr := range conf.ClientConfig().TendermintNodes {
+		uploadAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", addr, 1)
+		fmt.Println("Trying to connect to: " + uploadAddr)
+
+		reqNum := string(rand.Int())
+		values := map[string]io.Reader{
+			"Status":    strings.NewReader(reqNum),
+		}
+		if response, err := api.GetBase().UploadClient.Post(uploadAddr + conf.ClientConfig().UploadEndPoint,
+			"multipart/form-data", ); err == nil {
+				dat, err := ioutil.ReadAll(response.Body)
+				if err != nil {
+					continue
+				}
+				fmt.Printf("Response: %+v\n", string(dat))
+				/*remoteAddr = addr
+				apiOk = true
+				break
+				UploadHandlerOnline.*/
+		}
+
+
+	}
+	//NewUploadHTTPClient
 	conf.ClientConfig().UploadAddr = strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", remoteAddr, 1)
 	if !apiOk {
 		panic("Fatal: Could not estabilsh connection with API.")

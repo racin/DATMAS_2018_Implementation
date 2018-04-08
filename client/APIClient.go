@@ -2,6 +2,7 @@ package client
 
 import (
 	"github.com/racin/DATMAS_2018_Implementation/app"
+	bt "github.com/racin/DATMAS_2018_Implementation/types"
 )
 
 type API interface {
@@ -19,8 +20,8 @@ type ProofAPI interface {
 type DataAPI interface {
 	/*DownloadData(tx app.BasicTransaction) error
 	RemoveData(tx app.BasicTransaction) error*/
-	BeginUploadData(tx *app.SignedTransaction) error
-	EndUploadData(tx *app.SignedTransaction) error
+	BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, error)
+	EndUploadData(tx *app.SignedTransaction) (bt.CodeType, error)
 	//EndUploadData(values map[string]io.Reader) error
 }
 /*
@@ -29,8 +30,8 @@ type AccessAPI interface {
 }*/
 
 
-func NewAPI(endpoint string) API {
-	base := NewHTTPClient(endpoint)
+func NewTM_API(endpoint string) API {
+	base := NewTMHTTPClient(endpoint)
 	return &apiClient{endpoint, base}
 }
 
@@ -70,11 +71,11 @@ func (api *apiClient) RemoveData(tx app.BasicTransaction) (error) {
 	return api.base.GetAccount(id)
 }
 */
-func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (error) {
+func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, error) {
 	return api.base.BeginUploadData(tx)
 }
 
-func (api *apiClient) EndUploadData(tx *app.SignedTransaction) (error) {
+func (api *apiClient) EndUploadData(tx *app.SignedTransaction) (bt.CodeType, error) {
 	return api.base.EndUploadData(tx)
 }
 

@@ -10,49 +10,54 @@ import (
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/pkg/errors"
 	"fmt"
+	"net/http"
+	"time"
 )
 
 type BaseClient struct {
-	TM        rpcClient.Client
+	TM        			rpcClient.Client
+	UploadClient		*http.Client
+	UploadEndpoint		string
 }
 
-func NewHTTPClient(endpoint string) *BaseClient {
+func NewTMHTTPClient(endpoint string) *BaseClient {
 	tm := rpcClient.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
-	return &BaseClient{tm}
+	httpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
+	return &BaseClient{TM: tm, UploadClient: httpClient}
 }
 
-
-func checkBroadcastResult(commit interface{}, err error) error {
+func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
 	fmt.Printf("Data: %+v\n", commit)
 	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
 		if err != nil {
-			return err
+			return bt.CodeType_InternalError, err
 		} else if c.CheckTx.IsErr() {
-			return errors.New(c.CheckTx.String())
+			return bt.CodeType_InternalError, errors.New(c.CheckTx.String())
 		} else if c.DeliverTx.IsErr() {
-			return errors.New(c.DeliverTx.String())
+			return bt.CodeType_InternalError, errors.New(c.DeliverTx.String())
 		} else {
 			fmt.Printf("Data: %+v\n", c)
-			return nil;
+			return bt.CodeType_OK, nil;
 		}
 	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
 		fmt.Printf("Data: %+v\n", c)
-		if bt.CodeType(c.Code) == bt.CodeType_OK {
+		code := bt.CodeType(c.Code)
+		if code == bt.CodeType_OK {
 			fmt.Printf("Data: %+v\n", c)
-			return nil
+			return code, nil
 		} else {
-			return errors.New("CheckTx: " + bt.CodeType_name[int32(c.Code)])
+			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + bt.CodeType_name[int32(c.Code)])
 		}
 	}
 	/**/
-	return errors.New("Could not type assert result.")
+	return bt.CodeType_InternalError, errors.New("Could not type assert result.")
 }
 
-func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) error {
+func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) (bt.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
-func (c *BaseClient) EndUploadData(stx *app.SignedTransaction) error {
+func (c *BaseClient) EndUploadData(stx *app.SignedTransaction) (bt.CodeType, error) {
 	//data := map[string]io.Reader
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))

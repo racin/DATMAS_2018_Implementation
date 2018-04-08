@@ -26,14 +26,15 @@ type AppConfiguration struct {
 
 var clientConfig ClientConfiguration
 type ClientConfiguration struct {
-	BasePath 				string		`json:"basePath"`
-	RemoteAddr				string		`json:"remoteAddr"`
-	UploadAddr				string		`json:"uploadAddr"`
-	TendermintNodes			[]string	`json:"tendermintNodes"`
-	WebsocketEndPoint		string		`json:"websocketEndPoint"`
-	UploadEndPoint			string		`json:"uploadEndPoint"`
-	PrivateKey				string		`json:"privateKey"`
-	PublicKeys				string		`json:"publicKeys"`
+	BasePath 						string		`json:"basePath"`
+	RemoteAddr						string		`json:"remoteAddr"`
+	UploadAddr						string		`json:"uploadAddr"`
+	TendermintNodes					[]string	`json:"tendermintNodes"`
+	WebsocketEndPoint				string		`json:"websocketEndPoint"`
+	UploadEndPoint					string		`json:"uploadEndPoint"`
+	UploadTimeoutSeconds			int		`json:"uploadTimeoutSeconds"`
+	PrivateKey						string		`json:"privateKey"`
+	PublicKeys						string		`json:"publicKeys"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {

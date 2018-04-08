@@ -26,8 +26,6 @@ type Application struct {
 	tempUploads map[string]bool
 }
 
-
-
 func NewApplication() *Application {
 	// tree : iavl.NewIAVLTree(0, nil)
 	return &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr, tempUploads: make(map[string]bool)}
@@ -39,6 +37,8 @@ func (app *Application) StartUploadHandler(){
 		panic("Error setting up upload handler. Error: " + err.Error())
 	}
 }
+
+const UploadHandlerOnline = "Upload handler online."
 func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
@@ -48,16 +48,25 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	formdata := r.MultipartForm // ok, no problem so far, read the Form data
 
+	_, ok := formdata.Value["Status"]
+	if ok {
+		fmt.Fprintf(w, UploadHandlerOnline)
+		return
+	}
+
 	datahash, ok := formdata.Value["datahash"]
 	if !ok {
+		fmt.Fprintf(w, "Missing data hash parameter.")
 		return // Missing data hash
 	}
 	if _, ok := app.tempUploads[datahash[0]]; !ok {
+		fmt.Fprintf(w, "Data hash not in the list of pending uploads.")
 		return // Data hash not in the list of pending uploads
 	}
 
-	files, ok := formdata.File["multiplefiles"]
+	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
+		fmt.Fprintf(w, "File parameter should contain exactly one file.")
 		return // Missing files or more than one file
 	}
 
