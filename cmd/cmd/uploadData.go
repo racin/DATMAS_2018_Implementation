@@ -72,6 +72,3 @@ func openFile(filePath string) (*os.File, error){
 func init() {
 	dataCmd.AddCommand(uploadCmd)
 }
-
-
-

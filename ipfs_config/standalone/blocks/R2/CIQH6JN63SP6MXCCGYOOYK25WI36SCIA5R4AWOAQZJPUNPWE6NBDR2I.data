@@ -1,0 +1,16 @@
+
+ß×{
+  "author": "golang",
+  "bugs": {
+    "url": ""
+  },
+  "gx": {
+    "dvcsimport": "golang.org/x/sys"
+  },
+  "gxVersion": "0.7.0",
+  "language": "go",
+  "license": "BSD-new",
+  "name": "sys",
+  "version": "0.0.1"
+}
+×
