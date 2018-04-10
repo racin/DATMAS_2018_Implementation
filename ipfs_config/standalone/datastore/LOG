@@ -985,3 +985,19 @@
 03:51:02.113905 table@remove removed @208
 03:58:22.454512 db@close closing
 03:58:22.454637 db@close done T·123.999µs
+=============== Apr 10, 2018 (CEST) ===============
+12:51:08.448357 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+12:51:08.448536 version@stat F·[0 1] S·103KiB[0B 103KiB] Sc·[0.00 0.00]
+12:51:08.448552 db@open opening
+12:51:08.448601 journal@recovery F·1
+12:51:08.449118 journal@recovery recovering @219
+12:51:08.464644 memdb@flush created L0@222 N·91 S·11KiB "/F5..KR7,v1812":"/pr..4NI,v1876"
+12:51:08.465292 version@stat F·[1 1] S·115KiB[11KiB 103KiB] Sc·[0.25 0.00]
+12:51:08.466371 db@janitor F·4 G·0
+12:51:08.466409 db@open done T·17.844003ms
+13:51:08.475471 table@compaction L0·1 -> L1·1 S·115KiB Q·2949
+13:51:08.488987 table@build created L1@225 N·878 S·114KiB "/F5..KR7,v1812":"/pr..UPY,v1784"
+13:51:08.489146 version@stat F·[0 1] S·114KiB[0B 114KiB] Sc·[0.00 0.00]
+13:51:08.492656 table@compaction committed F-1 S-1KiB Ke·0 D·10 T·17.120914ms
+13:51:08.618025 table@remove removed @222
+13:51:08.618101 table@remove removed @221

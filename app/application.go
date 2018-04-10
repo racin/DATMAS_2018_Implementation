@@ -3,16 +3,16 @@ package app
 import (
 	"encoding/json"
 	"log"
-	"io"
+
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	//mp "github.com/tendermint/tendermint/mempool"
 	//"github.com/tendermint/merkleeyes/iavl"
 	"fmt"
-	"net/http"
-	"os"
+
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+
 
 )
 
@@ -31,94 +31,6 @@ func NewApplication() *Application {
 	return &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr, tempUploads: make(map[string]bool)}
 }
 
-func (app *Application) StartUploadHandler(){
-	http.HandleFunc(conf.AppConfig().UploadEndpoint, app.UploadHandler)
-	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
-		panic("Error setting up upload handler. Error: " + err.Error())
-	}
-}
-
-func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
-	formdata := r.MultipartForm // ok, no problem so far, read the Form data
-
-	if val, ok := formdata.Value["Status"]; ok {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:val[0], Codetype:types.CodeType_OK})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-
-	txString, ok := formdata.Value["transaction"]
-	if !ok {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Missing transaction parameter.", Codetype:types.CodeType_BCFSInvalidInput})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-
-	tx := &SignedTransaction{}
-	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Could not Marshal transaction", Codetype:types.CodeType_BCFSInvalidInput})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-
-	fileHash, ok := tx.Data.(string)
-	if (!ok) {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Missing data hash parameter.", Codetype:types.CodeType_BCFSInvalidInput})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-	if _, ok := app.tempUploads[fileHash]; !ok {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Data hash not in the list of pending uploads.",
-			Codetype:types.CodeType_BCFSInvalidInput})
-		fmt.Fprintf(w, "%s", byteArr)
-		return // Data hash not in the list of pending uploads
-	}
-
-	files, ok := formdata.File["file"]
-	if !ok || len(files) > 1 {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"File parameter should contain exactly one file.",
-			Codetype:types.CodeType_BCFSInvalidInput})
-		fmt.Fprintf(w, "%s", byteArr)
-		return // Missing files or more than one file
-	}
-
-
-	file := files[0]
-	fopen, err := file.Open()
-	defer fopen.Close()
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
-
-	out, err := os.Create("/tmp/" + file.Filename)
-
-	defer out.Close()
-	if err != nil {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Unable to create the file for writing." +
-			" Check your write access privilege", Codetype:types.CodeType_Unauthorized})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-
-	_, err = io.Copy(out, fopen) // file not files[i] !
-
-	if err != nil {
-		byteArr, _ := json.Marshal(&types.ResponseUpload{Message:err.Error(), Codetype:types.CodeType_InternalError})
-		fmt.Fprintf(w, "%s", byteArr)
-		return
-	}
-
-	byteArr, _ := json.Marshal(&types.ResponseUpload{Message:"Files uploaded successfully : " + file.Filename, Codetype:types.CodeType_OK})
-	fmt.Fprintf(w, "%s", byteArr)
-
-	// Replay transaction to CheckTx?
-}
 func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	fmt.Println("Info trigger");
 	return abci.ResponseInfo{Data: app.info}
@@ -191,6 +103,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	}
 	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 
+	// Get access list
 	acl := GetAccessList()
 	identity, ok := acl.Identities[tx.Identity];
 	if !ok {
@@ -225,6 +138,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Insufficient access level"}
 			}
 
+			// Check if data hash is contained within the transaction.
 			dataHash, ok := tx.Data.(string)
 			if !ok {
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}

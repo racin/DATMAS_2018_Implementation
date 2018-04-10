@@ -22,6 +22,9 @@ cd $GOPATH/src/github.com/ipfs/go-ipfs
 make install
 gx install
 
+go get github.com/hsanjuan/go-libp2p-http
+go get github.com/whyrusleeping/go-smux-multiplex
+
 protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:types/ types.proto
 go build main.go
 ./main -abci=grpc

@@ -24,7 +24,7 @@ var uploadCmd = &cobra.Command{
 		}
 
 		filePath := args[0];
-		file, err := openFile(filePath)
+		file, err := os.Open(filePath)
 		if err != nil {
 			log.Fatal("Could not open file. Error: ", err.Error())
 		}
@@ -58,15 +58,6 @@ var uploadCmd = &cobra.Command{
 		// Start timeout to wait for the transaction be put on the ledger.
 		fmt.Println("File successfully uploaded.", err)
 	},
-}
-
-func openFile(filePath string) (*os.File, error){
-	file, err := os.Open(filePath)
-	if err != nil {
-		return nil, err
-	}
-
-	return file, nil
 }
 
 func init() {
