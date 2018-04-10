@@ -12,23 +12,21 @@ import (
 )
 
 func init() {
+	// Expose APIs:
+	/*
+	IPFS
+		Add file
+		Get file
+		IsUp !!
 
-	/*apiMAddr, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
-	cfg := &client.Config{
-		APIAddr:           apiMAddr,
-		DisableKeepAlives: true,
-	}
-	var secret [32]byte
-	prot, err := pnet.NewV1ProtectorFromBytes(&secret)
-	h, err := libp2p.New(
-		context.Background(),
-		libp2p.ListenAddrs(apiMAddr),
-		libp2p.PrivateNetwork(prot),
-	)
-	if err != nil {
-		panic(err)
-	}
-	rest, err := rest.NewAPIWithHost(cfg, h)*/
+
+
+		IPFS-Cluster
+		StatusAll
+		Status(CID)
+	 */
+	 // Check AccessLevel
+	 // Relay response
 }
 
 func testClientHTTP(apiAddr ma.Multiaddr) *client.Client {

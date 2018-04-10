@@ -12,8 +12,6 @@ import (
 	"fmt"
 
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-
-
 )
 
 type Application struct {
@@ -92,6 +90,20 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
+func verifySignature(identity *Identity, stx *SignedTransaction) (bool, string){
+	// Check if public key exists and if message is signed.
+	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
+	if err != nil {
+		return false, "Could not locate public key"
+	}
+
+	// Check if transaction is signed.
+	if !pk.Verify(stx.Hash(), stx.Signature) {
+		return false,"Could not verify signature"
+	}
+
+	return true, ""
+}
 func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
@@ -104,21 +116,13 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 
 	// Get access list
-	acl := GetAccessList()
-	identity, ok := acl.Identities[tx.Identity];
+	identity, ok := GetAccessList().Identities[tx.Identity];
 	if !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	// Check if public key exists and if message is signed.
-	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
-	if err != nil {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidPubKey), Log: "Could not locate public key"}
-	}
-
-	// Check if transaction is signed.
-	if !pk.Verify(tx.Hash(), tx.Signature) {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
+	if ok, msg := verifySignature(&identity, tx); !ok {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: msg}
 	}
 
 	switch tx.Type {
