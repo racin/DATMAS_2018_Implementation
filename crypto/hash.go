@@ -11,7 +11,10 @@ import (
 	"gx/ipfs/QmceUdzxkimdYsgtX733uNgzf1DLHyBKN6ehGSp85ayppM/go-ipfs-cmdkit/files"
 	"github.com/ipfs/go-ipfs/repo"
 	"github.com/ipfs/go-ipfs/repo/config"
-	ds2 "github.com/ipfs/go-ipfs/thirdparty/datastore2"
+	ds "gx/ipfs/QmXRKBQA4wXP7xWbFiZsR1GP4HV6wMDQ1aWFxZZ4uBcPX9/go-datastore"
+	syncds "gx/ipfs/QmXRKBQA4wXP7xWbFiZsR1GP4HV6wMDQ1aWFxZZ4uBcPX9/go-datastore/sync"
+
+	//ds2 "github.com/ipfs/go-ipfs/thirdparty/datastore2"
 	mh "github.com/multiformats/go-multihash"
 	"fmt"
 	"crypto/md5"
@@ -68,7 +71,7 @@ func ipfsHash(file files.File) (string, error){
 				PeerID: "QmTFauExutTsy4XP6JbMFcw2Wa9645HJt2bTqL6qYDCKfe", // required by offline node
 			},
 		},
-		D: ds2.ThreadSafeCloserMapDatastore(),
+		D: syncds.MutexWrap(ds.NewMapDatastore()),
 	}
 	node, err := core.NewNode(context.Background(), &core.BuildCfg{Repo: r})
 	if err != nil {

@@ -17,6 +17,11 @@ cd $GOPATH/src/github.com/tendermint/tendermint
 dep ensure
 go install ./cmd/tendermint
 
+go get -u -d github.com/ipfs/go-ipfs
+cd $GOPATH/src/github.com/ipfs/go-ipfs
+make install
+gx install
+
 protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:types/ types.proto
 go build main.go
 ./main -abci=grpc
