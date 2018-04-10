@@ -1,53 +1,43 @@
 package main
 
 import (
+	"github.com/ipfs/ipfs-cluster/api/rest/client"
+	"github.com/ipfs/ipfs-cluster/api/rest"
+	"strings"
+	libp2p "github.com/libp2p/go-libp2p"
+	pnet "github.com/libp2p/go-libp2p-pnet"
+	ma "github.com/multiformats/go-multiaddr"
 	"fmt"
-
-	core "github.com/ipfs/go-ipfs/core"
-	corenet "github.com/ipfs/go-ipfs/core/corenet"
-	fsrepo "github.com/ipfs/go-ipfs/repo/fsrepo"
-
-	"code.google.com/p/go.net/context"
+	"context"
 )
 
+func init() {
+	apiMAddr, _ := ma.NewMultiaddr("/ip4/127.0.0.1/tcp/0")
+	cfg := &client.Config{
+		APIAddr:           apiMAddr,
+		DisableKeepAlives: true,
+	}
+	var secret [32]byte
+	prot, err := pnet.NewV1ProtectorFromBytes(&secret)
+	h, err := libp2p.New(
+		context.Background(),
+		libp2p.ListenAddrs(apiMAddr),
+		libp2p.PrivateNetwork(prot),
+	)
+	if err != nil {
+		panic(err)
+	}
+	rest, err := rest.NewAPIWithHost(cfg, h)
+}
+func apiMAddr(a *rest.API) ma.Multiaddr {
+	listen, _ := a.HTTPAddress()
+	hostPort := strings.Split(listen, ":")
+
+	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", hostPort[1]))
+	return addr
+}
+
+
 func main() {
-	// Basic ipfsnode setup
-	r, err := fsrepo.Open("~/.ipfs")
-	if err != nil {
-		panic(err)
-	}
 
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
-
-	cfg := &core.BuildCfg{
-		Repo:   r,
-		Online: true,
-	}
-
-	nd, err := core.NewNode(ctx, cfg)
-
-	if err != nil {
-		panic(err)
-	}
-
-	list, err := corenet.Listen(nd, "/app/whyrusleeping")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("I am peer: %s\n", nd.Identity.Pretty())
-
-	for {
-		con, err := list.Accept()
-		if err != nil {
-			fmt.Println(err)
-			return
-		}
-
-		defer con.Close()
-
-		fmt.Fprintln(con, "Hello! This is whyrusleepings awesome ipfs service")
-		fmt.Printf("Connection from: %s\n", con.Conn().RemotePeer())
-	}
 }
