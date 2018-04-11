@@ -42,7 +42,8 @@ var ipfsProxyConfig IPFSProxyConfiguration
 type IPFSProxyConfiguration struct {
 	BasePath 						string		`json:"basePath"`
 	ListenAddr 						string		`json:"listenAddr"`
-	AccessList			string		`json:"accessList"`
+	AccessList						string		`json:"accessList"`
+	PublicKeys						string		`json:"publicKeys"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {
@@ -126,6 +127,10 @@ func LoadIPFSProxyConfig(path ...string) (*IPFSProxyConfiguration, error){
 
 	if err = json.Unmarshal(conf, &ipfsProxyConfig); err != nil {
 		return nil, err
+	}
+
+	if strings.Contains(ipfsProxyConfig.BasePath,"$HOME") {
+		ipfsProxyConfig.BasePath = strings.Replace(ipfsProxyConfig.BasePath, "$HOME", usr.HomeDir, 1)
 	}
 
 	return &ipfsProxyConfig, nil

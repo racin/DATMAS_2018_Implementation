@@ -91,13 +91,13 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
-func VerifySignature_tx(identity *Identity, stx *SignedTransaction) (bool, string){
-	return VerifySignature(identity, stx.Hash(), stx.Signature)
+func VerifySignature_tx(pubkeyPath string, stx *SignedTransaction) (bool, string){
+	return VerifySignature(pubkeyPath, stx.Hash(), stx.Signature)
 }
 
-func VerifySignature(identity *Identity, hash string, signature []byte) (bool, string) {
+func VerifySignature(pubkeyPath string, hash string, signature []byte) (bool, string) {
 	// Check if public key exists and if message is signed.
-	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
+	pk, err := crypto.LoadPublicKey(pubkeyPath)
 	if err != nil {
 		return false, "Could not locate public key"
 	}
@@ -126,7 +126,8 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	if ok, msg := VerifySignature_tx(&identity, tx); !ok {
+	if ok, msg := VerifySignature_tx(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
+		tx); !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: msg}
 	}
 

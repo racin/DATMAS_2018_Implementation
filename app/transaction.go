@@ -42,7 +42,6 @@ func (t *Transaction) ToBytes() ([]byte, error) {
 func (t *Transaction) Hash() string {
 	data := []byte(fmt.Sprintf("%v", t))
 	hash, _ := crypto.HashData(data)
-	fmt.Println(hash)
 	return hash
 }
 

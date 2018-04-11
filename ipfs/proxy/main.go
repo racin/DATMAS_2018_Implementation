@@ -72,38 +72,37 @@ func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message stri
 	json.NewEncoder(*w).Encode(&types.IPFSReponse{Message:message, Codetype:codeType})
 }
 
-func (proxy *Proxy) CheckProxyAccess(w *http.ResponseWriter, txString string) (*app.SignedTransaction, error) {
+func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel app.AccessLevel) (*app.SignedTransaction, types.CodeType, string) {
 	tx := &app.SignedTransaction{}
 	if err := json.Unmarshal([]byte(txString), tx); err != nil {
-		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction");
-		return tx, err
+		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction"
 	}
 
 	// Check for replay attack
 	txHash := tx.Hash()
 	if proxy.HasSeenTranc(txHash) {
-		writeResponse(&w, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack.");
-		return
+		return nil, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack."
 	}
 
 	// Check identity access
 	identity, ok := app.GetAccessList("ipfs").Identities[tx.Identity];
 	if !ok {
-		writeResponse(&w, types.CodeType_Unauthorized, "Could not get access list");
-		return
+		return nil, types.CodeType_Unauthorized, "Could not get access list"
 	}
 
-	// Verify signature in transaction.
-	if ok, msg := app.VerifySignature(&identity, txHash, tx.Signature); !ok {
-		writeResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
-		return
-	}
+
+	// Verify signature in transaction. (Temp disabled)
+	/*if ok, msg := app.VerifySignature(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PublicKeys + identity.PublicKey,
+		txHash, tx.Signature); !ok {
+		return nil, types.CodeType_BCFSInvalidSignature, msg
+	}*/
 
 	// Check if uploader is allowed to upload data.
-	if identity.AccessLevel < 1 {
-		writeResponse(&w, types.CodeType_Unauthorized, "Insufficient access level");
-		return
+	if identity.AccessLevel < minAccessLevel {
+		return nil, types.CodeType_Unauthorized, "Insufficient access level"
 	}
+
+	return tx, types.CodeType_OK, txHash
 }
 
 func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
@@ -119,7 +118,11 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx, err := proxy.CheckProxyAccess(&w, txString[0])
+	// Check access to proxy method
+	tx, codeType, message := proxy.CheckProxyAccess(txString[0], app.User)
+	if codeType != types.CodeType_OK {
+		writeResponse(&w, codeType, message);
+	}
 
 	// Check if data hash is contained within the transaction.
 	fileHash, ok := tx.Data.(string)
@@ -167,10 +170,10 @@ func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 func (proxy *Proxy) UnPinFile(w http.ResponseWriter, r *http.Request) {
 
 }
+/**
+Simply checks if the IPFS service is up. Does not need to protected.
+ */
 func (proxy *Proxy) IsUp(w http.ResponseWriter, r *http.Request) {
-	if _, err := proxy.CheckProxyAccess(&w, "abc"); err != nil {
-		return
-	}
 	if proxy.client.IPFS().IsUp() {
 		writeResponse(&w, types.CodeType_OK, "true");
 	} else {
@@ -197,12 +200,26 @@ func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
 		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
 	}
 }
+
 func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
+	txString, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");
+		return
+	}
+	_, codeType, message := proxy.CheckProxyAccess(string(txString), app.User);
+	if codeType != types.CodeType_OK {
+		writeResponse(&w, codeType, message);
+		return
+	}
 	if pininfo, err := proxy.client.StatusAll(false); err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
 		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
 	}
+
+	// Add transaction to list of known transactions (message contains hash of tranc)
+	proxy.seenTranc[message] = true
 }
 
 func getClient(apiAddr ma.Multiaddr) *client.Client {

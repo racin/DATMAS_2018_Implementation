@@ -8,22 +8,22 @@ import (
 )
 
 type Context int
+type AccessLevel int
 const (
-	Anonymous 	= 0
-	User 		= 1
-	Storage		= 3
-	Consensus   = 4
+	Anonymous 	AccessLevel = iota
+	User 		AccessLevel = 1
+	Storage		AccessLevel = 2
+	Consensus   AccessLevel = 3
 
-	app 	Context = 0
+	app 	Context = iota
 	ipfs	Context = 1
 	test	Context = 2
-
 
 	listPathTest = "accessControl_test"
 )
 
 type Identity struct {
-	AccessLevel int    `json:"level"`
+	AccessLevel AccessLevel    `json:"level"`
 	Name        string `json:"name"`
 	PublicKey   string `json:"publickey"`
 }
