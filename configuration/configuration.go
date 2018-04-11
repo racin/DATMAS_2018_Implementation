@@ -10,6 +10,7 @@ import (
 const (
 	appConf 		= "/.bcfs/appConfig"
 	clientConf		= "/.bcfs/clientConfig"
+	ipfsProxyConf		= "/.bcfs/ipfsProxyConfig"
 )
 var appConfig AppConfiguration
 type AppConfiguration struct {
@@ -32,9 +33,14 @@ type ClientConfiguration struct {
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint				string		`json:"websocketEndPoint"`
 	UploadEndPoint					string		`json:"uploadEndPoint"`
-	UploadTimeoutSeconds			int		`json:"uploadTimeoutSeconds"`
+	UploadTimeoutSeconds			int			`json:"uploadTimeoutSeconds"`
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
+}
+
+var ipfsProxyConfig IPFSProxyConfiguration
+type IPFSProxyConfiguration struct {
+	ListenAddr 						string		`json:"listenAddr"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {
@@ -97,4 +103,31 @@ func LoadClientConfig(path ...string) (*ClientConfiguration, error){
 }
 func ClientConfig() *ClientConfiguration{
 	return &clientConfig
+}
+
+func LoadIPFSProxyConfig(path ...string) (*IPFSProxyConfiguration, error){
+	usr, err := user.Current()
+	if err != nil {
+		return nil, err
+	}
+
+	var filePath string
+	if len(path) > 0 {
+		filePath = path[0]
+	} else {
+		filePath = usr.HomeDir + ipfsProxyConf
+	}
+	conf, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return nil, err
+	}
+
+	if err = json.Unmarshal(conf, &ipfsProxyConfig); err != nil {
+		return nil, err
+	}
+
+	return &ipfsProxyConfig, nil
+}
+func IPFSProxyConfig() *IPFSProxyConfiguration{
+	return &ipfsProxyConfig
 }

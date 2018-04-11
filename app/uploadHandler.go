@@ -19,8 +19,9 @@ func (app *Application) StartUploadHandler(){
 }
 
 func writeUploadResponse(w *http.ResponseWriter, codeType types.CodeType, message string){
+	//json.NewEncoder(*w).Encode(&types.ResponseUpload{Message:message, Codetype:codeType})
 	byteArr, _ := json.Marshal(&types.ResponseUpload{Message:message, Codetype:codeType})
-	fmt.Fprintf(w, "%s", byteArr)
+	fmt.Fprintf(*w, "%s", byteArr)
 }
 
 func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {

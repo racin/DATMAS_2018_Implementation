@@ -7,9 +7,22 @@ import (
 	//libp2p "github.com/libp2p/go-libp2p"
 	//pnet "github.com/libp2p/go-libp2p-pnet"
 	ma "github.com/multiformats/go-multiaddr"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"fmt"
 	"os"
+	"net/http"
+	"github.com/gorilla/mux"
+	"github.com/racin/DATMAS_2018_Implementation/types"
+	"encoding/json"
+	cid2 "github.com/ipfs/go-cid"
+	mh "github.com/multiformats/go-multihash"
 )
+
+type Proxy struct {
+	client				*client.Client
+	localAPIAddr		ma.Multiaddr
+	remoteAPIAddr		ma.Multiaddr
+}
 
 func init() {
 	// Expose APIs:
@@ -29,8 +42,71 @@ func init() {
 	 // Relay response
 }
 
-func testClientHTTP(apiAddr ma.Multiaddr) *client.Client {
+func (proxy *Proxy) StartHTTPAPI(){
+	router := mux.NewRouter()
+	router.HandleFunc("/addnopin", proxy.AddFileNoPin).Methods("POST")
+	router.HandleFunc("/pinfile/{cid}", proxy.PinFile).Methods("GET")
+	router.HandleFunc("/remove/{cid}", proxy.RemoveFile).Methods("DELETE")
+	router.HandleFunc("/isup", proxy.IsUp).Methods("GET")
+	router.HandleFunc("/get/{cid}", proxy.GetFile).Methods("GET")
+	router.HandleFunc("/status/{cid}", proxy.Status).Methods("GET")
+	router.HandleFunc("/statusall", proxy.StatusAll).Methods("GET")
+	if err := http.ListenAndServe(conf.IPFSProxyConfig().ListenAddr, router); err != nil {
+		panic("Error setting up IPFS proxy. Error: " + err.Error())
+	}
+}
 
+func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
+
+}
+func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
+
+}
+func (proxy *Proxy) RemoveFile(w http.ResponseWriter, r *http.Request) {
+
+}
+func (proxy *Proxy) IsUp(w http.ResponseWriter, r *http.Request) {
+	var resp *types.IPFSReponse
+
+	if proxy.client.IPFS().IsUp() {
+		resp = &types.IPFSReponse{Message:"true"}
+	} else {
+		resp = &types.IPFSReponse{Message:"false"}
+	}
+	json.NewEncoder(w).Encode(resp)
+}
+func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
+
+}
+func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
+	params := mux.Vars(r)
+	var resp *types.IPFSReponse
+
+	b58, err := mh.FromB58String(params["cid"])
+	if err != nil {
+		resp = &types.IPFSReponse{Error:err.Error()}
+	}
+
+	cid := cid2.NewCidV0(b58)
+
+	if pininfo, err := proxy.client.Status(cid,false); err != nil {
+		resp = &types.IPFSReponse{Error:err.Error()}
+	} else {
+		resp = &types.IPFSReponse{Message:fmt.Sprintf("%+v", pininfo)}
+	}
+	json.NewEncoder(w).Encode(resp)
+}
+func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
+	var resp *types.IPFSReponse
+	if pininfo, err := proxy.client.StatusAll(false); err != nil {
+		resp = &types.IPFSReponse{Error:err.Error()}
+	} else {
+		resp = &types.IPFSReponse{Message:fmt.Sprintf("%+v", pininfo)}
+	}
+	json.NewEncoder(w).Encode(resp)
+}
+
+func getClient(apiAddr ma.Multiaddr) *client.Client {
 	cfg := &client.Config{
 		APIAddr: apiAddr,
 		DisableKeepAlives: true,
@@ -53,27 +129,39 @@ func apiMAddr(a *rest.API) ma.Multiaddr {
 
 
 func main() {
-	apiAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
-	c := testClientHTTP(apiAddr)
-	pininfo, err := c.StatusAll(false)
-	if err != nil {
-		panic(err.Error())
+	conf.LoadIPFSProxyConfig()
+	localAPIAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
+	remoteAPIAddr, _ := ma.NewMultiaddr(conf.IPFSProxyConfig().ListenAddr)
+	proxy := &Proxy {
+		client: getClient(localAPIAddr),
+		localAPIAddr:localAPIAddr,
+		remoteAPIAddr:remoteAPIAddr,
 	}
 
-	c.IPFS().
-		fmt.Printf("%+v\n", pininfo)
-	err = IPFSAddFile(c,"/home/gob/racin.txt")
+	fmt.Println("Starting IPFS proxy API")
+	proxy.StartHTTPAPI()
+
+	/*
+	err = proxy.IPFSAddFile("/home/gob/racin.txt")
 	if err != nil {
 		panic(err.Error())
-	}
+	}*/
 }
 
-func IPFSAddFile(c *client.Client, filePath string) error {
+func (proxy *Proxy) StartUploadHandler(){
+	/*http.HandleFunc(conf.AppConfig().UploadEndpoint, app.UploadHandler)
+	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
+		panic("Error setting up upload handler. Error: " + err.Error())
+	}*/
+}
+
+func (proxy *Proxy) IPFSAddFile(filePath string) error {
 	file, err := os.Open(filePath)
 	if err != nil {
 		return err
 	}
-	result, err := c.IPFS().Add(file)
+	//result, err := proxy.client.IPFS().Unpin()
+	result, err := proxy.client.IPFS().Add(file)
 	fmt.Println(result)
 	return err
 }

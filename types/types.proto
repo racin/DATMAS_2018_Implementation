@@ -117,6 +117,11 @@ message ResponseUpload {
   string message = 2;
 }
 
+message IPFSReponse {
+  string error = 1;
+  string message = 2;
+}
+
 message Response {
   oneof value {
     ResponseException exception = 1;

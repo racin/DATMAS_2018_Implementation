@@ -1001,3 +1001,6 @@
 13:51:08.492656 table@compaction committed F-1 S-1KiB Ke·0 D·10 T·17.120914ms
 13:51:08.618025 table@remove removed @222
 13:51:08.618101 table@remove removed @221
+=============== Apr 11, 2018 (CEST) ===============
+02:32:37.703764 db@close closing
+02:32:37.704940 db@close done T·2.05369ms
