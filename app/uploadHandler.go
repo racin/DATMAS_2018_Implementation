@@ -11,6 +11,14 @@ import (
 	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 )
+
+func (app *Application) HasSeenTranc(trancHash string) bool{
+	if _, ok := app.seenTranc[trancHash]; ok {
+		return true;
+	}
+	return false;
+}
+
 func (app *Application) StartUploadHandler(){
 	http.HandleFunc(conf.AppConfig().UploadEndpoint, app.UploadHandler)
 	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
@@ -49,6 +57,13 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check for replay attack
+	txHash := tx.Hash()
+	if app.HasSeenTranc(txHash) {
+		writeUploadResponse(&w, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack.");
+		return
+	}
+
 	// Check identity access
 	identity, ok := GetAccessList().Identities[tx.Identity];
 	if !ok {
@@ -57,7 +72,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify signature in transaction.
-	if ok, msg := VerifySignature(&identity, tx); !ok {
+	if ok, msg := VerifySignature(&identity, txHash, tx.Signature); !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
 		return
 	}

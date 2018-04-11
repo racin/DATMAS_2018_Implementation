@@ -40,7 +40,9 @@ type ClientConfiguration struct {
 
 var ipfsProxyConfig IPFSProxyConfiguration
 type IPFSProxyConfiguration struct {
+	BasePath 						string		`json:"basePath"`
 	ListenAddr 						string		`json:"listenAddr"`
+	AccessList			string		`json:"accessList"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {

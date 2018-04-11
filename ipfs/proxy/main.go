@@ -17,12 +17,15 @@ import (
 	"encoding/json"
 	cid2 "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
+	"io/ioutil"
 )
 
 type Proxy struct {
 	client				*client.Client
 	localAPIAddr		ma.Multiaddr
 	remoteAPIAddr		ma.Multiaddr
+	seenTranc			map[string]bool
 }
 
 func init() {
@@ -43,81 +46,91 @@ func init() {
 	 // Relay response
 }
 
+// Simple check to prevent Replay attacks. Not reliable.
+func (proxy *Proxy) HasSeenTranc(trancHash string) bool{
+	if _, ok := proxy.seenTranc[trancHash]; ok {
+		return true;
+	}
+	return false;
+}
+
 func (proxy *Proxy) StartHTTPAPI(){
 	router := mux.NewRouter()
 	router.HandleFunc("/addnopin", proxy.AddFileNoPin).Methods("POST")
-	router.HandleFunc("/pinfile/{cid}", proxy.PinFile).Methods("GET")
-	router.HandleFunc("/unpinfile/{cid}", proxy.UnPinFile).Methods("DELETE")
-	router.HandleFunc("/isup", proxy.IsUp).Methods("GET")
-	router.HandleFunc("/get/{cid}", proxy.GetFile).Methods("GET")
-	router.HandleFunc("/status/{cid}", proxy.Status).Methods("GET")
-	router.HandleFunc("/statusall", proxy.StatusAll).Methods("GET")
+	router.HandleFunc("/pinfile/{cid}", proxy.PinFile).Methods("POST")
+	router.HandleFunc("/unpinfile/{cid}", proxy.UnPinFile).Methods("POST")
+	router.HandleFunc("/isup", proxy.IsUp).Methods("POST")
+	router.HandleFunc("/get/{cid}", proxy.GetFile).Methods("POST")
+	router.HandleFunc("/status/{cid}", proxy.Status).Methods("POST")
+	router.HandleFunc("/statusall", proxy.StatusAll).Methods("POST")
 	if err := http.ListenAndServe(conf.IPFSProxyConfig().ListenAddr, router); err != nil {
 		panic("Error setting up IPFS proxy. Error: " + err.Error())
 	}
 }
 
-func writeUploadResponse(w *http.ResponseWriter, codeType types.CodeType, message string){
-	//json.NewEncoder(*w).Encode(&types.ResponseUpload{Message:message, Codetype:codeType})
-	byteArr, _ := json.Marshal(&types.ResponseUpload{Message:message, Codetype:codeType})
-	fmt.Fprintf(*w, "%s", byteArr)
+func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message string){
+	json.NewEncoder(*w).Encode(&types.IPFSReponse{Message:message, Codetype:codeType})
 }
 
-func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
-	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
-	if err != nil {
-		fmt.Fprintln(w, err)
-		return
-	}
-	formdata := r.MultipartForm // ok, no problem so far, read the Form data
-
-	txString, ok := formdata.Value["transaction"]
-	if !ok {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");
-		return
-	}
-
+func (proxy *Proxy) CheckProxyAccess(w *http.ResponseWriter, txString string) (*app.SignedTransaction, error) {
 	tx := &app.SignedTransaction{}
-	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction");
+	if err := json.Unmarshal([]byte(txString), tx); err != nil {
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction");
+		return tx, err
+	}
+
+	// Check for replay attack
+	txHash := tx.Hash()
+	if proxy.HasSeenTranc(txHash) {
+		writeResponse(&w, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack.");
 		return
 	}
 
 	// Check identity access
-	identity, ok := app.GetAccessList().Identities[tx.Identity];
+	identity, ok := app.GetAccessList("ipfs").Identities[tx.Identity];
 	if !ok {
-		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not get access list");
+		writeResponse(&w, types.CodeType_Unauthorized, "Could not get access list");
 		return
 	}
 
 	// Verify signature in transaction.
-	if ok, msg := app.VerifySignature(&identity, tx); !ok {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
+	if ok, msg := app.VerifySignature(&identity, txHash, tx.Signature); !ok {
+		writeResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
 		return
 	}
 
 	// Check if uploader is allowed to upload data.
 	if identity.AccessLevel < 1 {
-		writeUploadResponse(&w, types.CodeType_Unauthorized, "Insufficient access level");
+		writeResponse(&w, types.CodeType_Unauthorized, "Insufficient access level");
 		return
 	}
+}
+
+func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
+	if err != nil {
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
+		return
+	}
+	formdata := r.MultipartForm
+	txString, ok := formdata.Value["transaction"]
+	if !ok {
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");
+		return
+	}
+
+	tx, err := proxy.CheckProxyAccess(&w, txString[0])
 
 	// Check if data hash is contained within the transaction.
 	fileHash, ok := tx.Data.(string)
 	if (!ok) {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
 		return
-	}
-
-	// Check if data hash is already in the list of uploads pending
-	if _, ok := app.tempUploads[fileHash]; !ok {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash not in the list of pending uploads.");
-		return // Data hash not in the list of pending uploads
 	}
 
 	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "File parameter should contain exactly one file.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "File parameter should contain exactly one file.");
 		return // Missing files or more than one file
 	}
 
@@ -131,31 +144,22 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the hash of the upload file equals the hash contained in the transaction
 	if fileBytes, err := ioutil.ReadAll(fopen); err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
 		return
 	} else if uplFileHash, err := crypto.IPFSHashData(fileBytes); err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get hash of input file.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get hash of input file.");
 		return
 	} else if uplFileHash != fileHash {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Hash of input file not present in transaction.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Hash of input file not present in transaction.");
 		return
 	}
 
-	out, err := os.Create("/tmp/" + file.Filename)
-	defer out.Close()
-	if err != nil {
-		writeUploadResponse(&w, types.CodeType_Unauthorized, "Unable to create the file for writing. Check your write access privilege");
-		return
+	if resStr, err := proxy.client.IPFS().AddNoPin(fopen); err != nil {
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, resStr + ". Error: " + err.Error());
+	} else {
+		writeResponse(&w, types.CodeType_OK, resStr);
 	}
 
-	_, err = io.Copy(out, fopen) // file not files[i] !
-
-	if err != nil {
-		writeUploadResponse(&w, types.CodeType_InternalError, err.Error());
-		return
-	}
-
-	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
 }
 func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 
@@ -164,44 +168,41 @@ func (proxy *Proxy) UnPinFile(w http.ResponseWriter, r *http.Request) {
 
 }
 func (proxy *Proxy) IsUp(w http.ResponseWriter, r *http.Request) {
-	var resp *types.IPFSReponse
-
-	if proxy.client.IPFS().IsUp() {
-		resp = &types.IPFSReponse{Message:"true"}
-	} else {
-		resp = &types.IPFSReponse{Message:"false"}
+	if _, err := proxy.CheckProxyAccess(&w, "abc"); err != nil {
+		return
 	}
-	json.NewEncoder(w).Encode(resp)
+	if proxy.client.IPFS().IsUp() {
+		writeResponse(&w, types.CodeType_OK, "true");
+	} else {
+		writeResponse(&w, types.CodeType_OK, "false");
+	}
 }
 func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
 
 }
 func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
 	params := mux.Vars(r)
-	var resp *types.IPFSReponse
 
 	b58, err := mh.FromB58String(params["cid"])
 	if err != nil {
-		resp = &types.IPFSReponse{Error:err.Error()}
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
+		return
 	}
 
 	cid := cid2.NewCidV0(b58)
 
 	if pininfo, err := proxy.client.Status(cid,false); err != nil {
-		resp = &types.IPFSReponse{Error:err.Error()}
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
-		resp = &types.IPFSReponse{Message:fmt.Sprintf("%+v", pininfo)}
+		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
 	}
-	json.NewEncoder(w).Encode(resp)
 }
 func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
-	var resp *types.IPFSReponse
 	if pininfo, err := proxy.client.StatusAll(false); err != nil {
-		resp = &types.IPFSReponse{Error:err.Error()}
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
-		resp = &types.IPFSReponse{Message:fmt.Sprintf("%+v", pininfo)}
+		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
 	}
-	json.NewEncoder(w).Encode(resp)
 }
 
 func getClient(apiAddr ma.Multiaddr) *client.Client {
@@ -225,7 +226,6 @@ func apiMAddr(a *rest.API) ma.Multiaddr {
 	return addr
 }
 
-
 func main() {
 	conf.LoadIPFSProxyConfig()
 	localAPIAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
@@ -234,6 +234,7 @@ func main() {
 		client: getClient(localAPIAddr),
 		localAPIAddr:localAPIAddr,
 		remoteAPIAddr:remoteAPIAddr,
+		seenTranc:make(map[string]bool),
 	}
 
 	fmt.Println("Starting IPFS proxy API")

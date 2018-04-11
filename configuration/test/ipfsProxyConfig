@@ -1,3 +1,5 @@
 {
+    "basePath": "$HOME/.bcfs/",
+    "accessList": "accessList",
     "listenAddr": ":46660"
 }

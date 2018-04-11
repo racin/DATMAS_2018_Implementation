@@ -7,15 +7,21 @@ import (
 	"fmt"
 )
 
+type Context int
 const (
 	Anonymous 	= 0
 	User 		= 1
 	Storage		= 3
 	Consensus   = 4
-)
-const (
+
+	app 	Context = 0
+	ipfs	Context = 1
+	test	Context = 2
+
+
 	listPathTest = "accessControl_test"
 )
+
 type Identity struct {
 	AccessLevel int    `json:"level"`
 	Name        string `json:"name"`
@@ -25,12 +31,21 @@ type accessList struct {
 	Identities map[string]Identity `json:"identities"`
 }
 
-func GetAccessList(test ...bool) (*accessList){
+func GetAccessList(confPath ...string) (*accessList){
 	var path string
-	if len(test) > 0 && test[0] {
-		path = listPathTest
-	} else {
+	if len(confPath) == 0 {
 		path = conf.AppConfig().BasePath + conf.AppConfig().AccessList
+	} else {
+		switch p := confPath[0]; p {
+			case "app":
+				path = conf.AppConfig().BasePath + conf.AppConfig().AccessList
+			case "ipfs":
+				path = conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().AccessList
+			case "test":
+				path = listPathTest
+			default:
+				path = p
+		}
 	}
 
 	var z accessList = accessList{Identities:make(map[string]Identity)}

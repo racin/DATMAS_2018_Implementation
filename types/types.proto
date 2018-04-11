@@ -118,7 +118,7 @@ message ResponseUpload {
 }
 
 message IPFSReponse {
-  string error = 1;
+  CodeType codetype = 1;
   string message = 2;
 }
 
