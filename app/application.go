@@ -90,7 +90,7 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
-func verifySignature(identity *Identity, stx *SignedTransaction) (bool, string){
+func VerifySignature(identity *Identity, stx *SignedTransaction) (bool, string){
 	// Check if public key exists and if message is signed.
 	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
 	if err != nil {
@@ -121,7 +121,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	if ok, msg := verifySignature(&identity, tx); !ok {
+	if ok, msg := VerifySignature(&identity, tx); !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: msg}
 	}
 

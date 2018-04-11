@@ -57,7 +57,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Verify signature in transaction.
-	if ok, msg := verifySignature(&identity, tx); !ok {
+	if ok, msg := VerifySignature(&identity, tx); !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
 		return
 	}
