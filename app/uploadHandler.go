@@ -86,7 +86,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if data hash is contained within the transaction.
 	fileHash, ok := tx.Data.(string)
-	if (!ok) {
+	if (fileHash == "" || !ok) {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
 		return
 	}
@@ -140,4 +140,5 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
 
 	// TODO: Replay transaction to CheckTx?
+	// CheckTx issues a challenge to verify that file is stored. Then Pins and Delivers and Commits.
 }

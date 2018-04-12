@@ -1016,3 +1016,40 @@
 00:17:45.711238 db@open done T·77.790505ms
 01:04:51.864373 db@close closing
 01:04:51.864741 db@close done T·369.807µs
+=============== Apr 12, 2018 (CEST) ===============
+09:55:39.075482 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+09:55:39.075693 version@stat F·[1 1] S·1MiB[1MiB 114KiB] Sc·[0.25 0.00]
+09:55:39.075738 db@open opening
+09:55:39.075832 journal@recovery F·1
+09:55:39.076525 journal@recovery recovering @227
+09:55:39.084100 memdb@flush created L0@229 N·470 S·58KiB "/F5..KR7,v15416":"/pr..5SI,v15779"
+09:55:39.084897 version@stat F·[2 1] S·1MiB[1MiB 114KiB] Sc·[0.50 0.00]
+09:55:39.086771 db@janitor F·5 G·0
+09:55:39.086815 db@open done T·11.043591ms
+10:45:40.183083 table@compaction L0·2 -> L1·1 S·1MiB Q·16393
+10:45:40.211060 table@build created L1@232 N·13644 S·1MiB "/F5..7B7,v15004":"/pr..YSA,v14182"
+10:45:40.211121 version@stat F·[0 1] S·1MiB[0B 1MiB] Sc·[0.00 0.02]
+10:45:40.215771 table@compaction committed F-2 S-62KiB Ke·0 D·1214 T·32.639992ms
+10:45:40.215872 table@remove removed @229
+10:45:40.216185 table@remove removed @226
+10:45:40.216543 table@remove removed @225
+10:53:49.252094 db@close closing
+10:53:49.252276 db@close done T·181.224µs
+=============== Apr 12, 2018 (CEST) ===============
+10:53:50.103670 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:53:50.103861 version@stat F·[0 1] S·1MiB[0B 1MiB] Sc·[0.00 0.02]
+10:53:50.103880 db@open opening
+10:53:50.103927 journal@recovery F·1
+10:53:50.104287 journal@recovery recovering @230
+10:53:50.115789 memdb@flush created L0@233 N·582 S·69KiB "/F5..KR7,v15886":"/pr..6AI,v16367"
+10:53:50.116266 version@stat F·[1 1] S·1MiB[69KiB 1MiB] Sc·[0.25 0.02]
+10:53:50.116835 db@janitor F·4 G·0
+10:53:50.116867 db@open done T·12.972987ms
+11:39:19.490459 table@compaction L0·1 -> L1·1 S·1MiB Q·17027
+11:39:19.534432 table@build created L1@236 N·14113 S·1MiB "/F5..7B7,v15004":"/pr..YSA,v14182"
+11:39:19.534551 version@stat F·[0 1] S·1MiB[0B 1MiB] Sc·[0.00 0.02]
+11:39:19.537963 table@compaction committed F-1 S-10KiB Ke·0 D·113 T·47.420574ms
+11:39:19.538132 table@remove removed @233
+11:39:19.538740 table@remove removed @232
+12:00:38.332409 db@close closing
+12:00:38.333052 db@close done T·643.88µs
