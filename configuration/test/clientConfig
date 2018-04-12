@@ -4,9 +4,20 @@
   "publicKeys": "PubKeys/",
 
   "tendermintNodes": ["testingoffline","localhost"],
-  "websocketEndPoint": "/websocket",
-  "uploadEndPoint": "/upload",
+  "websocketEndpoint": "/websocket",
+  "uploadEndpoint": "/upload",
   "remoteAddr": "http://$TmNode:46657",
   "uploadAddr": "http://$TmNode:46659",
-  "uploadTimeoutSeconds" : 30
+  "uploadTimeoutSeconds" : 30,
+
+  "ipfsNodes": ["testingoffline","localhost"],
+  "ipfsProxyAddr": "http://$IpfsNode:46660",
+  "ipfsIsupEndpoint": "/isup",
+  "ipfsStatusallEndpoint": "/statusall",
+  "ipfsPinfileEndpoint": "/pinfile",
+  "ipfsUnpinfileEndpoint": "/unpinfile",
+  "ipfsGetEndpoint": "/get",
+  "ipfsStatusEndpoint": "/status",
+  "ipfsAddnopinEndpoint": "/addnopin",
+  "ipfsChallengeEndpoint": "/challenge"
 }

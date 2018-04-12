@@ -10,19 +10,22 @@ import (
 const (
 	appConf 		= "/.bcfs/appConfig"
 	clientConf		= "/.bcfs/clientConfig"
-	ipfsProxyConf		= "/.bcfs/ipfsProxyConfig"
+	ipfsProxyConf	= "/.bcfs/ipfsProxyConfig"
 )
+
 var appConfig AppConfiguration
 type AppConfiguration struct {
 	BasePath 			string		`json:"basePath"`
 	ListenAddr 			string		`json:"listenAddr"`
 	UploadAddr 			string		`json:"uploadAddr"`
-	UploadEndpoint		string		`json:"uploadEndPoint"`
+	UploadEndpoint		string		`json:"uploadEndpoint"`
 	RpcType 			string		`json:"rpcType"`
 	Info				string		`json:"appInfo"`
 	PrivateKey			string		`json:"privateKey"`
 	PublicKeys			string		`json:"publicKeys"`
 	AccessList			string		`json:"accessList"`
+	IpfsNodes			[]string	`json:"ipfsNodes"`
+	IpfsProxyAddr		string		`json:"ipfsProxyAddr"`
 }
 
 var clientConfig ClientConfiguration
@@ -31,11 +34,21 @@ type ClientConfiguration struct {
 	RemoteAddr						string		`json:"remoteAddr"`
 	UploadAddr						string		`json:"uploadAddr"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
-	WebsocketEndPoint				string		`json:"websocketEndPoint"`
-	UploadEndPoint					string		`json:"uploadEndPoint"`
+	WebsocketEndPoint				string		`json:"websocketEndpoint"`
+	UploadEndPoint					string		`json:"uploadEndpoint"`
 	UploadTimeoutSeconds			int			`json:"uploadTimeoutSeconds"`
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
+	IpfsNodes						[]string	`json:"ipfsNodes"`
+	IpfsProxyAddr					string		`json:"ipfsProxyAddr"`
+	IpfsIsupEndpoint				string		`json:"ipfsIsupEndpoint"`
+	IpfsStatusallEndpoint			string		`json:"ipfsStatusallEndpoint"`
+	IpfsPinfileEndpoint				string		`json:"ipfsPinfileEndpoint"`
+	IpfsUnpinfileEndpoint			string		`json:"ipfsUnpinfileEndpoint"`
+	IpfsGetEndpoint					string		`json:"ipfsGetEndpoint"`
+	IpfsStatusEndpoint				string		`json:"ipfsStatusEndpoint"`
+	IpfsAddnopinEndpoint			string		`json:"ipfsAddnopinEndpoint"`
+	IpfsChallengeEndpoint			string		`json:"ipfsChallengeEndpoint"`
 }
 
 var ipfsProxyConfig IPFSProxyConfiguration
