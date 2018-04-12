@@ -24,7 +24,6 @@ var uploadCmd = &cobra.Command{
 		}
 
 		// File and Name is required parameters.
-
 		filePath := args[0];
 		file, err := os.Open(filePath)
 		if err != nil {
@@ -43,9 +42,8 @@ var uploadCmd = &cobra.Command{
 			log.Fatal(err.Error())
 
 		}
-
 		byteArr, _ := json.Marshal(stranc)
-		fmt.Println("Data hash registered in application")
+		fmt.Println("Data hash registered in application. Uploading data to service")
 		values := map[string]io.Reader{
 			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
@@ -57,10 +55,14 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Error with upload. ", res.Message)
 		}
 
+		upl := make(chan<- interface{}, 1)
+
+
 		// Start timeout to wait for the transaction be put on the ledger.
 		fmt.Println("File successfully uploaded.", err)
 	},
 }
+
 
 func init() {
 	dataCmd.AddCommand(uploadCmd)

@@ -118,7 +118,7 @@ func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
 
 func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) (bt.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
-	return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
+	return checkBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 func (c *BaseClient) EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
 	//data := map[string]io.Reader

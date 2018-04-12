@@ -15,7 +15,9 @@ import (
 	"time"
 	"strconv"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"io/ioutil"
+	"context"
 )
 
 var RootCmd = &cobra.Command{
@@ -23,6 +25,10 @@ var RootCmd = &cobra.Command{
 	Short: "Block Chain File System",
 	Long: `Implementation of Block Chain File System for Master Thesis in Computer Science at UiS 2018.
 Written by Racin Nygaard.	`,
+}
+
+type BCFSClient struct {
+	rootAPI 	client.API
 }
 
 var cfgFile string
@@ -51,9 +57,8 @@ func Execute() {
 	}
 }
 
-func main() {
-	fmt.Println("a")
-	fmt.Println("Main client")
+func subToNewBlock(outChan chan<- interface{}) error {
+	return getAPI().GetBase().TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, outChan)
 }
 
 func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
@@ -74,7 +79,6 @@ func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc 
 	return
 }
 
-var rootAPI client.API
 func getAPI() client.API {
 	if rootAPI != nil {
 		return rootAPI
