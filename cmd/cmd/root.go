@@ -87,10 +87,11 @@ func getAPI() client.API {
 	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, addr := range conf.ClientConfig().TendermintNodes {
 		if !tmApiFound {
-			rootAPI = client.NewTM_API(strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
-			fmt.Println("Trying to connect to (TM_api: " + strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1))
-			if _, err := rootAPI.GetBase().TM.Status(); err == nil {
-				remoteAddr = addr
+			apiAddr := strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1)
+			rootAPI = client.NewTM_API(apiAddr)
+			fmt.Println("Trying to connect to (TM_api: " + apiAddr)
+			if _, err := rootAPI.GetBase().TMClient.Status(); err == nil {
+				conf.ClientConfig().RemoteAddr = apiAddr
 				tmApiFound = true
 			}
 		}
@@ -103,22 +104,19 @@ func getAPI() client.API {
 				"Status":    strings.NewReader(reqNum),
 			}
 
-			response := rootAPI.GetBase().SendMultipartFormData(uploadAddr, &values);
-			if response.Codetype == types.CodeType_OK  && response.Message == reqNum{
-				remoteAddr = addr
+			uploadAPI := uploadAddr + conf.ClientConfig().UploadEndPoint
+			response := rootAPI.GetBase().SendMultipartFormData(uploadAPI, &values);
+			if response.Codetype == types.CodeType_OK && response.Message == reqNum{
+				rootAPI.GetBase().TMUploadAPI = uploadAPI
+				conf.ClientConfig().UploadAddr = uploadAddr
 				tmUplApiFound = true
-			} else{
-				fmt.Printf("Error Response: %+v\n", response)
 			}
 		}
 	}
 
-
-	if !apiOk {
-		panic("Fatal: Could not estabilsh connection with API.")
+	if !tmApiFound || !tmUplApiFound {
+		panic("Fatal: Could not estabilsh connection with Tendermint API.")
 	}
-	apiOk = false
-	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
 
 	// Get Tendermint Upload API
 	for _, addr := range conf.ClientConfig().TendermintNodes {

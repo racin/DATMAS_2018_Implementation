@@ -12,6 +12,7 @@
 
   "ipfsNodes": ["testingoffline","localhost"],
   "ipfsProxyAddr": "http://$IpfsNode:46660",
+  "ipfsProxyTimeoutSeconds": 30,
   "ipfsIsupEndpoint": "/isup",
   "ipfsStatusallEndpoint": "/statusall",
   "ipfsPinfileEndpoint": "/pinfile",

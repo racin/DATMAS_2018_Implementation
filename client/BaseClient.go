@@ -20,22 +20,27 @@ import (
 )
 
 type BaseClient struct {
-	TM        			rpcClient.Client
-	UploadClient		*http.Client
-	UploadEndpoint		string
+	TMClient        			rpcClient.Client
+
+	TMUploadClient				*http.Client
+	TMUploadAPI					string
+
+	IPFSClient					*http.Client
+	IPFSAPI						string
 }
 
 func NewTMHTTPClient(endpoint string) *BaseClient {
 	tm := rpcClient.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
-	httpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
-	return &BaseClient{TM: tm, UploadClient: httpClient}
+	TMhttpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
+	IpfshttpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
+	return &BaseClient{TMClient: tm, TMUploadClient: TMhttpClient, IPFSClient: IpfshttpClient}
 }
 
-func (c *BaseClient) SendMultipartFormData(uploadAddr string, values *map[string]io.Reader) (bt.ResponseUpload) {
+func (c *BaseClient) SendMultipartFormData(endpoint string, values *map[string]io.Reader) (bt.ResponseUpload) {
 	buffer, boundary := getMultipartValues(values)
 	var result bt.ResponseUpload
 
-	response, err := c.UploadClient.Post(uploadAddr + conf.ClientConfig().UploadEndPoint, boundary, buffer)
+	response, err := c.TMUploadClient.Post(endpoint, boundary, buffer)
 	if err == nil {
 		if dat, err := ioutil.ReadAll(response.Body); err == nil {
 			fmt.Printf("Got response: %#v\n", string(dat))

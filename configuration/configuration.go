@@ -40,6 +40,7 @@ type ClientConfiguration struct {
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
 	IpfsNodes						[]string	`json:"ipfsNodes"`
+	ipfsProxyTimeoutSeconds			string		`json:"ipfsProxyTimeoutSeconds"`
 	IpfsProxyAddr					string		`json:"ipfsProxyAddr"`
 	IpfsIsupEndpoint				string		`json:"ipfsIsupEndpoint"`
 	IpfsStatusallEndpoint			string		`json:"ipfsStatusallEndpoint"`
