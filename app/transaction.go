@@ -18,17 +18,18 @@ type SignedTransaction struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
-
 type TransactionType string
-
 const (
-	DownloadData		TransactionType = "data-download"
-	UploadData     		TransactionType = "data-upload"
-	RemoveData      	TransactionType = "data-remove"
-	VerifyStorage		TransactionType = "data-verify"
-	ChangeContentAccess	TransactionType = "data-access"
-)
+	// Tendermint
+	DownloadData		TransactionType = "download"
+	UploadData     		TransactionType = "upload"
+	RemoveData      	TransactionType = "removedata"
+	VerifyStorage		TransactionType = "verifystorage"
+	ChangeContentAccess	TransactionType = "changeaccess"
 
+	// IPFS Proxy
+	IPFSProxy			TransactionType = "ipfsproxy"
+)
 
 /*
 func (t *Transaction) FromBytes(bs []byte) error {

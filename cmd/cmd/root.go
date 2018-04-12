@@ -15,6 +15,7 @@ import (
 	"time"
 	"strconv"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	"io/ioutil"
 )
 
 var RootCmd = &cobra.Command{
@@ -79,7 +80,6 @@ func getAPI() client.API {
 		return rootAPI
 	}
 	tmApiFound, tmUplApiFound, ipfsProxyFound := false, false, false
-	var remoteAddr string
 
 	// Get Tendermint blockchain API
 	s1 := rand.NewSource(time.Now().UnixNano())
@@ -91,7 +91,7 @@ func getAPI() client.API {
 			rootAPI = client.NewTM_API(apiAddr)
 			fmt.Println("Trying to connect to (TM_api: " + apiAddr)
 			if _, err := rootAPI.GetBase().TMClient.Status(); err == nil {
-				conf.ClientConfig().RemoteAddr = apiAddr
+				//conf.ClientConfig().RemoteAddr = apiAddr
 				tmApiFound = true
 			}
 		}
@@ -108,7 +108,7 @@ func getAPI() client.API {
 			response := rootAPI.GetBase().SendMultipartFormData(uploadAPI, &values);
 			if response.Codetype == types.CodeType_OK && response.Message == reqNum{
 				rootAPI.GetBase().TMUploadAPI = uploadAPI
-				conf.ClientConfig().UploadAddr = uploadAddr
+				//conf.ClientConfig().UploadAddr = uploadAddr
 				tmUplApiFound = true
 			}
 		}
@@ -118,41 +118,22 @@ func getAPI() client.API {
 		panic("Fatal: Could not estabilsh connection with Tendermint API.")
 	}
 
-	// Get Tendermint Upload API
-	for _, addr := range conf.ClientConfig().TendermintNodes {
+	// Get IPFS Proxy API
+	for _, addr := range conf.ClientConfig().IpfsNodes {
+		ipfsAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$IpfsNode", addr, 1)
+		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
-	}
-
-	//NewUploadHTTPClient
-	conf.ClientConfig().UploadAddr = strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", remoteAddr, 1)
-	if !apiOk {
-		panic("Fatal: Could not estabilsh connection with API.")
-	}
-
-	apiOk = false
-	conf.ClientConfig().RemoteAddr = strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", remoteAddr, 1)
-	for _, addr := range conf.ClientConfig().TendermintNodes {
-		uploadAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", addr, 1)
-		fmt.Println("Trying to connect to: " + uploadAddr)
-		reqNum := strconv.Itoa(rand.New(s1).Int())
-		values := map[string]io.Reader{
-			"Status":    strings.NewReader(reqNum),
-		}
-
-		response := rootAPI.GetBase().SendMultipartFormData(uploadAddr, &values);
-		if response.Codetype == types.CodeType_OK  && response.Message == reqNum{
-			remoteAddr = addr
-			apiOk = true
-			break
-		} else{
-			fmt.Printf("Error Response: %+v\n", response)
+		if response, err := rootAPI.GetBase().IPFSClient.Get(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint); err != nil {
+			if dat, err := ioutil.ReadAll(response.Body); err == nil && string(dat) == "true" {
+				ipfsProxyFound = true
+				rootAPI.GetBase().IPFSAddr = ipfsAddr
+				break
+			}
 		}
 	}
 
-	//NewUploadHTTPClient
-	conf.ClientConfig().UploadAddr = strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", remoteAddr, 1)
-	if !apiOk {
-		panic("Fatal: Could not estabilsh connection with API.")
+	if !ipfsProxyFound {
+		panic("Fatal: Could not estabilsh connection with IPFS Proxy API.")
 	}
 
 	return rootAPI

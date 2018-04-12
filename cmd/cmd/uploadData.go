@@ -15,13 +15,15 @@ import (
 
 // getAccountCmd represents the getAccount command
 var uploadCmd = &cobra.Command{
-	Use:   "upload",
+	Use:   "upload [file] [name] [description]",
 	Short: "upload data",
 	Long:  `Upload data.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		if len(args) < 1 {
+		if len(args) < 2 {
 			log.Fatal("Not enough arguments.")
 		}
+
+		// File and Name is required parameters.
 
 		filePath := args[0];
 		file, err := os.Open(filePath)

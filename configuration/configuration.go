@@ -32,6 +32,7 @@ var clientConfig ClientConfiguration
 type ClientConfiguration struct {
 	BasePath 						string		`json:"basePath"`
 	RemoteAddr						string		`json:"remoteAddr"`
+	Metadata						string		`json:"metadata"`
 	UploadAddr						string		`json:"uploadAddr"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`

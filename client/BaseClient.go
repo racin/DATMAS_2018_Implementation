@@ -26,7 +26,7 @@ type BaseClient struct {
 	TMUploadAPI					string
 
 	IPFSClient					*http.Client
-	IPFSAPI						string
+	IPFSAddr					string
 }
 
 func NewTMHTTPClient(endpoint string) *BaseClient {

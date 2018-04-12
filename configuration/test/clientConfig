@@ -2,6 +2,7 @@
   "basePath": "$HOME/.bcfs/",
   "privateKey": "mycert.pem",
   "publicKeys": "PubKeys/",
+  "metadata": "Metadata/",
 
   "tendermintNodes": ["testingoffline","localhost"],
   "websocketEndpoint": "/websocket",
