@@ -12,8 +12,11 @@ import (
 	"io"
 	"encoding/json"
 	"bytes"
+	"github.com/racin/DATMAS_2018_Implementation/client"
+	"time"
 )
 
+const newBlockTimeout = 30 * time.Second
 // getAccountCmd represents the getAccount command
 var uploadCmd = &cobra.Command{
 	Use:   "upload [file] [name] [description]",
@@ -58,7 +61,7 @@ var uploadCmd = &cobra.Command{
 
 		newBlockCh := make(chan interface{}, 1)
 		if err := subToNewBlock(newBlockCh); err != nil {
-			log.Fatal("Could not subscribe to new block events. Error: ", err.Error()
+			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 
 		castedTx := tmtypes.Tx(byteArr)
@@ -77,12 +80,12 @@ var uploadCmd = &cobra.Command{
 				}
 				if evt.Block.Txs.Index(castedTx) > -1 {
 					// Transaction is put in the latest block.
-
 					fmt.Println("File successfully uploaded. CID: ", fileHash)
+					client.WriteMetadata(fileHash, &client.MetadataEntry{Name:fileName, Description:fileDescription})
 				}
-				nTxs += int(evt.Block.Header.NumTxs)
-			case <-ticker.C:
-				panic("Timed out waiting to commit blocks with transactions")
+			case <-time.After(newBlockTimeout):
+				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
+					"Try running a status query with CID: " + fileHash)
 		}
 		// Start timeout to wait for the transaction be put on the ledger.
 	},

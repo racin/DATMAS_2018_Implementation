@@ -32,9 +32,9 @@ func GetMetadata(cid string, mePath ...string) (*MetadataEntry){
 	return me
 }
 
-func WriteAccessList(me *MetadataEntry) error {
+func WriteMetadata(cid string, me *MetadataEntry) error {
 	if data, err := json.Marshal(&me); err == nil {
-		return ioutil.WriteFile(conf.AppConfig().BasePath + conf.AppConfig().AccessList, data, 0600)
+		return ioutil.WriteFile(conf.ClientConfig().BasePath + conf.ClientConfig().Metadata + cid, data, 0600)
 	} else {
 		return err
 	}
