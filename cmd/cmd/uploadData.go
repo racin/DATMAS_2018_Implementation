@@ -8,6 +8,7 @@ import (
 	"os"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"io"
 	"encoding/json"
 	"bytes"
@@ -55,9 +56,23 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Error with upload. ", res.Message)
 		}
 
-		upl := make(chan<- interface{}, 1)
+		newBlockCh := make(chan interface{}, 1)
+		if err := subToNewBlock(newBlockCh); err != nil {
+			log.Fatal("Could not subscribe to new block events. Error: ", err.Error()
+		}
 
-
+		select {
+			case b := <-newBlockCh:
+				evt := b.(tmtypes.TMEventData).Unwrap().(tmtypes.EventDataNewBlock)
+				for index, element := range evt.Block.Txs {
+					if []byte(element) == byteArr {
+						// Our Tx is in this block
+					}
+				}
+				nTxs += int(evt.Block.Header.NumTxs)
+			case <-ticker.C:
+				panic("Timed out waiting to commit blocks with transactions")
+		}
 		// Start timeout to wait for the transaction be put on the ledger.
 		fmt.Println("File successfully uploaded.", err)
 	},

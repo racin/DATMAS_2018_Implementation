@@ -27,10 +27,6 @@ var RootCmd = &cobra.Command{
 Written by Racin Nygaard.	`,
 }
 
-type BCFSClient struct {
-	rootAPI 	client.API
-}
-
 var cfgFile string
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -57,8 +53,8 @@ func Execute() {
 	}
 }
 
-func subToNewBlock(outChan chan<- interface{}) error {
-	return getAPI().GetBase().TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, outChan)
+func subToNewBlock(newBlock chan interface{}) error {
+	return getAPI().GetBase().TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, newBlock)
 }
 
 func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
@@ -79,6 +75,7 @@ func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc 
 	return
 }
 
+var rootAPI client.API
 func getAPI() client.API {
 	if rootAPI != nil {
 		return rootAPI
