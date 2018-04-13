@@ -61,20 +61,30 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error()
 		}
 
+		castedTx := tmtypes.Tx(byteArr)
+		fileName := args[1];
+		var fileDescription string;
+		if len(args) > 1 {
+			fileDescription = args[2]
+		}
 		select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.TMEventData).Unwrap().(tmtypes.EventDataNewBlock)
-				for index, element := range evt.Block.Txs {
-					if []byte(element) == byteArr {
-						// Our Tx is in this block
-					}
+				// Validate
+				if err := evt.Block.ValidateBasic(); err != nil {
+					// System is broken. Notify administrators
+					log.Fatal("Could not validate latest block. Error: ", err.Error())
+				}
+				if evt.Block.Txs.Index(castedTx) > -1 {
+					// Transaction is put in the latest block.
+
+					fmt.Println("File successfully uploaded. CID: ", fileHash)
 				}
 				nTxs += int(evt.Block.Header.NumTxs)
 			case <-ticker.C:
 				panic("Timed out waiting to commit blocks with transactions")
 		}
 		// Start timeout to wait for the transaction be put on the ledger.
-		fmt.Println("File successfully uploaded.", err)
 	},
 }
 

@@ -23,9 +23,9 @@ const (
 )
 
 type Identity struct {
-	AccessLevel AccessLevel    `json:"level"`
-	Name        string `json:"name"`
-	PublicKey   string `json:"publickey"`
+	AccessLevel AccessLevel    	`json:"level"`
+	Name        string 			`json:"name"`
+	PublicKey   string 			`json:"publickey"`
 }
 type accessList struct {
 	Identities map[string]Identity `json:"identities"`
