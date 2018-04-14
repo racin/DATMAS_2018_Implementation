@@ -1,26 +1,25 @@
-package app
+package crypto
 
 type StorageSample struct {
-	cid						string
-	sample					map[string]byte
+	Sample					map[string]byte		`json:"sample"`
 }
 
 type StorageChallenge struct {
-	cid						string
-	challengesignature		[]byte
-	challenge				[]byte
+	//Challengesignature		[]byte				`json:"challengesignature"`
+	Challenge				[]byte				`json:"challenge"`
 }
 
 type StorageChallengeProof struct {
-	StorageChallenge
-	proof					[]byte
-	proofsignature			[]byte
+	SignedStruct // Of type StorageChallenge
+	Proof					[]byte				`json:"proof"`
+	//Proofsignature			[]byte				`json:"proofsignature"`
 }
 
-
-func (app *Application) GenerateStorageSample(fileByte *[]byte) *StorageSample{
+func GenerateStorageSample(fileByte *[]byte, privkeyPath string) *StorageSample{
 	return &StorageSample{}
 }
+
+
 
 func (sp *StorageSample) StoreSample() error{
 	// Distribute the sample to the other consensus nodes. (Remember that different layers can not act maliciously

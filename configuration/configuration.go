@@ -24,6 +24,7 @@ type AppConfiguration struct {
 	PrivateKey			string		`json:"privateKey"`
 	PublicKeys			string		`json:"publicKeys"`
 	AccessList			string		`json:"accessList"`
+	TempUploadPath		string		`json:"tempUploadPath"`
 	IpfsNodes			[]string	`json:"ipfsNodes"`
 	IpfsProxyAddr		string		`json:"ipfsProxyAddr"`
 }
@@ -59,6 +60,7 @@ type IPFSProxyConfiguration struct {
 	ListenAddr 						string		`json:"listenAddr"`
 	AccessList						string		`json:"accessList"`
 	PublicKeys						string		`json:"publicKeys"`
+	TempUploadPath					string		`json:"tempUploadPath"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {

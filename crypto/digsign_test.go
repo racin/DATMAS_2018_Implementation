@@ -6,12 +6,14 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 const (
 	certName 		= "mycert_test"
 	certPathTest 	= "test_certificate/mycert_test"
 )
+
 func TestSignature(t *testing.T){
 	if _, err := conf.LoadAppConfig("../configuration/test/appConfig"); err != nil {
 		t.Fatal("Error loading app config: " + err.Error())
@@ -56,6 +58,23 @@ func TestSignature(t *testing.T){
 
 		if signature, err := privKey.Sign(hashData); err == nil {
 			verify := pubKey.Verify(hashData, signature)
+			assert.True(t, verify, "Signature did not match.")
+		} else {
+			t.Fatal("Could not sign data. Error: " + err.Error())
+		}
+	})
+	t.Run("SignHashStruct", func(t *testing.T){
+		// Generate a set of random keys
+		trans := &TestHashStruct{Signable: Signable{}, Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
+		if err != nil {
+			t.Fatal("Could not hash data. Error: " + err.Error())
+		}
+		fmt.Printf("%v\n", trans)
+		_ = trans.Hash()
+		//HashStruct(trans)
+
+		if signedTrans, err := trans.Sign(privKey); err == nil {
+			verify := signedTrans.Verify(pubKey)
 			assert.True(t, verify, "Signature did not match.")
 		} else {
 			t.Fatal("Could not sign data. Error: " + err.Error())

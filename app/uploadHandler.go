@@ -51,9 +51,13 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	tx := &SignedTransaction{}
+	stx := &SignedTransaction{}
+	var tx Transaction
 	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction");
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
+		return
+	} else if tx, ok = stx.Base.(Transaction); !ok {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (Transaction)");
 		return
 	}
 
@@ -73,7 +77,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Verify signature in transaction.
 	if ok, msg := VerifySignature(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
-		txHash, tx.Signature); !ok {
+		txHash, stx.Signature); !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
 		return
 	}
@@ -91,11 +95,11 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check if data hash is already in the list of uploads pending
+	/*// Check if data hash is already in the list of uploads pending
 	if _, ok := app.tempUploads[fileHash]; !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash not in the list of pending uploads.");
 		return // Data hash not in the list of pending uploads
-	}
+	}*/
 
 	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
@@ -112,7 +116,8 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if the hash of the upload file equals the hash contained in the transaction
-	if fileBytes, err := ioutil.ReadAll(fopen); err != nil {
+	fileBytes, err := ioutil.ReadAll(fopen);
+	if err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
 		return
 	} else if uplFileHash, err := crypto.IPFSHashData(fileBytes); err != nil {
@@ -123,7 +128,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out, err := os.Create("/tmp/" + file.Filename)
+	out, err := os.Create(conf.AppConfig().TempUploadPath + fileHash)
 	defer out.Close()
 	if err != nil {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Unable to create the file for writing. Check your write access privilege");
@@ -137,8 +142,12 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Generate Sample of data. Distribute it to other TM nodes
+	//sample := GenerateStorageSample(&fileBytes, conf.AppConfig().PrivateKey)
+
 	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
 
+	//app.BaseApplication.CheckTx(tx)
 	// TODO: Replay transaction to CheckTx?
 	// CheckTx issues a challenge to verify that file is stored. Then Pins and Delivers and Commits.
 }

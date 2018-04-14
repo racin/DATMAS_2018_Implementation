@@ -2,5 +2,6 @@
     "basePath": "$HOME/.bcfs/",
     "accessList": "accessList",
     "listenAddr": ":46660",
-    "publicKeys": "PubKeys/"
+    "publicKeys": "PubKeys/",
+    "tempUploadPath": "/tmp/"
 }

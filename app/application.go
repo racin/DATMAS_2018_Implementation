@@ -91,10 +91,6 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
-func VerifySignature_tx(pubkeyPath string, stx *SignedTransaction) (bool, string){
-	return VerifySignature(pubkeyPath, stx.Hash(), stx.Signature)
-}
-
 func VerifySignature(pubkeyPath string, hash string, signature []byte) (bool, string) {
 	// Check if public key exists and if message is signed.
 	pk, err := crypto.LoadPublicKey(pubkeyPath)
@@ -113,10 +109,13 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	fmt.Println("Data received: " + string(txBytes))
-	tx := &SignedTransaction{}
-	if err := json.Unmarshal(txBytes, tx); err != nil {
-		fmt.Println(err.Error())
-		return abci.ResponseCheckTx{Info: "Error"}
+	stx := &SignedTransaction{}
+	var tx Transaction
+	var ok bool = false
+	if err := json.Unmarshal(txBytes, stx); err != nil {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
+	} else if tx, ok = stx.Base.(Transaction); !ok {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not Marshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
 
@@ -126,8 +125,8 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	if ok, msg := VerifySignature_tx(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
-		tx); !ok {
+	if ok, msg := VerifySignature(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
+		tx.Hash(), stx.Signature); !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: msg}
 	}
 

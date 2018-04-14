@@ -3,6 +3,7 @@
   "privateKey": "mycert.pem",
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
+  "tempUploadPath": "/tmp/",
 
 
   "listenAddr": "tcp://0.0.0.0:46658",

@@ -157,7 +157,7 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get hash of input file.");
 		return
 	} else if uplFileHash != fileHash {
-		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Hash of input file not present in transaction.");
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash parameter does not equal hash of uploaded file.");
 		return
 	}
 
@@ -170,8 +170,26 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 }
+func (proxy *Proxy) GetProof(cidStr string) *app.StorageChallengeProof{
+	proof := &app.StorageChallengeProof{Proof:[]byte("abc")}
+	err := proxy.client.IPFS().Get(cidStr, conf.IPFSProxyConfig().TempUploadPath)
+	if err != nil {
+		return nil
+	}
+
+
+	// Implement PoS here. Now simply check if hash is correct.
+	if ipfsHash, err := crypto.IPFSHashFile(conf.IPFSProxyConfig().TempUploadPath + cidStr); err != nil {
+		return nil
+	} else if ipfsHash != cidStr {
+		return nil
+	}
+
+	return proof
+}
 func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 	// Only Consensus access level can execute this method.
+	//
 
 }
 func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
@@ -195,23 +213,13 @@ func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var tmp string = "/tmp/"
-	err = proxy.client.IPFS().Get(cidStr, tmp)
+	err = proxy.client.IPFS().Get(cidStr, conf.IPFSProxyConfig().TempUploadPath)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSUnknownAddress, "Could not find file with hash. Error: " + err.Error());
 		return
 	}
 
-	// Implement PoS here. Now simply check if hash is correct.
-	if ipfsHash, err := crypto.IPFSHashFile(tmp + cidStr); err != nil {
-		writeResponse(&w, types.CodeType_InternalError, "Could not read file. Error: " + err.Error());
-		return
-	} else if ipfsHash != cidStr {
-		writeResponse(&w, types.CodeType_InternalError, "Hash of file is not equal to input");
-		return
-	}
-
-	// PoS OK, Pin file.
+	// Pin file.
 	b58, err := mh.FromB58String(cidStr)
 	if err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
