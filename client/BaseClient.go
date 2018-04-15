@@ -13,9 +13,6 @@ import (
 	"net/http"
 	"time"
 	"io"
-	"bytes"
-	"mime/multipart"
-	"os"
 	"io/ioutil"
 )
 
@@ -37,7 +34,7 @@ func NewTMHTTPClient(endpoint string) *BaseClient {
 }
 
 func (c *BaseClient) SendMultipartFormData(endpoint string, values *map[string]io.Reader) (bt.ResponseUpload) {
-	buffer, boundary := getMultipartValues(values)
+	buffer, boundary := app.GetMultipartValues(values)
 	var result bt.ResponseUpload
 
 	response, err := c.TMUploadClient.Post(endpoint, boundary, buffer)
@@ -53,40 +50,6 @@ func (c *BaseClient) SendMultipartFormData(endpoint string, values *map[string]i
 	}
 	fmt.Printf("The result: %#v\n", result)
 	return result
-}
-
-func getMultipartValues(values *map[string]io.Reader) (buffer *bytes.Buffer, boundary string){
-	var b bytes.Buffer
-	var err error
-	w := multipart.NewWriter(&b)
-	defer w.Close()
-
-	for index, element := range *values {
-		var writer io.Writer
-		// If file has a close method.
-		if file, ok := element.(io.Closer); ok {
-			defer file.Close()
-		}
-
-		// Check if a file is added. Else add it as a regular data element.
-		if file, ok := element.(*os.File); ok {
-			writer, err = w.CreateFormFile(index, file.Name());
-		} else {
-			writer, err = w.CreateFormField(index);
-		}
-
-		// If there are problems with adding an element, continue to the next one.
-		if err != nil {
-			continue
-		}
-
-		if _, err = io.Copy(writer, element); err != nil {
-			continue
-		}
-
-	}
-
-	return &b, w.FormDataContentType()
 }
 
 func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {

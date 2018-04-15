@@ -145,7 +145,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate Sample of data. Distribute it to other TM nodes
-	//sample := GenerateStorageSample(&fileBytes, conf.AppConfig().PrivateKey)
+	sample := crypto.GenerateStorageSample(&fileBytes, conf.AppConfig().PrivateKey)
 
 	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
 

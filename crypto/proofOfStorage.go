@@ -1,7 +1,17 @@
 package crypto
 
+import (
+	"crypto/rand"
+	"math/big"
+	"encoding/binary"
+	"math"
+)
+
+const numSamples = 1000;
+
+// By using uint64 as the index it is possible to index files up to 2048 Exa bytes.
 type StorageSample struct {
-	Sample					map[string]byte		`json:"sample"`
+	Samples					map[uint64]byte		`json:"sample"`
 }
 
 type StorageChallenge struct {
@@ -15,7 +25,28 @@ type StorageChallengeProof struct {
 	//Proofsignature			[]byte				`json:"proofsignature"`
 }
 
-func GenerateStorageSample(fileByte *[]byte, privkeyPath string) *StorageSample{
+func GenerateStorageSample(fileByte *[]byte) *StorageSample{
+	ret := &StorageSample{Samples:make(map[uint64]byte)}
+
+	a, b := rand.Int(rand.Reader, big.NewInt(int64(len(*fileByte))))
+	for i := 0; i < numSamples; i++ {
+		buf := make([]byte, 8)
+		_, err := rand.Read(buf)
+
+		if err != nil {
+			return nil // Problems generating a random number.
+		}
+
+		smplByte := binary.LittleEndian.Uint64(buf)
+
+		ret.Samples[smplByte] =
+	}
+
+
+
+	z.SetUint64(64)
+	num := rand.Int(rand.Reader, big.NewInt(math.Exp2(64)))
+
 	return &StorageSample{}
 }
 

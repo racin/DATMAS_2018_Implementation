@@ -13,6 +13,9 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"encoding/json"
 	"bytes"
+	"mime/multipart"
+	"os"
+	"io"
 )
 
 
@@ -51,24 +54,29 @@ func (app *Application) getIPFSProxyAddr() (string, error) {
 }
 
 func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
-	signedStruct *crypto.SignedStruct) (*types.IPFSReponse) {
-	var payload bytes.Buffer
+	input interface{}) (*types.IPFSReponse) {
+	var payload *bytes.Buffer
 	var contentType string
 	res := &types.IPFSReponse{Codetype:types.CodeType_InternalError}
-	if endpoint == conf.AppConfig().IpfsAddnopinEndpoint {
-		contentType = ""
-	} else {
-		if byteArr, err := json.Marshal(signedStruct); err != nil {
-			res.Message = err.Error()
+	switch data := input.(type){
+		case *crypto.SignedStruct:
+			if byteArr, err := json.Marshal(data); err != nil {
+				res.Message = err.Error()
+				return res
+			} else {
+				*payload = *bytes.NewBuffer(byteArr)
+			}
+			contentType = "application/json"
+		case *map[string]io.Reader:
+			payload, contentType = GetMultipartValues(data)
+		default:
+			res.Message = "Input must be of type *crypto.SignedStruct or *map[string]io.Reader."
 			return res
-		} else {
-			payload.Write(byteArr)
-		}
-		contentType = "application/json"
 	}
+
 	ipfsAddr := strings.Replace(conf.AppConfig().IpfsProxyAddr, "$IpfsNode", ipfsproxy, 1)
 	fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
-	if response, err := app.IpfsHttpClient.Post(ipfsAddr + endpoint, contentType, &payload); err != nil{
+	if response, err := app.IpfsHttpClient.Post(ipfsAddr + endpoint, contentType, payload); err == nil{
 		if dat, err := ioutil.ReadAll(response.Body); err == nil{
 			if err := json.Unmarshal(dat, res); err != nil {
 				res.Message = err.Error()
@@ -77,9 +85,39 @@ func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
 			res.Message = err.Error()
 		}
 	} else {
+		res.Message = err.Error()
+	}
+
+	return res
+}
+
+func GetMultipartValues(values *map[string]io.Reader) (buffer *bytes.Buffer, boundary string){
+	var b bytes.Buffer
+	var err error
+	w := multipart.NewWriter(&b)
+	defer w.Close()
+
+	for index, element := range *values {
+		var writer io.Writer
+		// If file has a close method.
+		if file, ok := element.(io.Closer); ok {
+			defer file.Close()
 		}
 
-	return "", errors.New("Fatal: Could not connect to IPFS Proxy")
+		// Check if a file is added. Else add it as a regular data element.
+		if file, ok := element.(*os.File); ok {
+			writer, err = w.CreateFormFile(index, file.Name());
+		} else {
+			writer, err = w.CreateFormField(index);
+		}
+
+		// If there was no errors creating the form element, try to copy the element to it
+		if err == nil {
+			io.Copy(writer, element)
+		}
+	}
+
+	return &b, w.FormDataContentType()
 }
 
 type QueryBroadcastReponse struct {
