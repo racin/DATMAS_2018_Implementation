@@ -11,8 +11,9 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"github.com/racin/DATMAS_2018_Implementation/types"
+	//"github.com/racin/DATMAS_2018_Implementation/types"
 	"reflect"
+	"bytes"
 )
 
 type SignedStruct struct {
@@ -20,62 +21,29 @@ type SignedStruct struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
-type Signable struct {
-}
-
 type TestHashStruct struct {
-	Signable
 	Message			string
 	Number			int
 	Data			[]byte
 }
 
-
 func HashStruct(in interface{}) string {
-	t := reflect.TypeOf(in)
-	for i := 0; i < t.NumField(); i++ {
-		fmt.Printf("%+v\n", t.Field(i))
-	}
-	switch in := in.(type) {
-	case *TestHashStruct, *types.Transaction, *StorageChallenge:
-		data := []byte(fmt.Sprintf("%v", in))
-		fmt.Printf("Hashing this: %v\n", in)
-		hash, _ := HashData(data)
-		return hash
-	default:
-		fmt.Printf("Could not type assert! %+v ___ %+v \n", in)
-		return ""
-	}
+	buffer := bytes.NewBuffer([]byte{38})
+	buffer.WriteString(fmt.Sprintf("%v", reflect.ValueOf(in)))
+	hash, _ := HashData(buffer.Bytes())
+	return hash
 }
 
-
-func (h *Signable) Hash() string {
-	fmt.Printf("Hashing this: %v\n", h)
-	fmt.Printf("Hashing this: %v\n", reflect.ValueOf(h))
-	fmt.Printf("Hashing this: %v\n", reflect.ValueOf(*h))
-	fmt.Printf("Hashing this: %v\n", h)
-
-	return HashStruct(h)
-	/*
-	data := []byte(fmt.Sprintf("%v", h))
-	fmt.Printf("Hashing this: %v\n", h)
-	hash, _ := HashData(data)
-	return hash*/
-}
-
-func (t *Signable) Sign(keys *Keys) (*SignedStruct, error) {
-	if signature, err := keys.Sign(t.Hash()); err != nil {
+func SignStruct(in interface{}, keys *Keys) (*SignedStruct, error) {
+	if signature, err := keys.Sign(HashStruct(in)); err != nil {
 		return nil, err
 	} else {
-		return &SignedStruct{Base: *t, Signature: signature}, nil
+		return &SignedStruct{Base: in, Signature: signature}, nil
 	}
 }
 
 func (t *SignedStruct) Verify(keys *Keys) bool {
-	if signable, ok := t.Base.(Signable); ok {
-		return keys.Verify(signable.Hash(), t.Signature)
-	}
-	return false;
+	return keys.Verify(HashStruct(t.Base), t.Signature)
 }
 
 type Keys struct {

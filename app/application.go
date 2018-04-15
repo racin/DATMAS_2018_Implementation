@@ -37,14 +37,17 @@ func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("Deliver trigger. Hash of data: " + txHash);
-	tx := &Transaction{}
-	tx.Data = "abc"
-	if err := json.Unmarshal(txBytes, tx); err != nil {
-		return abci.ResponseDeliverTx{Info: "Error"}
+	stx := &crypto.SignedStruct{}
+	var tx types.Transaction
+	var ok bool = false
+	if err := json.Unmarshal(txBytes, stx); err != nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
+	} else if tx, ok = stx.Base.(types.Transaction); !ok {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not Marshal transaction (Transaction)"}
 	}
-	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
+	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 	switch tx.Type {
-	case DownloadData:
+	case types.TransactionType_DownloadData:
 		{
 			/*if err := deliverAccountAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
@@ -53,28 +56,28 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 
-	case UploadData:
+	case types.TransactionType_UploadData:
 		{
 			/*if err := deliverAccountDelTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return abci.ResponseDeliverTx{Info: "Error"};
 		}
-	case RemoveData:
+	case types.TransactionType_RemoveData:
 		{
 			/*if err := deliverReputationGiveTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return abci.ResponseDeliverTx{Info: "Error"};
 		}
-	case VerifyStorage:
+	case types.TransactionType_VerifyStorage:
 		{
 			/*if err := deliverSecretAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
 			}*/
 			return abci.ResponseDeliverTx{Info: "Error"};
 		}
-	case ChangeContentAccess:
+	case types.TransactionType_ChangeContentAccess:
 		{
 			/*if err := deliverSecretUpdateTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
@@ -91,33 +94,20 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
-func VerifySignature(pubkeyPath string, hash string, signature []byte) (bool, string) {
-	// Check if public key exists and if message is signed.
-	pk, err := crypto.LoadPublicKey(pubkeyPath)
-	if err != nil {
-		return false, "Could not locate public key"
-	}
 
-	// Check if transaction is signed.
-	if !pk.Verify(hash, signature) {
-		return false,"Could not verify signature"
-	}
-
-	return true, ""
-}
 func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	fmt.Println("Data received: " + string(txBytes))
-	stx := &SignedTransaction{}
-	var tx Transaction
+	stx := &crypto.SignedStruct{}
+	var tx types.Transaction
 	var ok bool = false
 	if err := json.Unmarshal(txBytes, stx); err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	} else if tx, ok = stx.Base.(Transaction); !ok {
+	} else if tx, ok = stx.Base.(types.Transaction); !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not Marshal transaction (Transaction)"}
 	}
-	fmt.Printf("Hash of transaction: %s\n",tx.Hash())
+	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
 	// Get access list
 	identity, ok := GetAccessList().Identities[tx.Identity];
@@ -125,13 +115,16 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	if ok, msg := VerifySignature(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
-		tx.Hash(), stx.Signature); !ok {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: msg}
+	// Check if public key exists and if message is signed.
+	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
+	if err != nil {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
+	} else if !stx.Verify(pk) {
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
 	}
 
 	switch tx.Type {
-	case DownloadData:
+	case types.TransactionType_DownloadData:
 		{
 			/*if err := checkAccountAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
@@ -140,7 +133,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 			return abci.ResponseCheckTx{Info: "Error"}
 		}
 
-	case UploadData:
+	case types.TransactionType_UploadData:
 		{
 			// Check if uploader is allowed to upload data.
 			if identity.AccessLevel < 1 {
@@ -165,7 +158,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSBeginUploadOK), Log: "Data hash added to list of pending uploads"}
 			}
 		}
-	case RemoveData:
+	case types.TransactionType_RemoveData:
 		{
 			/*if err := checkReputationGiveTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
@@ -173,7 +166,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 			fmt.Println("RemoveData")
 			return abci.ResponseCheckTx{Info: "Error"}
 		}
-	case VerifyStorage:
+	case types.TransactionType_VerifyStorage:
 		{
 			/*if err := checkSecretAddTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
@@ -181,7 +174,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 			fmt.Println("VerifyStorage")
 			return abci.ResponseCheckTx{Info: "Error"};
 		}
-	case ChangeContentAccess:
+	case types.TransactionType_ChangeContentAccess:
 		{
 			/*if err := checkSecretUpdateTransaction(tx, app.state); err != nil {
 				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}

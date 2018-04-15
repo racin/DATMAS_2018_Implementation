@@ -19,8 +19,6 @@ func GenerateStorageSample(fileByte *[]byte, privkeyPath string) *StorageSample{
 	return &StorageSample{}
 }
 
-
-
 func (sp *StorageSample) StoreSample() error{
 	// Distribute the sample to the other consensus nodes. (Remember that different layers can not act maliciously
 	// by colluding).

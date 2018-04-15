@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"testing"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
 )
 
 const (
@@ -56,28 +55,30 @@ func TestSignature(t *testing.T){
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}
 
-		if signature, err := privKey.Sign(hashData); err == nil {
+		signature, err := privKey.Sign(hashData);
+		if err == nil {
 			verify := pubKey.Verify(hashData, signature)
 			assert.True(t, verify, "Signature did not match.")
 		} else {
 			t.Fatal("Could not sign data. Error: " + err.Error())
 		}
+		signature2, err := privKey.Sign(hashData);
+		assert.NotEqual(t, signature, signature2, "Signatures is not properly salted.")
 	})
 	t.Run("SignHashStruct", func(t *testing.T){
-		// Generate a set of random keys
-		trans := &TestHashStruct{Signable: Signable{}, Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
+		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
 		if err != nil {
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}
-		fmt.Printf("%v\n", trans)
-		_ = trans.Hash()
-		//HashStruct(trans)
 
-		if signedTrans, err := trans.Sign(privKey); err == nil {
+		signedTrans, err := SignStruct(trans, privKey);
+		if err == nil {
 			verify := signedTrans.Verify(pubKey)
 			assert.True(t, verify, "Signature did not match.")
 		} else {
 			t.Fatal("Could not sign data. Error: " + err.Error())
 		}
+		signedTrans2, err := SignStruct(trans, privKey);
+		assert.NotEqual(t, signedTrans, signedTrans2, "Signatures is not properly salted.")
 	})
 }

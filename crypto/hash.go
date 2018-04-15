@@ -30,12 +30,11 @@ func GetFingerPrint(key *Keys) (string, error){
 	}
 }
 func HashData(data []byte) (string, error) {
-	var err error
 	if mhash, err := mh.Sum(data, HashFunction, -1); err == nil {
 		return mhash.B58String(), nil
+	} else {
+		return "", err
 	}
-
-	return "", err
 }
 func HashFile(filePath string) (string, error) {
 	var err error

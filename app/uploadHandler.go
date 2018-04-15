@@ -51,8 +51,8 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stx := &SignedTransaction{}
-	var tx Transaction
+	stx := &crypto.SignedStruct{}
+	var tx types.Transaction
 	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
 		return

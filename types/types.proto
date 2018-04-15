@@ -42,6 +42,17 @@ enum CodeType {
 //----------------------------------------
 // Request types
 
+enum TransactionType {
+  // Tendermint
+  DownloadData = 0;
+  UploadData = 1;
+  RemoveData = 2;
+  VerifyStorage = 3;
+  ChangeContentAccess = 4;
+
+  // IPFS Proxy
+  IPFSProxy = 5;
+}
 message Request {
   oneof value {
     RequestEcho echo = 2;

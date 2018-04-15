@@ -10,7 +10,7 @@ type Transaction struct {
 	Type      	TransactionType `json:"type"`
 	Timestamp 	string       	`json:"timestamp"`
 }
-
+/*
 type TransactionType string
 const (
 	// Tendermint
@@ -22,7 +22,7 @@ const (
 
 	// IPFS Proxy
 	IPFSProxy			TransactionType = "ipfsproxy"
-)
+)*/
 
 /*
 func (t *Transaction) Sign(keys *crypto.Keys) (*SignedTransaction, error) {
