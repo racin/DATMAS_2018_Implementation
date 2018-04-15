@@ -116,8 +116,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	}
 
 	// Check if public key exists and if message is signed.
-	pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey)
-	if err != nil {
+	if pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey); err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
 	} else if !stx.Verify(pk) {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}

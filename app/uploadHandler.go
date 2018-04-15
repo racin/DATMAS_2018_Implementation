@@ -56,13 +56,13 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
 		return
-	} else if tx, ok = stx.Base.(Transaction); !ok {
+	} else if tx, ok = stx.Base.(types.Transaction); !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (Transaction)");
 		return
 	}
 
 	// Check for replay attack
-	txHash := tx.Hash()
+	txHash := crypto.HashStruct(tx)
 	if app.HasSeenTranc(txHash) {
 		writeUploadResponse(&w, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack.");
 		return
@@ -75,10 +75,12 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify signature in transaction.
-	if ok, msg := VerifySignature(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey,
-		txHash, stx.Signature); !ok {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, msg);
+	// Check if public key exists and if message is signed.
+	if pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey); err != nil {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
+		return
+	} else if pk.Verify(txHash, stx.Signature) {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not verify signature");
 		return
 	}
 
