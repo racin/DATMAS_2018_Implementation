@@ -4,7 +4,6 @@ import (
 	"fmt"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"github.com/racin/DATMAS_2018_Implementation/client"
-	"github.com/racin/DATMAS_2018_Implementation/app"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/spf13/cobra"
 
@@ -57,7 +56,7 @@ func subToNewBlock(newBlock chan interface{}) error {
 	return getAPI().GetBase().TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, newBlock)
 }
 
-func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc *app.SignedTransaction) {
+func getSignedTransaction(txtype types.TransactionType, data interface{}) (stranc *crypto.SignedStruct) {
 	keys, err := crypto.LoadPrivateKey(conf.ClientConfig().BasePath + conf.ClientConfig().PrivateKey)
 	if err != nil {
 		panic("Could not load private key. Use the --generateKeys option to generate a new one. Error: " + err.Error())
@@ -68,7 +67,7 @@ func getSignedTransaction(txtype app.TransactionType, data interface{}) (stranc 
 		panic("Could not load fingerprint of public key. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}
 
-	stranc, err = app.NewTx(data, fp, txtype).Sign(keys);
+	stranc, err = crypto.SignStruct(types.NewTx(data, fp, txtype), keys);
 	if err != nil {
 		panic("Could not sign transaction. Private/Public key pair may not match. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}
@@ -121,7 +120,7 @@ func getAPI() client.API {
 
 	// Get IPFS Proxy API
 	for _, addr := range conf.ClientConfig().IpfsNodes {
-		ipfsAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$IpfsNode", addr, 1)
+		ipfsAddr := strings.Replace(conf.ClientConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
 		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
 		if response, err := rootAPI.GetBase().IPFSClient.Get(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint); err != nil {

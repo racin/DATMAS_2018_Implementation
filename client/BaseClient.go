@@ -32,7 +32,7 @@ type BaseClient struct {
 func NewTMHTTPClient(endpoint string) *BaseClient {
 	tm := rpcClient.NewHTTP(endpoint, conf.ClientConfig().WebsocketEndPoint)
 	TMhttpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
-	IpfshttpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second}
+	IpfshttpClient := &http.Client{Timeout: time.Duration(conf.ClientConfig().IpfsProxyTimeoutSeconds) * time.Second}
 	return &BaseClient{TMClient: tm, TMUploadClient: TMhttpClient, IPFSClient: IpfshttpClient}
 }
 

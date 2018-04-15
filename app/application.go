@@ -3,15 +3,14 @@ package app
 import (
 	"encoding/json"
 	"log"
-
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
-	//mp "github.com/tendermint/tendermint/mempool"
-	//"github.com/tendermint/merkleeyes/iavl"
 	"fmt"
-
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"net/http"
+	"time"
+	rpcClient "github.com/tendermint/tendermint/rpc/client"
 )
 
 type Application struct {
@@ -22,12 +21,18 @@ type Application struct {
 
 	tempUploads 		map[string]bool
 	seenTranc 			map[string]bool
+
+	IpfsHttpClient		*http.Client
+	TMRpcClients		map[string]rpcClient.Client
+
 }
 
 func NewApplication() *Application {
-	// tree : iavl.NewIAVLTree(0, nil)
-	return &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr,
-		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool)}
+	app := &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr,
+		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool),
+		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second}}
+	app.setupTMRpcClients()
+	return app
 }
 
 func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
@@ -140,10 +145,13 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 			}
 
 			// Check if data hash is contained within the transaction.
-			dataHash, ok := tx.Data.(string)
+			reqUpload, ok := tx.Data.(types.RequestUpload)
 			if !ok {
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}
 			}
+
+			// Check if a file with this hash exists on an IPFS node and is uploaded to our server.
+			
 
 			// Check if data hash is already in the list of uploads pending
 			if val, ok := app.tempUploads[dataHash]; ok && val {

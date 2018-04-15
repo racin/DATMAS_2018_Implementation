@@ -15,18 +15,30 @@ const (
 
 var appConfig AppConfiguration
 type AppConfiguration struct {
-	BasePath 			string		`json:"basePath"`
-	ListenAddr 			string		`json:"listenAddr"`
-	UploadAddr 			string		`json:"uploadAddr"`
-	UploadEndpoint		string		`json:"uploadEndpoint"`
-	RpcType 			string		`json:"rpcType"`
-	Info				string		`json:"appInfo"`
-	PrivateKey			string		`json:"privateKey"`
-	PublicKeys			string		`json:"publicKeys"`
-	AccessList			string		`json:"accessList"`
-	TempUploadPath		string		`json:"tempUploadPath"`
-	IpfsNodes			[]string	`json:"ipfsNodes"`
-	IpfsProxyAddr		string		`json:"ipfsProxyAddr"`
+	BasePath 						string		`json:"basePath"`
+	ListenAddr 						string		`json:"listenAddr"`
+	UploadAddr 						string		`json:"uploadAddr"`
+	UploadEndpoint					string		`json:"uploadEndpoint"`
+	RpcType 						string		`json:"rpcType"`
+	Info							string		`json:"appInfo"`
+	PrivateKey						string		`json:"privateKey"`
+	PublicKeys						string		`json:"publicKeys"`
+	AccessList						string		`json:"accessList"`
+	TempUploadPath					string		`json:"tempUploadPath"`
+	TendermintNodes					[]string	`json:"tendermintNodes"`
+	WebsocketEndPoint				string		`json:"websocketEndpoint"`
+	WebsocketAddr					string		`json:"websocketAddr"`
+	IpfsNodes						[]string	`json:"ipfsNodes"`
+	IpfsProxyAddr					string		`json:"ipfsProxyAddr"`
+	IpfsProxyTimeoutSeconds			int			`json:"ipfsProxyTimeoutSeconds"`
+	IpfsIsupEndpoint				string		`json:"ipfsIsupEndpoint"`
+	IpfsStatusallEndpoint			string		`json:"ipfsStatusallEndpoint"`
+	IpfsPinfileEndpoint				string		`json:"ipfsPinfileEndpoint"`
+	IpfsUnpinfileEndpoint			string		`json:"ipfsUnpinfileEndpoint"`
+	IpfsGetEndpoint					string		`json:"ipfsGetEndpoint"`
+	IpfsStatusEndpoint				string		`json:"ipfsStatusEndpoint"`
+	IpfsAddnopinEndpoint			string		`json:"ipfsAddnopinEndpoint"`
+	IpfsChallengeEndpoint			string		`json:"ipfsChallengeEndpoint"`
 }
 
 var clientConfig ClientConfiguration
@@ -42,7 +54,7 @@ type ClientConfiguration struct {
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
 	IpfsNodes						[]string	`json:"ipfsNodes"`
-	ipfsProxyTimeoutSeconds			string		`json:"ipfsProxyTimeoutSeconds"`
+	IpfsProxyTimeoutSeconds			int			`json:"ipfsProxyTimeoutSeconds"`
 	IpfsProxyAddr					string		`json:"ipfsProxyAddr"`
 	IpfsIsupEndpoint				string		`json:"ipfsIsupEndpoint"`
 	IpfsStatusallEndpoint			string		`json:"ipfsStatusallEndpoint"`

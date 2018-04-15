@@ -53,6 +53,12 @@ enum TransactionType {
   // IPFS Proxy
   IPFSProxy = 5;
 }
+
+message RequestUpload {
+  string cid = 1; // Hash of file
+  string ipfsNode = 2; // IPFS node which has temporarily stored the file.
+}
+
 message Request {
   oneof value {
     RequestEcho echo = 2;

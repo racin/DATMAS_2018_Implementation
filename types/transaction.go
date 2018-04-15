@@ -10,6 +10,12 @@ type Transaction struct {
 	Type      	TransactionType `json:"type"`
 	Timestamp 	string       	`json:"timestamp"`
 }
+
+func NewTx(data interface{}, identity string, t TransactionType) *Transaction {
+	return &Transaction{Data: data, Identity: identity, Type: t, Timestamp: time.Now().Format(time.RFC3339)}
+
+}
+
 /*
 type TransactionType string
 const (
@@ -39,8 +45,3 @@ func (t *SignedTransaction) Verify(keys *crypto.Keys) bool {
 	}
 	return false;
 }*/
-
-func NewTx(data interface{}, identity string, t TransactionType) *Transaction {
-	return &Transaction{Data: data, Identity: identity, Type: t, Timestamp: time.Now().Format(time.RFC3339)}
-
-}

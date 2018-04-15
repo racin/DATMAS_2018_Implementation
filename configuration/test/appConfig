@@ -5,6 +5,9 @@
   "accessList": "accessList",
   "tempUploadPath": "/tmp/",
 
+  "tendermintNodes": ["testingoffline","localhost"],
+  "websocketEndpoint": "/websocket",
+  "websocketAddr": "http://$TmNode:46657",
 
   "listenAddr": "tcp://0.0.0.0:46658",
   "uploadAddr": ":46659",

@@ -40,7 +40,7 @@ func (proxy *Proxy) StartHTTPAPI(){
 	router := mux.NewRouter()
 
 	// Empty Data parameter (Request is JSON of SignedTransaction)
-	router.HandleFunc("/isup", proxy.IsUp).Methods("GET")
+	router.HandleFunc("/isup", proxy.IsUp).Methods("POST")
 	router.HandleFunc("/statusall", proxy.StatusAll).Methods("POST")
 
 	// Data parameter contains CID (Request is JSON of SignedTransaction)
@@ -74,8 +74,8 @@ func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message stri
 	json.NewEncoder(*w).Encode(&types.IPFSReponse{Message:message, Codetype:codeType})
 }
 
-func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel app.AccessLevel) (*app.SignedTransaction, types.CodeType, string) {
-	tx := &app.SignedTransaction{}
+func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel app.AccessLevel) (*crypto.SignedStruct, types.CodeType, string) {
+	tx := &crypto.SignedStruct{}
 	if err := json.Unmarshal([]byte(txString), tx); err != nil {
 		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction"
 	}
