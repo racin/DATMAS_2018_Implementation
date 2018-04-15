@@ -4,6 +4,13 @@ import (
 	"testing"
 	"github.com/stretchr/testify/assert"
 )
+
+type TestHashStruct struct {
+	Message			string
+	Number			int
+	Data			[]byte
+}
+
 func TestIPFSHash(t *testing.T){
 	fileHash, err := IPFSHashFile("hash_test.txt")
 	if err != nil {
@@ -30,6 +37,15 @@ func TestHash(t *testing.T){
 		t.Fatal("Hash failed: " + err.Error())
 	}
 	assert.Equal(t, "QmP4eE9BBqDRHrPbwFN75M9cX84Rm3G8B2fKtxZCtREUyC", textHash, "Data hash did not match")
+}
+
+func TestStructHash(t *testing.T) {
+	hashstruct := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
+	hash1 := HashStruct(hashstruct);
+	hashstruct.Number = 987
+	hash2 := HashStruct(hashstruct)
+
+	assert.NotEqual(t, hash1, hash2, "Output of HashStruct is equal with non-equal input.")
 }
 
 func TestFingerprint(t *testing.T){

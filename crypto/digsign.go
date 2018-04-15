@@ -21,12 +21,6 @@ type SignedStruct struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
-type TestHashStruct struct {
-	Message			string
-	Number			int
-	Data			[]byte
-}
-
 func HashStruct(in interface{}) string {
 	buffer := bytes.NewBuffer([]byte{38})
 	buffer.WriteString(fmt.Sprintf("%v", reflect.ValueOf(in)))
