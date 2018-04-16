@@ -7,9 +7,13 @@ import (
 	"math"
 	"encoding/json"
 	"io/ioutil"
+	"github.com/pkg/errors"
 )
 
-const numSamples = 1000;
+const (
+	numSamples = 10000; // Each sample will require approximately 10KB of storage.
+	challengeSamples = 10; // Probability of guessing a correct proof is about: 1 / (2^(8*10)
+)
 
 // By using uint64 as the index it is possible to index files up to 2048 Exa bytes.
 type StorageSample struct {
@@ -19,11 +23,13 @@ type StorageSample struct {
 type StorageChallenge struct {
 	//Challengesignature		[]byte				`json:"challengesignature"`
 	Challenge				[]uint64				`json:"challenge"`
+	Identity				string					`json:"identity"`
 }
 
 type StorageChallengeProof struct {
 	SignedStruct // Of type StorageChallenge
 	Proof					map[uint64]byte				`json:"proof"`
+	Identity				string						`json:"identity"`
 	//Proofsignature			[]byte				`json:"proofsignature"`
 }
 
@@ -38,7 +44,13 @@ func GenerateStorageSample(fileByte *[]byte) *StorageSample{
 			return nil // Problems generating a random number.
 		}
 
+
 		rnduint := rnd.Uint64()
+
+		if _, ok := ret.Samples[rnduint]; ok {
+			continue // This byte is already sampled.
+		}
+
 		ret.Samples[rnduint] =	(*fileByte)[rnduint]
 	}
 
@@ -55,13 +67,42 @@ func (sp *StorageSample) StoreSample(basepath string, cid string) error{
 	// by colluding).
 }
 
-func (sp *StorageSample) GenerateChallenge() *StorageChallenge{
+func (sp *StorageSample) GenerateChallenge(keys *Keys) *SignedStruct{
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples)}
+	max := new(big.Int).SetUint64(uint64(len((*sp).Samples)))
+	for i := 0; i < challengeSamples; i++ {
+		rnd, err := rand.Int(rand.Reader, max)
+
+		if err != nil {
+			return nil // Problems generating a random number.
+		}
+
+		chal.Challenge = append(chal.Challenge, rnd.Uint64())
+	}
+
+	ident, err := GetFingerPrint(keys)
+	if err != nil {
+		return nil // Could not get the keys fingerprint.
+	}
+	chal.Identity = ident
 
 	// Sign the challenge with our private key
-	return &StorageChallenge{}
+	signed, err := SignStruct(chal, keys)
+	if err != nil {
+		// Problem signing the data.
+		return nil
+	}
+	return signed
 }
 
-func (scp *StorageChallengeProof) VerifyChallengeProof() error{
+func (scp *StorageChallengeProof) VerifyChallengeProof(keys *Keys) error{
+	
+	challenge, ok := scp.Base.(*StorageChallenge)
+	if !ok {
+		return errors.New("Could not type assert the StorageChalleng.")
+	}
+
+
 	// Verify signatures on both the challenge and the proof.
 	return nil
 }
