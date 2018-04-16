@@ -1,19 +1,19 @@
-package app
+package configuration
 
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	"github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 func TestAccessControl (t *testing.T){
-	if _, err := configuration.LoadAppConfig("../configuration/test/appConfig"); err != nil {
+	appConf, err := LoadAppConfig("../configuration/test/appConfig");
+	if err != nil {
 		t.Fatal("Error loading app config: " + err.Error())
 	}
 
-	acl := GetAccessList("test")
+	acl := GetAccessList(listPathTest)
 	assert.NotEmpty(t, acl.Identities, "Access list empty")
 
-	acl2 := GetAccessList()
+	acl2 := GetAccessList(appConf.BasePath + appConf.AccessList)
 	assert.NotEqual(t, acl, acl2, "Test data is not isolated.")
 }

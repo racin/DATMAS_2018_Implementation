@@ -395,3 +395,7 @@ func apiMAddr(a *rest.API) ma.Multiaddr {
 	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", hostPort[1]))
 	return addr
 }
+
+func (proxy *Proxy) GetAccessList() (*conf.AccessList){
+	return conf.GetAccessList(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().AccessList)
+}

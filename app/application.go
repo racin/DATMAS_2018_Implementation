@@ -258,3 +258,7 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (resQuery abci.Respons
 	fmt.Printf("%+v\n", sumBlock.GetValidatorUpdates())
 	return
 }
+
+func (app *Application) GetAccessList() (*conf.AccessList){
+	return conf.GetAccessList(conf.AppConfig().BasePath + conf.AppConfig().AccessList)
+}
