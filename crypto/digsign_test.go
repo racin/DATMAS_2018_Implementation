@@ -11,6 +11,7 @@ import (
 const (
 	certName 		= "mycert_test"
 	certPathTest 	= "test_certificate/mycert_test"
+	testKeysBits	= 1024
 )
 
 func TestSignature(t *testing.T){
@@ -22,7 +23,7 @@ func TestSignature(t *testing.T){
 	var err error
 	var certPath string
 	t.Run("TestGenerateKeys", func(t *testing.T){
-		if _, err := GenerateKeyPair(conf.AppConfig().BasePath, certName , 1024); err != nil {
+		if _, err := GenerateKeyPair(conf.AppConfig().BasePath, certName , testKeysBits); err != nil {
 			certPath = certPathTest
 			t.Fatal("Error: " + err.Error())
 		} else {
@@ -43,7 +44,7 @@ func TestSignature(t *testing.T){
 	})
 	// If keys could not be loaded, generate a random one for testing.
 	if privKey == nil || privKey.private == nil || pubKey == nil || pubKey.public == nil {
-		keypair, _ := rsa.GenerateKey(rand.Reader, 1024)
+		keypair, _ := rsa.GenerateKey(rand.Reader, testKeysBits)
 		privKey = &Keys{private: keypair, public: &keypair.PublicKey}
 		pubKey = &Keys{public: &keypair.PublicKey}
 	}

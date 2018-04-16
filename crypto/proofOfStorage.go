@@ -33,11 +33,20 @@ type StorageChallengeProof struct {
 	//Proofsignature			[]byte				`json:"proofsignature"`
 }
 
+func min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
+// If the file is smaller than numSamples, we simply store the whole file.
 func GenerateStorageSample(fileByte *[]byte) *StorageSample{
-	ret := &StorageSample{Samples:make(map[uint64]byte, numSamples)}
+	nSamples := min(numSamples, len(*fileByte))
+	ret := &StorageSample{Samples:make(map[uint64]byte, nSamples)}
 	max := new(big.Int).SetUint64(uint64(len(*fileByte)))
 
-	for i := 0; i < numSamples; i++ {
+	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
 
 		if err != nil {
@@ -48,6 +57,7 @@ func GenerateStorageSample(fileByte *[]byte) *StorageSample{
 		rnduint := rnd.Uint64()
 
 		if _, ok := ret.Samples[rnduint]; ok {
+			i--
 			continue // This byte is already sampled.
 		}
 
@@ -67,7 +77,7 @@ func (sp *StorageSample) StoreSample(basepath string, cid string) error{
 	// by colluding).
 }
 
-func LoadSample(basepath string, cid string) *StorageSample{
+func LoadStorageSample(basepath string, cid string) *StorageSample{
 	ret := &StorageSample{}
 	bytearr, err := ioutil.ReadFile(basepath + cid)
 	if err == nil {
@@ -103,6 +113,14 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
 		return nil
 	}
 	return signed
+}
+
+func (signedStruct *SignedStruct) ProveChallenge(pubkeyBase string, sampleBase string, proverIdent *conf.Identity, challengerIdent *conf.Identity) *SignedStruct {
+	challenge, ok := signedStruct.Base.(*StorageChallenge)
+	if !ok {
+		return nil
+	}
+	
 }
 
 func (signedStruct *SignedStruct) VerifyChallengeProof(pubkeyBase string, sampleBase string, proverIdent *conf.Identity, challengerIdent *conf.Identity) error{
@@ -145,7 +163,7 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(pubkeyBase string, sample
 		return errors.New("Could not verify signature of challenge.")
 	}
 
-	sample := LoadSample(sampleBase, challenge.Cid)
+	sample := LoadStorageSample(sampleBase, challenge.Cid)
 	if sample == nil || sample.Samples == nil {
 		return errors.New("Could not find a stored sample for this Cid.")
 	}
