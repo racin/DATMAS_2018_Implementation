@@ -4,6 +4,7 @@
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
   "tempUploadPath": "/tmp/",
+  "storageSamples": "storageSamples/",
 
   "tendermintNodes": ["testingoffline","localhost"],
   "websocketEndpoint": "/websocket",

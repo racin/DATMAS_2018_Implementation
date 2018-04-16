@@ -24,6 +24,7 @@ type AppConfiguration struct {
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
 	AccessList						string		`json:"accessList"`
+	StorageSamples					string		`json:"storageSamples"`
 	TempUploadPath					string		`json:"tempUploadPath"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`
