@@ -115,7 +115,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
 	// Get access list
-	identity, ok := GetAccessList().Identities[tx.Identity];
+	identity, ok := app.GetAccessList().Identities[tx.Identity];
 	if !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
