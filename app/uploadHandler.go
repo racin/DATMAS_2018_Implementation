@@ -145,7 +145,27 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Generate Sample of data. Distribute it to other TM nodes
-	sample := crypto.GenerateStorageSample(&fileBytes, conf.AppConfig().PrivateKey)
+	sample := crypto.GenerateStorageSample(&fileBytes)
+
+	// Store the sample in Query.
+	/*if err := sample.StoreSample(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples); err != nil {
+		writeUploadResponse(&w, types.CodeType_InternalError, err.Error());
+		return
+	}*/
+	myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys +
+		conf.AppConfig().PrivateKey);
+	if err != nil {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
+		return
+	}
+
+	signedSample, err := crypto.SignStruct(sample, myPrivKey)
+	if err != nil {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
+		return
+	}
+	app.broadcastQuery("/newsample", signedSample)
+
 
 	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
 

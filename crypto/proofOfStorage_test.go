@@ -6,7 +6,6 @@ import (
 
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"io/ioutil"
-	"fmt"
 )
 
 const (
@@ -31,9 +30,9 @@ func TestStorageSample(t *testing.T){
 		}
 		assert.NotEmpty(t, storageSample.Samples, "No samples generated.")
 	})
-	fmt.Printf("%v, %+v\n", len(storageSample.Samples), storageSample)
+
 	t.Run("StoreStorageSample", func(t *testing.T){
-		if err := storageSample.StoreSample(testPosPath, cid); err != nil {
+		if err := storageSample.StoreSample(testPosPath); err != nil {
 			t.Fatal("Could not store storage sample.")
 		}
 		storageSample = nil;
@@ -47,16 +46,15 @@ func TestStorageSample(t *testing.T){
 
 	var challenge *SignedStruct
 	t.Run("GenerateChallenge", func(t *testing.T){
-		privKey, err := LoadPrivateKey(clientCertPathTest + ".pem")
+		privKey, err := LoadPrivateKey(consensusCertPathTest + ".pem")
 		if err != nil {
 			t.Fatal("Could not load private key. Error: " + err.Error())
 		}
 		challenge = storageSample.GenerateChallenge(privKey, cid)
-		fmt.Printf("Challenge: %v, %+v\n", len(storageSample.Samples), challenge)
 		assert.NotNil(t, challenge, "Could not load Storage Sample")
 		chalng, ok := challenge.Base.(*StorageChallenge)
-		fmt.Printf("Chill challenge: %v, %+v\n", len(storageSample.Samples), chalng)
-		assert.False(t, ok, "Could not type assert SignedStruct to StorageChallenge")
+
+		assert.True(t, ok, "Could not type assert SignedStruct to StorageChallenge")
 		assert.NotEmpty(t, chalng.Challenge, "Challenge was empty")
 	})
 	t.Run("VerifyChallenge", func(t *testing.T){
@@ -64,6 +62,7 @@ func TestStorageSample(t *testing.T){
 		if !ok {
 			t.Fatal("Could not find identity: " + consensusCertPathFP)
 		}
+
 		err = challenge.VerifyChallenge(challengerIdent)
 		if err != nil {
 			t.Fatal("Could not verify the challenge. Error: " + err.Error())
@@ -77,9 +76,7 @@ func TestStorageSample(t *testing.T){
 		}
 
 		challengeProof = challenge.ProveChallenge(privKey, &byteArr)
-		if challengeProof == nil {
-			t.Fatal("Could not generate challenge proof.")
-		}
+		assert.NotNil(t, challengeProof, "Could not generate challenge proof.")
 	})
 	t.Run("VerifyChallengeProof", func(t *testing.T){
 		challengerIdent, ok := acl.Identities[consensusCertPathFP]
@@ -91,20 +88,41 @@ func TestStorageSample(t *testing.T){
 			t.Fatal("Could not find prover identity in access list.")
 		}
 
-		challengeProof := challenge.VerifyChallengeProof("", &challengerIdent, &proverIdent)
-		if challengeProof == nil {
-			t.Fatal("Could not generate challenge proof.")
+		err := challengeProof.VerifyChallengeProof(testPosPath, &challengerIdent, &proverIdent)
+		if err != nil {
+			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
 		}
 	})
-}
-func TestGenerateStorageSample(t *testing.T) {
+	t.Run("VerifyChallengeWithWrongIdentity", func(t *testing.T){
+		challengerIdent, ok := acl.Identities[clientCertPathFP]
+		if !ok {
+			t.Fatal("Could not find identity: " + clientCertPathFP)
+		}
 
-}
+		assert.NotNil(t, challenge.VerifyChallenge(challengerIdent), "Challenge verified using wrong identity")
+	})
+	var challengeProofWithWrongIdentity *SignedStruct
+	t.Run("GenerateChallengeProofWithWrongIdentity", func(t *testing.T){
+		privKey, err := LoadPrivateKey(clientCertPathTest + ".pem")
+		if err != nil {
+			t.Fatal("Could not load private key. Error: " + err.Error())
+		}
 
-func TestGenerateChallenge(t *testing.T){
+		challengeProofWithWrongIdentity = challenge.ProveChallenge(privKey, &byteArr)
+		assert.NotNil(t, challengeProofWithWrongIdentity, "Could not generate challenge proof.")
+	})
+	t.Run("VerifyChallengeProofWithWrongIdentity", func(t *testing.T){
+		challengerIdent, ok := acl.Identities[consensusCertPathFP]
+		if !ok {
+			t.Fatal("Could not find challenger identity in access list.")
+		}
+		proverIdent, ok := acl.Identities[storageCertPathFP]
+		if !ok {
+			t.Fatal("Could not find prover identity in access list.")
+		}
 
-}
-
-func TestVerifyChallengeProof(t *testing.T){
-
+		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, &challengerIdent, &proverIdent)
+		assert.NotNil(t, err, "Proof should not be verifiable using a different public key. " +
+			"(Client signed the proof.)")
+	})
 }
