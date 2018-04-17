@@ -12,6 +12,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 )
 
+// Used to prevent replay attacks.
 func (app *Application) HasSeenTranc(trancHash string) bool{
 	if _, ok := app.seenTranc[trancHash]; ok {
 		return true;
@@ -38,7 +39,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		fmt.Fprintln(w, err)
 		return
 	}
-	formdata := r.MultipartForm // ok, no problem so far, read the Form data
+	formdata := r.MultipartForm
 
 	if val, ok := formdata.Value["Status"]; ok {
 		writeUploadResponse(&w, types.CodeType_OK, val[0]);
@@ -69,7 +70,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check identity access
-	identity, ok := GetAccessList().Identities[tx.Identity];
+	identity, ok := app.GetAccessList().Identities[tx.Identity];
 	if !ok {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not get access list");
 		return
@@ -92,23 +93,19 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if data hash is contained within the transaction.
 	fileHash, ok := tx.Data.(string)
-	if (fileHash == "" || !ok) {
+	if fileHash == "" || !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
 		return
 	}
 
-	/*// Check if data hash is already in the list of uploads pending
-	if _, ok := app.tempUploads[fileHash]; !ok {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash not in the list of pending uploads.");
-		return // Data hash not in the list of pending uploads
-	}*/
-
+	// Check that exactly one file is sent
 	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "File parameter should contain exactly one file.");
-		return // Missing files or more than one file
+		return
 	}
 
+	// Try to open the file sent
 	file := files[0]
 	fopen, err := file.Open()
 	defer fopen.Close()
@@ -130,46 +127,39 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Create file on disk in temporary storage.
+	// TODO: Confirm the necessity of this step.
 	out, err := os.Create(conf.AppConfig().TempUploadPath + fileHash)
 	defer out.Close()
 	if err != nil {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Unable to create the file for writing. Check your write access privilege");
 		return
+	} else if _, err = io.Copy(out, fopen); err != nil {
+		writeUploadResponse(&w, types.CodeType_InternalError, err.Error());
+		return
 	}
 
-	_, err = io.Copy(out, fopen) // file not files[i] !
-
+	// Load my private key in order to sign the generated storage sample.
+	myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey);
 	if err != nil {
-		writeUploadResponse(&w, types.CodeType_InternalError, err.Error());
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate my private key.");
 		return
 	}
 
 	// Generate Sample of data. Distribute it to other TM nodes
 	sample := crypto.GenerateStorageSample(&fileBytes)
-
-	// Store the sample in Query.
-	/*if err := sample.StoreSample(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples); err != nil {
-		writeUploadResponse(&w, types.CodeType_InternalError, err.Error());
-		return
-	}*/
-	myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys +
-		conf.AppConfig().PrivateKey);
+	signedSample, err := sample.SignSample(myPrivKey)
 	if err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not sign storage sample.");
 		return
 	}
 
-	signedSample, err := crypto.SignStruct(sample, myPrivKey)
-	if err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
-		return
-	}
-	app.broadcastQuery("/newsample", signedSample)
+	// Broadcast the signed storage sample to all other tendermint consensus nodes.
+	// TODO: Add some mechanic to resend the sample to the nodes which are unavailble.
+	bytearr, err := json.Marshal(signedSample)
+	app.broadcastQuery("/newsample", &bytearr)
 
 
-	writeUploadResponse(&w, types.CodeType_OK, "Files uploaded successfully : " + file.Filename);
-
-	//app.BaseApplication.CheckTx(tx)
-	// TODO: Replay transaction to CheckTx?
-	// CheckTx issues a challenge to verify that file is stored. Then Pins and Delivers and Commits.
+	writeUploadResponse(&w, types.CodeType_OK, "File temporary stored and storage sample distributed. " +
+		"After uploading file to IPFS, send a transaction to the mempool.");
 }

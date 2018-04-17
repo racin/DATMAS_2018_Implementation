@@ -124,10 +124,10 @@ type QueryBroadcastReponse struct {
 	Result			*core_types.ResultABCIQuery
 	Err				error
 }
-func (app *Application) broadcastQuery(path string, data cmn.HexBytes) map[string]*QueryBroadcastReponse{
+func (app *Application) broadcastQuery(path string, data *[]byte) map[string]*QueryBroadcastReponse{
 	response := make(map[string]*QueryBroadcastReponse)
 	for key, value := range app.TMRpcClients {
-		result, err := value.ABCIQuery(path, data)
+		result, err := value.ABCIQuery(path, *data)
 		response[key] = &QueryBroadcastReponse{Result: result, Err: err}
 	}
 

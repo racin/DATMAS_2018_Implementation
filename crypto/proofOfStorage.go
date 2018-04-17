@@ -16,12 +16,12 @@ const (
 
 // By using uint64 as the index it is possible to index files up to 2048 Exa bytes.
 type StorageSample struct {
+	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
-	Samples					map[uint64]byte		`json:"sample"`
+	Samples					map[uint64]byte			`json:"sample"`
 }
 
 type StorageChallenge struct {
-	//Challengesignature		[]byte				`json:"challengesignature"`
 	Challenge				[]uint64				`json:"challenge"`
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
@@ -35,7 +35,6 @@ type StorageChallengeProof struct {
 	SignedStruct // Of type StorageChallenge
 	Proof					[]byte					`json:"proof"`
 	Identity				string					`json:"identity"`
-	//Proofsignature			[]byte				`json:"proofsignature"`
 }
 
 func min(x, y int) int {
@@ -77,6 +76,15 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 	}
 
 	return ret
+}
+
+func (sp *StorageSample) SignSample(privKey *Keys) (*SignedStruct, error) {
+	fp, err := GetFingerprint(privKey)
+	if err != nil {
+		return nil, err
+	}
+	(*sp).Identity = fp
+	return SignStruct(sp, privKey)
 }
 
 func (sp *StorageSample) StoreSample(basepath string) error{
