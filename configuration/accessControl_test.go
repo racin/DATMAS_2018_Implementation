@@ -11,7 +11,7 @@ func TestAccessControl (t *testing.T){
 		t.Fatal("Error loading app config: " + err.Error())
 	}
 
-	acl := GetAccessList(listPathTest)
+	acl := GetAccessList(ListPathTest)
 	assert.NotEmpty(t, acl.Identities, "Access list empty")
 
 	acl2 := GetAccessList(appConf.BasePath + appConf.AccessList)

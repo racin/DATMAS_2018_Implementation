@@ -98,6 +98,7 @@ func LoadPublicKey(path string) (*Keys, error) {
 
 	return nil, fmt.Errorf("Could not unmarshal public key.")
 }
+
 func LoadPrivateKey(path string) (*Keys, error) {
 	dat, err := ioutil.ReadFile(path)
 	if err != nil {
@@ -120,6 +121,7 @@ func LoadPrivateKey(path string) (*Keys, error) {
 
 	return nil, fmt.Errorf("Could not unmarshal private key.")
 }
+
 func GenerateKeyPair(path, name string, bits int) (*Keys, error){
 	if err := os.MkdirAll(filepath.Dir(path), 0700); err != nil {
 		return nil, err

@@ -9,8 +9,14 @@ import (
 )
 
 const (
-	certName 		= "mycert_test"
-	certPathTest 	= "test_certificate/mycert_test"
+	certName 				= "mycert_test"
+	testCertPath			= "test_certificate/"
+	clientCertPathTest 		= "test_certificate/client_test"
+	clientCertPathFP		= "95c73e8028118d18a961dd1da6b5e7c3"
+	storageCertPathTest 	= "test_certificate/storage_test"
+	storageCertPathFP		= "64168bb2f7a0a4d67d83471470ce757c"
+	consensusCertPathTest 	= "test_certificate/consensus_test"
+	consensusCertPathFP		= "cc418e456ae72df5bdb39d65bb8945e8"
 	testKeysBits	= 1024
 )
 
@@ -24,7 +30,7 @@ func TestSignature(t *testing.T){
 	var certPath string
 	t.Run("TestGenerateKeys", func(t *testing.T){
 		if _, err := GenerateKeyPair(conf.AppConfig().BasePath, certName , testKeysBits); err != nil {
-			certPath = certPathTest
+			certPath = clientCertPathTest
 			t.Fatal("Error: " + err.Error())
 		} else {
 			certPath = conf.AppConfig().BasePath + certName

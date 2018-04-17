@@ -62,7 +62,7 @@ func getSignedTransaction(txtype types.TransactionType, data interface{}) (stran
 		panic("Could not load private key. Use the --generateKeys option to generate a new one. Error: " + err.Error())
 	}
 
-	fp, err := crypto.GetFingerPrint(keys)
+	fp, err := crypto.GetFingerprint(keys)
 	if err != nil {
 		panic("Could not load fingerprint of public key. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}

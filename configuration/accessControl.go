@@ -17,7 +17,7 @@ const (
 	ipfs	Context = 1
 	test	Context = 2
 
-	listPathTest = "accessControl_test"
+	ListPathTest = "accessControl_test"
 )
 
 type Identity struct {

@@ -22,7 +22,7 @@ import (
 )
 const HashFunction = mh.SHA2_256
 
-func GetFingerPrint(key *Keys) (string, error){
+func GetFingerprint(key *Keys) (string, error){
 	if k, err := ssh.NewPublicKey(key.public); err != nil {
 		return "", fmt.Errorf("Problems type asserting Public key: %s\n", err.Error())
 	} else {

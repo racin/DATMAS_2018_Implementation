@@ -3,16 +3,19 @@ package crypto
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	//conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"io/ioutil"
 	"fmt"
 )
 
 const (
-	certPathTest 	= "test_certificate/mycert_test"
+	testPosPath = "test_pos/"
+	aclTestPath = "../configuration/" + conf.ListPathTest
 )
 func TestStorageSample(t *testing.T){
-	byteArr, err := ioutil.ReadFile("test_pos/RandData")
+	acl := conf.GetAccessList(aclTestPath)
+	byteArr, err := ioutil.ReadFile(testPosPath + "RandData")
 	if err != nil {
 		t.Fatal("Error reading test file: " + err.Error())
 	}
@@ -30,35 +33,68 @@ func TestStorageSample(t *testing.T){
 	})
 	fmt.Printf("%v, %+v\n", len(storageSample.Samples), storageSample)
 	t.Run("StoreStorageSample", func(t *testing.T){
-		if err := storageSample.StoreSample("test_pos/", cid); err != nil {
+		if err := storageSample.StoreSample(testPosPath, cid); err != nil {
 			t.Fatal("Could not store storage sample.")
 		}
 		storageSample = nil;
 	})
 	t.Run("LoadStorageSample", func(t *testing.T){
 		assert.Nil(t, storageSample, "storageSample is not set to nil.")
-		storageSample := LoadStorageSample("test_pos/", cid)
+		storageSample = LoadStorageSample("test_pos/", cid)
 		assert.NotNil(t, storageSample, "Could not load Storage Sample")
 		assert.NotEmpty(t, storageSample.Samples, "Could not load samples.")
 	})
-	var privKey *Keys
-	var pubKey *Keys
-	var challenge *StorageChallenge
+
+	var challenge *SignedStruct
 	t.Run("GenerateChallenge", func(t *testing.T){
-		privKey, err = LoadPrivateKey(certPathTest + ".pem")
+		privKey, err := LoadPrivateKey(clientCertPathTest + ".pem")
+		if err != nil {
+			t.Fatal("Could not load private key. Error: " + err.Error())
+		}
+		challenge = storageSample.GenerateChallenge(privKey, cid)
+		fmt.Printf("Challenge: %v, %+v\n", len(storageSample.Samples), challenge)
+		assert.NotNil(t, challenge, "Could not load Storage Sample")
+		chalng, ok := challenge.Base.(*StorageChallenge)
+		fmt.Printf("Chill challenge: %v, %+v\n", len(storageSample.Samples), chalng)
+		assert.False(t, ok, "Could not type assert SignedStruct to StorageChallenge")
+		assert.NotEmpty(t, chalng.Challenge, "Challenge was empty")
+	})
+	t.Run("VerifyChallenge", func(t *testing.T){
+		challengerIdent, ok := acl.Identities[consensusCertPathFP]
+		if !ok {
+			t.Fatal("Could not find identity: " + consensusCertPathFP)
+		}
+		err = challenge.VerifyChallenge(challengerIdent)
+		if err != nil {
+			t.Fatal("Could not verify the challenge. Error: " + err.Error())
+		}
+	})
+	var challengeProof *SignedStruct
+	t.Run("GenerateChallengeProof", func(t *testing.T){
+		privKey, err := LoadPrivateKey(storageCertPathTest + ".pem")
 		if err != nil {
 			t.Fatal("Could not load private key. Error: " + err.Error())
 		}
 
-		pubKey, err = LoadPublicKey(certPathTest + ".pub")
-		if err != nil {
-			t.Fatal("Could not load public key. Error: " + err.Error())
+		challengeProof = challenge.ProveChallenge(privKey, &byteArr)
+		if challengeProof == nil {
+			t.Fatal("Could not generate challenge proof.")
 		}
-		challenge := storageSample.GenerateChallenge(privKey)
-		assert.Nil(t, storageSample, "storageSample is not set to nil.")
-		storageSample := LoadStorageSample("test_pos/", cid)
-		assert.NotNil(t, storageSample, "Could not load Storage Sample")
-		assert.NotEmpty(t, storageSample.Samples, "Could not load samples.")
+	})
+	t.Run("VerifyChallengeProof", func(t *testing.T){
+		challengerIdent, ok := acl.Identities[consensusCertPathFP]
+		if !ok {
+			t.Fatal("Could not find challenger identity in access list.")
+		}
+		proverIdent, ok := acl.Identities[storageCertPathFP]
+		if !ok {
+			t.Fatal("Could not find prover identity in access list.")
+		}
+
+		challengeProof := challenge.VerifyChallengeProof("", &challengerIdent, &proverIdent)
+		if challengeProof == nil {
+			t.Fatal("Could not generate challenge proof.")
+		}
 	})
 }
 func TestGenerateStorageSample(t *testing.T) {

@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 const (
@@ -41,10 +42,13 @@ func min(x, y int) int {
 }
 
 // If the file is smaller than numSamples, we simply store the whole file.
-func GenerateStorageSample(fileByte *[]byte) *StorageSample{
-	nSamples := min(numSamples, len(*fileByte))
+func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
+	if fileBytes == nil {
+		return nil
+	}
+	nSamples := min(numSamples, len(*fileBytes))
 	ret := &StorageSample{Samples:make(map[uint64]byte, nSamples)}
-	max := new(big.Int).SetUint64(uint64(len(*fileByte)))
+	max := new(big.Int).SetUint64(uint64(len(*fileBytes)))
 
 	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
@@ -61,7 +65,7 @@ func GenerateStorageSample(fileByte *[]byte) *StorageSample{
 			continue // This byte is already sampled.
 		}
 
-		ret.Samples[rnduint] =	(*fileByte)[rnduint]
+		ret.Samples[rnduint] =	(*fileBytes)[rnduint]
 	}
 
 	return ret
@@ -87,8 +91,9 @@ func LoadStorageSample(basepath string, cid string) *StorageSample{
 	return ret
 }
 
-func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples)}
+func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStruct{
+	fmt.Printf("%+v\n", sp)
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid}
 	max := new(big.Int).SetUint64(uint64(len((*sp).Samples)))
 	for i := 0; i < challengeSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
@@ -100,7 +105,7 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
 		chal.Challenge = append(chal.Challenge, rnd.Uint64())
 	}
 
-	ident, err := GetFingerPrint(privkey)
+	ident, err := GetFingerprint(privkey)
 	if err != nil {
 		return nil // Could not get the keys fingerprint.
 	}
@@ -115,15 +120,59 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
 	return signed
 }
 
-func (signedStruct *SignedStruct) ProveChallenge(pubkeyBase string, sampleBase string, proverIdent *conf.Identity, challengerIdent *conf.Identity) *SignedStruct {
+func (signedStruct *SignedStruct) VerifyChallenge(challengerIdent conf.Identity) error {
+	challenge, ok := signedStruct.Base.(*StorageChallenge)
+	if !ok {
+		return errors.New("Could not type assert the StorageChallengeProof.")
+	}
+
+	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) ||
+		challengerIdent.PublicKey != challenge.Identity {
+		return errors.New("Challengers identity was unexpected.")
+	}
+
+	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
+	if err != nil {
+		return err
+	}
+
+	// Check if the proof is signed by the expected prover.
+	if !signedStruct.Verify(challengerPubkey) {
+		return errors.New("Could not verify signature of challenger.")
+	}
+
+	return nil
+}
+
+func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byte) *SignedStruct {
+	if fileBytes == nil {
+		return nil
+	}
+
 	challenge, ok := signedStruct.Base.(*StorageChallenge)
 	if !ok {
 		return nil
 	}
-	
+
+	fingerprint, err := GetFingerprint(privKey)
+	if err != nil {
+		return nil
+	}
+
+	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint, Proof: make(map[uint64]byte)}
+	for _, value := range challenge.Challenge {
+		proof.Proof[value] = (*fileBytes)[value]
+	}
+
+	newSignedStruct, err := SignStruct(proof, privKey)
+	if err != nil {
+		return nil;
+	}
+
+	return newSignedStruct
 }
 
-func (signedStruct *SignedStruct) VerifyChallengeProof(pubkeyBase string, sampleBase string, proverIdent *conf.Identity, challengerIdent *conf.Identity) error{
+func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, proverIdent *conf.Identity, challengerIdent *conf.Identity) error{
 	scp, ok := signedStruct.Base.(*StorageChallengeProof)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallengeProof.")
@@ -138,17 +187,17 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(pubkeyBase string, sample
 		return errors.New("Provers identity was unexpected.")
 	}
 	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) ||
-		proverIdent.PublicKey != scp.Identity {
+		challengerIdent.PublicKey != challenge.Identity {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
 	// Check if public key exists and if message is signed.
-	proverPubkey, err := LoadPublicKey(pubkeyBase + scp.Identity);
+	proverPubkey, err := LoadPublicKey(proverIdent.PublicKey);
 	if err != nil {
 		return err
 	}
 
-	challengerPubkey, err := LoadPublicKey(pubkeyBase + challenge.Identity);
+	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
 	if err != nil {
 		return err
 	}

@@ -49,22 +49,22 @@ func TestStructHash(t *testing.T) {
 }
 
 func TestFingerprint(t *testing.T){
-	pubkey, err := LoadPublicKey(certPathTest+".pub")
+	pubkey, err := LoadPublicKey(clientCertPathTest+".pub")
 	if err != nil {
 		t.Fatal("Could not load public key. Error: " + err.Error())
 	}
-	fp, err := GetFingerPrint(pubkey)
+	fp, err := GetFingerprint(pubkey)
 	if err != nil {
 		t.Fatal("Could not get fingerprint. Error: " + err.Error())
 	}
 
 	assert.Equal(t, "95c73e8028118d18a961dd1da6b5e7c3", fp, "Fingerprint of Public key not correct")
 
-	privkey, err := LoadPrivateKey(certPathTest+".pem")
+	privkey, err := LoadPrivateKey(clientCertPathTest+".pem")
 	if err != nil {
 		t.Fatal("Could not load private key. Error: " + err.Error())
 	}
-	fp2, err := GetFingerPrint(privkey)
+	fp2, err := GetFingerprint(privkey)
 	if err != nil {
 		t.Fatal("Could not get fingerprint. Error: " + err.Error())
 	}
