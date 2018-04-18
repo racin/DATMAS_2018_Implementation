@@ -54,9 +54,10 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 		return nil
 	}
 	nSamples := min(numSamples, len(*fileBytes))
+
 	ret := &StorageSample{Cid: cid, Samples:make(map[uint64]byte, nSamples)}
 	max := new(big.Int).SetUint64(uint64(len(*fileBytes)))
-
+	
 	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
 
@@ -64,17 +65,13 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 			return nil // Problems generating a random number.
 		}
 
-
 		rnduint := rnd.Uint64()
-
 		if _, ok := ret.Samples[rnduint]; ok {
 			i--
 			continue // This byte is already sampled.
 		}
-
 		ret.Samples[rnduint] =	(*fileBytes)[rnduint]
 	}
-
 	return ret
 }
 
@@ -87,44 +84,55 @@ func (sp *StorageSample) SignSample(privKey *Keys) (*SignedStruct, error) {
 	return SignStruct(sp, privKey)
 }
 
-func (sp *StorageSample) StoreSample(basepath string) error{
+func (sp *SignedStruct) StoreSample(basepath string) error{
 	bytearr, err := json.Marshal(sp)
 	if err != nil {
 		return err
 	}
-	return ioutil.WriteFile(basepath + sp.Cid, bytearr, 0600)
+
+	storageSample, ok := sp.Base.(*StorageSample)
+	if !ok {
+		return errors.New("SignedStruct must have StorageSample as underlying type.")
+	}
+
+	return ioutil.WriteFile(basepath + storageSample.Cid, bytearr, 0600)
 	// Distribute the sample to the other consensus nodes. (Remember that different layers can not act maliciously
 	// by colluding).
 }
 
+// We store the signature of the sample so that the authenticity of the sample can be proven later. (non-repudiation).
 func LoadStorageSample(basepath string, cid string) *StorageSample{
-	ret := &StorageSample{}
-	bytearr, err := ioutil.ReadFile(basepath + cid)
-	if err == nil {
-		json.Unmarshal(bytearr,ret);
+	if bytearr, err := ioutil.ReadFile(basepath + cid); err == nil {
+		signedStruct := &SignedStruct{Base: &StorageSample{}}
+		if json.Unmarshal(bytearr,signedStruct) == nil {
+			if ret, ok := signedStruct.Base.(*StorageSample); ok {
+				return ret
+			}
+		}
 	}
 
+	return nil
+}
+
+func (sp *StorageSample) getSampleIndices() []uint64 {
+	ret := make([]uint64, len(sp.Samples))
+	i := 0
+	for key, _:= range sp.Samples {
+		ret[i] = key
+		i++
+	}
 	return ret
 }
 
 func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStruct{
 	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid}
-	max := new(big.Int).SetUint64(uint64(len((*sp).Samples)))
+	sampleIndices := sp.getSampleIndices()
+	max := new(big.Int).SetUint64(uint64(len(sampleIndices)))
+
 	for i := 0; i < challengeSamples; i++ {
-		rnd, err := rand.Int(rand.Reader, max)
-
-		if err != nil {
-			return nil // Problems generating a random number.
+		if rnd, err := rand.Int(rand.Reader, max); err == nil {
+			chal.Challenge[i] = sampleIndices[rnd.Uint64()]
 		}
-
-		rndUint := rnd.Uint64()
-		if _, ok := sp.Samples[rndUint]; ok {
-			chal.Challenge[i] = rndUint
-		} else {
-			i--
-			continue;
-		}
-
 	}
 
 	ident, err := GetFingerprint(privkey)

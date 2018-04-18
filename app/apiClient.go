@@ -121,17 +121,18 @@ func GetMultipartValues(values *map[string]io.Reader) (buffer *bytes.Buffer, bou
 }
 
 type QueryBroadcastReponse struct {
+	Identity		string
 	Result			*core_types.ResultABCIQuery
 	Err				error
 }
-func (app *Application) broadcastQuery(path string, data *[]byte) map[string]*QueryBroadcastReponse{
-	response := make(map[string]*QueryBroadcastReponse)
+func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-*QueryBroadcastReponse){
 	for key, value := range app.TMRpcClients {
-		result, err := value.ABCIQuery(path, *data)
-		response[key] = &QueryBroadcastReponse{Result: result, Err: err}
-	}
+		go func() {
+			result, err := value.ABCIQuery(path, *data)
+			outChan <- &QueryBroadcastReponse{Result: result, Err: err, Identity: key}
+		}()
 
-	return response
+	}
 }
 
 func (app *Application) multicastQuery(path string, data cmn.HexBytes, tmNodes []string) map[string]*QueryBroadcastReponse{

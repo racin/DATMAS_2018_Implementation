@@ -7,6 +7,7 @@
   "storageSamples": "storageSamples/",
 
   "tendermintNodes": ["testingoffline","localhost"],
+  "tmQueryTimeoutSeconds": 20,
   "websocketEndpoint": "/websocket",
   "websocketAddr": "http://$TmNode:46657",
 

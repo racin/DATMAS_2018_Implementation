@@ -10,6 +10,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	"time"
 )
 
 // Used to prevent replay attacks.
@@ -139,16 +140,9 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Load my private key in order to sign the generated storage sample.
-	myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey);
-	if err != nil {
-		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate my private key.");
-		return
-	}
-
 	// Generate Sample of data. Distribute it to other TM nodes
 	sample := crypto.GenerateStorageSample(&fileBytes)
-	signedSample, err := sample.SignSample(myPrivKey)
+	signedSample, err := sample.SignSample(app.privKey)
 	if err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not sign storage sample.");
 		return
@@ -157,9 +151,35 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	// Broadcast the signed storage sample to all other tendermint consensus nodes.
 	// TODO: Add some mechanic to resend the sample to the nodes which are unavailble.
 	bytearr, err := json.Marshal(signedSample)
-	app.broadcastQuery("/newsample", &bytearr)
+	responseChan := make(chan *QueryBroadcastReponse, len(app.TMRpcClients))
+	done := make(chan int)
+	app.broadcastQuery("/newsample", &bytearr, responseChan)
+	goodResponses := make(map[string]bool)
+	for {
+		select {
+		case v := <-responseChan:
+			if v.Err == nil {
+				goodResponses[v.Identity] = true
+			}
+		case <-done:
+			return
+		case <-time.After(time.Duration(conf.AppConfig().TmQueryTimeoutSeconds) * time.Second):
+			return
+		}
+	}
 
+	if _, ok := goodResponses[app.fingerprint]; !ok {
+		// Could not store the sample in my own node? Some serious trouble.
+		writeUploadResponse(&w, types.CodeType_OK, "Problems storing Storage sample.");
+		return
+	}
 
-	writeUploadResponse(&w, types.CodeType_OK, "File temporary stored and storage sample distributed. " +
-		"After uploading file to IPFS, send a transaction to the mempool.");
+	// Need 2/3+ precommits to make progress.
+	if len(goodResponses) >= ((2*len(conf.AppConfig().TendermintNodes))+1)/3 {
+		writeUploadResponse(&w, types.CodeType_OK, "File temporary stored and storage sample distributed. " +
+			"After uploading file to IPFS, send a transaction to the mempool.");
+	} else {
+		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not distribute storage samples to enough nodes" +
+			" within the time period. Try again later.");
+	}
 }

@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
+	"io/ioutil"
 )
 
 type Application struct {
@@ -25,12 +26,26 @@ type Application struct {
 	IpfsHttpClient		*http.Client
 	TMRpcClients		map[string]rpcClient.Client
 
+	privKey				*crypto.Keys
+	fingerprint			string
+
 }
 
 func NewApplication() *Application {
 	app := &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr,
 		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool),
 		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second}}
+
+	// Load my in order to digitally sign transactions
+	if myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey); err != nil {
+		panic("Could not load private key. Error: " + err.Error())
+	} else if fp, err := crypto.GetFingerprint(myPrivKey); err != nil{
+		panic("Could not get fingerprint of private key.")
+	} else {
+		app.privKey = myPrivKey
+		app.fingerprint = fp
+	}
+
 	app.setupTMRpcClients()
 	return app
 }
@@ -151,7 +166,11 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 			}
 
 			// Check if a file with this hash exists on an IPFS node and is uploaded to our server.
-			
+			app.queryIPFSproxy(reqUpload.IpfsNode, conf.AppConfig().IpfsChallengeEndpoint, crypto.LoadStorageSample())
+			fileBytes, err := ioutil.ReadFile(conf.AppConfig().TempUploadPath + reqUpload.Cid)
+			if err != nil {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}
+			}
 
 			// Check if data hash is already in the list of uploads pending
 			if val, ok := app.tempUploads[dataHash]; ok && val {
@@ -208,7 +227,7 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (resQuery abci.Respons
 	fmt.Println("Query trigger");
 	log.Print("query")
 	switch reqQuery.Path {
-	case "/account":
+	case "/newsample":
 		{
 			var (
 				result interface{}
@@ -221,25 +240,6 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (resQuery abci.Respons
 			}
 			if err != nil {
 				resQuery.Code = 1 // types.CodeType_BaseInvalidInput
-				resQuery.Log = err.Error()
-				return
-			}
-			bs, _ := json.Marshal(result)
-			resQuery.Value = bs
-		}
-	case "/secret":
-		{
-			var (
-				result interface{}
-				err    error
-			)
-			if reqQuery.Data == nil {
-				log.Printf("got secret list: %+v", result)
-			} else {
-				log.Printf("got secret: %+v", result)
-			}
-			if err != nil {
-				resQuery.Code = 1 //types.CodeType_BaseInvalidInput
 				resQuery.Log = err.Error()
 				return
 			}

@@ -30,9 +30,20 @@ func TestStorageSample(t *testing.T){
 		}
 		assert.NotEmpty(t, storageSample.Samples, "No samples generated.")
 	})
-
+	var signedStorageSample *SignedStruct
+	t.Run("SignSample", func(t *testing.T){
+		privKey, err := LoadPrivateKey(consensusCertPathTest + ".pem")
+		if err != nil {
+			t.Fatal("Could not load private key. Error: " + err.Error())
+		}
+		signedStorageSample, err = storageSample.SignSample(privKey)
+		if err != nil {
+			t.Fatal("Could not sign storage sample. Error: " + err.Error())
+		}
+		assert.NotNil(t, signedStorageSample, "Could not sign storage sample.")
+	})
 	t.Run("StoreStorageSample", func(t *testing.T){
-		if err := storageSample.StoreSample(testPosPath); err != nil {
+		if err := signedStorageSample.StoreSample(testPosPath); err != nil {
 			t.Fatal("Could not store storage sample.")
 		}
 		storageSample = nil;
@@ -40,10 +51,10 @@ func TestStorageSample(t *testing.T){
 	t.Run("LoadStorageSample", func(t *testing.T){
 		assert.Nil(t, storageSample, "storageSample is not set to nil.")
 		storageSample = LoadStorageSample("test_pos/", cid)
-		assert.NotNil(t, storageSample, "Could not load Storage Sample")
-		assert.NotEmpty(t, storageSample.Samples, "Could not load samples.")
+		if storageSample == nil || storageSample.Samples == nil || len(storageSample.Samples) == 0 {
+			t.Fatal("Could not load Storage Sample")
+		}
 	})
-
 	var challenge *SignedStruct
 	t.Run("GenerateChallenge", func(t *testing.T){
 		privKey, err := LoadPrivateKey(consensusCertPathTest + ".pem")

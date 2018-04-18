@@ -27,6 +27,7 @@ type AppConfiguration struct {
 	StorageSamples					string		`json:"storageSamples"`
 	TempUploadPath					string		`json:"tempUploadPath"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
+	TmQueryTimeoutSeconds			int			`json:"tmQueryTimeoutSeconds"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`
 	WebsocketAddr					string		`json:"websocketAddr"`
 	IpfsNodes						[]string	`json:"ipfsNodes"`
