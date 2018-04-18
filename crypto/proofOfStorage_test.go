@@ -69,12 +69,7 @@ func TestStorageSample(t *testing.T){
 		assert.NotEmpty(t, chalng.Challenge, "Challenge was empty")
 	})
 	t.Run("VerifyChallenge", func(t *testing.T){
-		challengerIdent, ok := acl.Identities[consensusCertPathFP]
-		if !ok {
-			t.Fatal("Could not find identity: " + consensusCertPathFP)
-		}
-
-		err = challenge.VerifyChallenge(challengerIdent)
+		err = challenge.VerifyChallenge(acl)
 		if err != nil {
 			t.Fatal("Could not verify the challenge. Error: " + err.Error())
 		}
@@ -90,27 +85,10 @@ func TestStorageSample(t *testing.T){
 		assert.NotNil(t, challengeProof, "Could not generate challenge proof.")
 	})
 	t.Run("VerifyChallengeProof", func(t *testing.T){
-		challengerIdent, ok := acl.Identities[consensusCertPathFP]
-		if !ok {
-			t.Fatal("Could not find challenger identity in access list.")
-		}
-		proverIdent, ok := acl.Identities[storageCertPathFP]
-		if !ok {
-			t.Fatal("Could not find prover identity in access list.")
-		}
-
-		err := challengeProof.VerifyChallengeProof(testPosPath, &challengerIdent, &proverIdent)
+		err := challengeProof.VerifyChallengeProof(testPosPath, acl, storageCertPathFP)
 		if err != nil {
 			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
 		}
-	})
-	t.Run("VerifyChallengeWithWrongIdentity", func(t *testing.T){
-		challengerIdent, ok := acl.Identities[clientCertPathFP]
-		if !ok {
-			t.Fatal("Could not find identity: " + clientCertPathFP)
-		}
-
-		assert.NotNil(t, challenge.VerifyChallenge(challengerIdent), "Challenge verified using wrong identity")
 	})
 	var challengeProofWithWrongIdentity *SignedStruct
 	t.Run("GenerateChallengeProofWithWrongIdentity", func(t *testing.T){
@@ -123,16 +101,7 @@ func TestStorageSample(t *testing.T){
 		assert.NotNil(t, challengeProofWithWrongIdentity, "Could not generate challenge proof.")
 	})
 	t.Run("VerifyChallengeProofWithWrongIdentity", func(t *testing.T){
-		challengerIdent, ok := acl.Identities[consensusCertPathFP]
-		if !ok {
-			t.Fatal("Could not find challenger identity in access list.")
-		}
-		proverIdent, ok := acl.Identities[storageCertPathFP]
-		if !ok {
-			t.Fatal("Could not find prover identity in access list.")
-		}
-
-		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, &challengerIdent, &proverIdent)
+		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, acl, storageCertPathFP)
 		assert.NotNil(t, err, "Proof should not be verifiable using a different public key. " +
 			"(Client signed the proof.)")
 	})

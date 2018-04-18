@@ -44,7 +44,6 @@ func min(x, y int) int {
 	return y
 }
 
-// If the file is smaller than numSamples, we simply store the whole file.
 func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 	if fileBytes == nil {
 		return nil
@@ -53,11 +52,12 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 	if err != nil {
 		return nil
 	}
+	// If the file is smaller than numSamples, we simply store the whole file.
 	nSamples := min(numSamples, len(*fileBytes))
 
 	ret := &StorageSample{Cid: cid, Samples:make(map[uint64]byte, nSamples)}
 	max := new(big.Int).SetUint64(uint64(len(*fileBytes)))
-	
+
 	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
 
@@ -150,14 +150,13 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStr
 	return signed
 }
 
-func (signedStruct *SignedStruct) VerifyChallenge(challengerIdent conf.Identity) error {
-	challenge, ok := signedStruct.Base.(*StorageChallenge)
+func (signedStruct *SignedStruct) VerifySample(acl *conf.AccessList) error {
+	/*challenge, ok := signedStruct.Base.(*StorageSample)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallengeProof.")
 	}
 
-
-	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
+	challengerPubkey, err := LoadPublicKey(samplerIdent.PublicKey);
 	if err != nil {
 		return err
 	}
@@ -175,6 +174,106 @@ func (signedStruct *SignedStruct) VerifyChallenge(challengerIdent conf.Identity)
 	// Check if the proof is signed by the expected prover.
 	if !signedStruct.Verify(challengerPubkey) {
 		return errors.New("Could not verify signature of challenger.")
+	}
+*/
+	return nil
+}
+
+func (signedStruct *SignedStruct) VerifyChallenge(acl *conf.AccessList) error {
+	challenge, ok := signedStruct.Base.(*StorageChallenge)
+	if !ok {
+		return errors.New("Could not type assert the StorageChallengeProof.")
+	}
+
+	identity, ok := acl.Identities[challenge.Identity]
+	if !ok {
+		return errors.New("Could not find identity attached to StorageChallenge.")
+	}
+
+	challengerPubkey, err := LoadPublicKey(identity.PublicKey);
+	if err != nil {
+		return err
+	}
+
+	if (identity.AccessLevel != conf.Consensus && identity.AccessLevel != conf.User) {
+		return errors.New("Challengers identity was unexpected.")
+	}
+
+	// Check if the proof is signed by the expected prover.
+	if !signedStruct.Verify(challengerPubkey) {
+		return errors.New("Could not verify signature of challenger.")
+	}
+
+	return nil
+}
+
+// Challenger can simply keep a list of challenges sent, and to whom.
+func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, acl *conf.AccessList, requiredProverIdent string) error{
+	scp, ok := signedStruct.Base.(*StorageChallengeProof)
+	if !ok {
+		return errors.New("Could not type assert the StorageChallengeProof.")
+	}
+
+	proverIdent, ok := acl.Identities[requiredProverIdent]
+	if !ok {
+		return errors.New("Could not find proverIdent attached to StorageChallengeProof.")
+	}
+
+	if proverIdent.AccessLevel != conf.Storage || requiredProverIdent != scp.Identity {
+		return errors.New("Provers identity was unexpected.")
+	}
+
+	challenge, ok := scp.Base.(*StorageChallenge)
+	if !ok {
+		return errors.New("Could not type assert the StorageChallenge.")
+	}
+
+	challengerIdent, ok := acl.Identities[challenge.Identity]
+	if !ok {
+		return errors.New("Could not find challengerIdent attached to StorageChallenge.")
+	}
+
+	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) {
+		return errors.New("Challengers identity was unexpected.")
+	}
+
+	// Check if public key exists and if message is signed.
+	proverPubkey, err := LoadPublicKey(proverIdent.PublicKey);
+	if err != nil {
+		return err
+	}
+
+	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
+	if err != nil {
+		return err
+	}
+
+	// Check if the proof is signed by the expected prover.
+	if !signedStruct.Verify(proverPubkey) {
+		return errors.New("Could not verify signature of prover.")
+	}
+
+	// Check if the challenge is signed by the expected challenger
+	if  !scp.Verify(challengerPubkey){
+		return errors.New("Could not verify signature of challenger.")
+	}
+
+	sample := LoadStorageSample(sampleBase, challenge.Cid)
+	if sample == nil || sample.Samples == nil {
+		return errors.New("Could not find a stored sample for this Cid.")
+	}
+
+	lenChal := len(challenge.Challenge)
+	lenProof := len(scp.Proof)
+
+	if lenChal != lenProof {
+		return errors.New("Length of challenge and proof is not equal.")
+	}
+	for i := 0; i < lenChal; i++ {
+		index := challenge.Challenge[i]
+		if scp.Proof[i] != sample.Samples[index] {
+			return errors.Errorf("Incorrect value on proof for challenge byte: %v", index)
+		}
 	}
 
 	return nil
@@ -208,75 +307,4 @@ func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byt
 	}
 
 	return newSignedStruct
-}
-
-func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challengerIdent *conf.Identity, proverIdent *conf.Identity) error{
-	scp, ok := signedStruct.Base.(*StorageChallengeProof)
-	if !ok {
-		return errors.New("Could not type assert the StorageChallengeProof.")
-	}
-
-	challenge, ok := scp.Base.(*StorageChallenge)
-	if !ok {
-		return errors.New("Could not type assert the StorageChallenge.")
-	}
-
-	// Check if public key exists and if message is signed.
-	proverPubkey, err := LoadPublicKey(proverIdent.PublicKey);
-	if err != nil {
-		return err
-	}
-
-	prover_fp, err := GetFingerprint(proverPubkey)
-	if err != nil {
-		return nil
-	}
-
-	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
-	if err != nil {
-		return err
-	}
-
-	challenger_fp, err := GetFingerprint(challengerPubkey)
-	if err != nil {
-		return nil
-	}
-
-	if proverIdent.AccessLevel != conf.Storage || prover_fp != scp.Identity {
-		return errors.New("Provers identity was unexpected.")
-	}
-	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) ||
-		challenger_fp != challenge.Identity {
-		return errors.New("Challengers identity was unexpected.")
-	}
-
-	// Check if the proof is signed by the expected prover.
-	if !signedStruct.Verify(proverPubkey) {
-		return errors.New("Could not verify signature of prover.")
-	}
-
-	// Check if the challenge is signed by the expected challenger
-	if  !scp.Verify(challengerPubkey){
-		return errors.New("Could not verify signature of challenger.")
-	}
-
-	sample := LoadStorageSample(sampleBase, challenge.Cid)
-	if sample == nil || sample.Samples == nil {
-		return errors.New("Could not find a stored sample for this Cid.")
-	}
-
-	lenChal := len(challenge.Challenge)
-	lenProof := len(scp.Proof)
-
-	if lenChal != lenProof {
-		return errors.New("Length of challenge and proof is not equal.")
-	}
-	for i := 0; i < lenChal; i++ {
-		index := challenge.Challenge[i]
-		if scp.Proof[i] != sample.Samples[index] {
-			return errors.Errorf("Incorrect value on proof for challenge byte: %v", index)
-		}
-	}
-
-	return nil
 }

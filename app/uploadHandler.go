@@ -158,7 +158,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	for {
 		select {
 		case v := <-responseChan:
-			if v.Err == nil {
+			if v.Err == nil && v.Result.Response.Code == uint32(types.CodeType_OK){
 				goodResponses[v.Identity] = true
 			}
 		case <-done:
@@ -174,7 +174,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Need 2/3+ precommits to make progress.
+	// Need 2/3+ precommits to make progress. Quorum >= 2f + 1 = (2*n+1)/3
 	if len(goodResponses) >= ((2*len(conf.AppConfig().TendermintNodes))+1)/3 {
 		writeUploadResponse(&w, types.CodeType_OK, "File temporary stored and storage sample distributed. " +
 			"After uploading file to IPFS, send a transaction to the mempool.");

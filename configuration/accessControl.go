@@ -29,18 +29,26 @@ type AccessList struct {
 	Identities map[string]Identity `json:"identities"`
 }
 
-func GetAccessList(path string) (*AccessList){
-	var z AccessList = AccessList{Identities:make(map[string]Identity)}
+var z map[string]*AccessList
 
+func init() {
+	z = make(map[string]*AccessList)
+}
+func GetAccessList(path string) (*AccessList){
+	if val, ok := z[path]; ok {
+		return val
+	}
+
+	z[path] = &AccessList{Identities:make(map[string]Identity)}
 	if data, err := ioutil.ReadFile(path); err == nil {
-		if err := json.Unmarshal(data, &z); err != nil {
+		if err := json.Unmarshal(data, z[path]); err != nil {
 			panic(err.Error())
 		}
 	} else {
 		panic(err.Error())
 	}
 
-	return &z
+	return z[path]
 }
 
 func WriteAccessList(acl *AccessList, path string){
@@ -48,4 +56,5 @@ func WriteAccessList(acl *AccessList, path string){
 	if data, err := json.Marshal(acl); err == nil {
 		ioutil.WriteFile(path, data, 0600)
 	}
+	z[path] = acl // Force reloading of access list.
 }
