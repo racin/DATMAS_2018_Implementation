@@ -10,7 +10,7 @@ import (
 )
 
 const (
-	numSamples = 3000; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
+	numSamples = 30; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
 	challengeSamples = 10; // Probability of guessing a correct proof is about: 1 / (2^(8*10)
 )
 
@@ -18,7 +18,8 @@ const (
 type StorageSample struct {
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
-	Samples					map[uint64]byte			`json:"sample"`
+	Sampleindices			[]uint64				`json:"sampleIndices"`
+	Samplevalues			[]byte					`json:"sampleValues"`
 }
 
 type StorageChallenge struct {
@@ -27,7 +28,7 @@ type StorageChallenge struct {
 	Cid						string					`json:"cid"`
 }
 
-// We can not use map[uint64]byte as the type for the proof, as when iterating the map, the order is not guaranteed to
+// We can not use map[uint64]byte as the type to represent the samples, as when iterating the map, the order is not guaranteed to
 // be equal between iterations. Therefore the hash of the struct may differ, and signatures will fail to verify.
 // Instead we rely on the guaranteed ordering of arrays and use the underlying Challenge []uint64 to specify the index
 // of each byte in Proof.
@@ -55,9 +56,9 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 	// If the file is smaller than numSamples, we simply store the whole file.
 	nSamples := min(numSamples, len(*fileBytes))
 
-	ret := &StorageSample{Cid: cid, Samples:make(map[uint64]byte, nSamples)}
+	ret := &StorageSample{Cid: cid, Sampleindices: make([]uint64, nSamples), Samplevalues:make([]byte, nSamples)}
 	max := new(big.Int).SetUint64(uint64(len(*fileBytes)))
-
+	addedSamples := make(map[uint64]bool)
 	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
 
@@ -66,11 +67,13 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 		}
 
 		rnduint := rnd.Uint64()
-		if _, ok := ret.Samples[rnduint]; ok {
+		if _, ok := addedSamples[rnduint]; ok {
 			i--
 			continue // This byte is already sampled.
 		}
-		ret.Samples[rnduint] =	(*fileBytes)[rnduint]
+		ret.Sampleindices[i] = rnduint
+		ret.Samplevalues[i] = (*fileBytes)[rnduint]
+		addedSamples[rnduint] = true
 	}
 	return ret
 }
@@ -82,6 +85,20 @@ func (sp *StorageSample) SignSample(privKey *Keys) (*SignedStruct, error) {
 	}
 	(*sp).Identity = fp
 	return SignStruct(sp, privKey)
+}
+
+func (sp *StorageSample) CompareTo(other *StorageSample) bool {
+	if len(sp.Sampleindices) == len(other.Sampleindices) {
+		mySampleMap := sp.getSamplesMap()
+		otherSampleMap := other.getSamplesMap()
+		for key, val := range *mySampleMap {
+			if otherVal, ok := (*otherSampleMap)[key]; !ok || otherVal != val {
+				return false
+			}
+		}
+		return true
+	}
+	return false
 }
 
 func (sp *SignedStruct) StoreSample(basepath string) error{
@@ -113,7 +130,7 @@ func LoadStorageSample(basepath string, cid string) *StorageSample{
 
 	return nil
 }
-
+/*
 func (sp *StorageSample) getSampleIndices() []uint64 {
 	ret := make([]uint64, len(sp.Samples))
 	i := 0
@@ -122,16 +139,15 @@ func (sp *StorageSample) getSampleIndices() []uint64 {
 		i++
 	}
 	return ret
-}
+}*/
 
 func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStruct{
 	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid}
-	sampleIndices := sp.getSampleIndices()
-	max := new(big.Int).SetUint64(uint64(len(sampleIndices)))
+	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
 
 	for i := 0; i < challengeSamples; i++ {
 		if rnd, err := rand.Int(rand.Reader, max); err == nil {
-			chal.Challenge[i] = sampleIndices[rnd.Uint64()]
+			chal.Challenge[i] = sp.Sampleindices[rnd.Uint64()]
 		}
 	}
 
@@ -150,52 +166,49 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStr
 	return signed
 }
 
-func (signedStruct *SignedStruct) VerifySample(acl *conf.AccessList) error {
-	/*challenge, ok := signedStruct.Base.(*StorageSample)
+func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, samplerPubkey *Keys) error {
+	if samplerIdentity == nil {
+		return errors.New("Samplers identity was nil.")
+	} else if samplerPubkey == nil {
+		return errors.New("Samplers pubkey was nil.")
+	}
+	sample, ok := signedStruct.Base.(*StorageSample)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallengeProof.")
 	}
 
-	challengerPubkey, err := LoadPublicKey(samplerIdent.PublicKey);
+	fp, err := GetFingerprint(samplerPubkey)
 	if err != nil {
-		return err
+		return errors.New("Could not get fingerprint of Public key.")
 	}
-
-	fp, err := GetFingerprint(challengerPubkey)
-	if err != nil {
-		return err;
-	}
-
-	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) ||
-		fp != challenge.Identity {
+	if fp != sample.Identity || (samplerIdentity.AccessLevel != conf.Consensus && samplerIdentity.AccessLevel != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
 	// Check if the proof is signed by the expected prover.
-	if !signedStruct.Verify(challengerPubkey) {
+	if !signedStruct.Verify(samplerPubkey) {
 		return errors.New("Could not verify signature of challenger.")
 	}
-*/
+
 	return nil
 }
 
-func (signedStruct *SignedStruct) VerifyChallenge(acl *conf.AccessList) error {
+func (signedStruct *SignedStruct) VerifyChallenge(challengerIdentity *conf.Identity, challengerPubkey *Keys) error {
+	if challengerIdentity == nil {
+		return errors.New("Challengers identity was nil.")
+	} else if challengerPubkey == nil {
+		return errors.New("Challengers pubkey was nil.")
+	}
 	challenge, ok := signedStruct.Base.(*StorageChallenge)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallengeProof.")
 	}
 
-	identity, ok := acl.Identities[challenge.Identity]
-	if !ok {
-		return errors.New("Could not find identity attached to StorageChallenge.")
-	}
-
-	challengerPubkey, err := LoadPublicKey(identity.PublicKey);
+	fp, err := GetFingerprint(challengerPubkey)
 	if err != nil {
-		return err
+		return errors.New("Could not get fingerprint of Public key.")
 	}
-
-	if (identity.AccessLevel != conf.Consensus && identity.AccessLevel != conf.User) {
+	if fp != challenge.Identity || (challengerIdentity.AccessLevel != conf.Consensus && challengerIdentity.AccessLevel != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -207,19 +220,36 @@ func (signedStruct *SignedStruct) VerifyChallenge(acl *conf.AccessList) error {
 	return nil
 }
 
+// Helper function used with verifying proofs
+func (sp *StorageSample) getSamplesMap() *map[uint64]byte {
+	ret := make(map[uint64]byte, len(sp.Sampleindices))
+	for i := 0; i < len(sp.Sampleindices); i++ {
+		ret[sp.Sampleindices[i]] = sp.Samplevalues[i]
+	}
+	return &ret
+}
 // Challenger can simply keep a list of challenges sent, and to whom.
-func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, acl *conf.AccessList, requiredProverIdent string) error{
+func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challengerIdentity *conf.Identity, challengerPubkey *Keys,
+		proverIdentity *conf.Identity, proverPubkey *Keys) error{
+	if challengerIdentity == nil {
+		return errors.New("Challengers identity was nil.")
+	} else if challengerPubkey == nil {
+		return errors.New("Challengers pubkey was nil.")
+	} else if proverIdentity == nil {
+		return errors.New("Provers identity was nil.")
+	} else if proverPubkey == nil {
+		return errors.New("Provers pubkey was nil.")
+	}
 	scp, ok := signedStruct.Base.(*StorageChallengeProof)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallengeProof.")
 	}
 
-	proverIdent, ok := acl.Identities[requiredProverIdent]
-	if !ok {
-		return errors.New("Could not find proverIdent attached to StorageChallengeProof.")
+	fpProver, err := GetFingerprint(proverPubkey)
+	if err != nil {
+		return errors.New("Could not get fingerprint of Public key.")
 	}
-
-	if proverIdent.AccessLevel != conf.Storage || requiredProverIdent != scp.Identity {
+	if fpProver != scp.Identity || proverIdentity.AccessLevel != conf.Storage {
 		return errors.New("Provers identity was unexpected.")
 	}
 
@@ -228,24 +258,13 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, acl *c
 		return errors.New("Could not type assert the StorageChallenge.")
 	}
 
-	challengerIdent, ok := acl.Identities[challenge.Identity]
-	if !ok {
-		return errors.New("Could not find challengerIdent attached to StorageChallenge.")
+	fpChallenger, err := GetFingerprint(challengerPubkey)
+	if err != nil {
+		return errors.New("Could not get fingerprint of Public key.")
 	}
 
-	if (challengerIdent.AccessLevel != conf.Consensus && challengerIdent.AccessLevel != conf.User) {
+	if fpChallenger != challenge.Identity || (challengerIdentity.AccessLevel != conf.Consensus && challengerIdentity.AccessLevel != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
-	}
-
-	// Check if public key exists and if message is signed.
-	proverPubkey, err := LoadPublicKey(proverIdent.PublicKey);
-	if err != nil {
-		return err
-	}
-
-	challengerPubkey, err := LoadPublicKey(challengerIdent.PublicKey);
-	if err != nil {
-		return err
 	}
 
 	// Check if the proof is signed by the expected prover.
@@ -258,8 +277,8 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, acl *c
 		return errors.New("Could not verify signature of challenger.")
 	}
 
-	sample := LoadStorageSample(sampleBase, challenge.Cid)
-	if sample == nil || sample.Samples == nil {
+	storageSample := LoadStorageSample(sampleBase, challenge.Cid)
+	if storageSample == nil || len(storageSample.Sampleindices) == 0 {
 		return errors.New("Could not find a stored sample for this Cid.")
 	}
 
@@ -269,9 +288,11 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, acl *c
 	if lenChal != lenProof {
 		return errors.New("Length of challenge and proof is not equal.")
 	}
+
+	mapSamples := storageSample.getSamplesMap()
 	for i := 0; i < lenChal; i++ {
 		index := challenge.Challenge[i]
-		if scp.Proof[i] != sample.Samples[index] {
+		if scp.Proof[i] != (*mapSamples)[index] {
 			return errors.Errorf("Incorrect value on proof for challenge byte: %v", index)
 		}
 	}

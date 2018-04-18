@@ -14,6 +14,7 @@ import (
 	//"github.com/racin/DATMAS_2018_Implementation/types"
 	"reflect"
 	"bytes"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 type SignedStruct struct {
@@ -165,4 +166,14 @@ func GenerateKeyPair(path, name string, bits int) (*Keys, error){
 	}
 
 	return &Keys{private:keypair, public:&keypair.PublicKey}, nil
+}
+
+func GetIdentityPublicKey(ident string, acl *conf.AccessList, pubkeyBase string) (identity *conf.Identity, pubkey *Keys){
+	if id, ok := acl.Identities[ident]; ok {
+		identity = &id
+		if pk, err := LoadPublicKey(pubkeyBase + identity.PublicKey); err == nil {
+			pubkey = pk
+		}
+	}
+	return
 }

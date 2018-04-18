@@ -28,7 +28,7 @@ func TestStorageSample(t *testing.T){
 		if storageSample == nil {
 			t.Fatal("Error generating storage sample.")
 		}
-		assert.NotEmpty(t, storageSample.Samples, "No samples generated.")
+		assert.NotEmpty(t, storageSample.Sampleindices, "No samples generated.")
 	})
 	var signedStorageSample *SignedStruct
 	t.Run("SignSample", func(t *testing.T){
@@ -42,6 +42,12 @@ func TestStorageSample(t *testing.T){
 		}
 		assert.NotNil(t, signedStorageSample, "Could not sign storage sample.")
 	})
+	t.Run("VerifyStorageSample", func(t *testing.T){
+		err = signedStorageSample.VerifySample(GetIdentityPublicKey(consensusCertPathFP, acl, ""))
+		if err != nil {
+			t.Fatal("Could not verify the sample. Error: " + err.Error())
+		}
+	})
 	t.Run("StoreStorageSample", func(t *testing.T){
 		if err := signedStorageSample.StoreSample(testPosPath); err != nil {
 			t.Fatal("Could not store storage sample.")
@@ -51,7 +57,7 @@ func TestStorageSample(t *testing.T){
 	t.Run("LoadStorageSample", func(t *testing.T){
 		assert.Nil(t, storageSample, "storageSample is not set to nil.")
 		storageSample = LoadStorageSample("test_pos/", cid)
-		if storageSample == nil || storageSample.Samples == nil || len(storageSample.Samples) == 0 {
+		if storageSample == nil || len(storageSample.Sampleindices) == 0 {
 			t.Fatal("Could not load Storage Sample")
 		}
 	})
@@ -69,7 +75,7 @@ func TestStorageSample(t *testing.T){
 		assert.NotEmpty(t, chalng.Challenge, "Challenge was empty")
 	})
 	t.Run("VerifyChallenge", func(t *testing.T){
-		err = challenge.VerifyChallenge(acl)
+		err = challenge.VerifyChallenge(GetIdentityPublicKey(consensusCertPathFP, acl, ""))
 		if err != nil {
 			t.Fatal("Could not verify the challenge. Error: " + err.Error())
 		}
@@ -85,7 +91,9 @@ func TestStorageSample(t *testing.T){
 		assert.NotNil(t, challengeProof, "Could not generate challenge proof.")
 	})
 	t.Run("VerifyChallengeProof", func(t *testing.T){
-		err := challengeProof.VerifyChallengeProof(testPosPath, acl, storageCertPathFP)
+		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
+		proverIdent, proverPubkey := GetIdentityPublicKey(storageCertPathFP, acl, "")
+		err := challengeProof.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey)
 		if err != nil {
 			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
 		}
@@ -101,7 +109,9 @@ func TestStorageSample(t *testing.T){
 		assert.NotNil(t, challengeProofWithWrongIdentity, "Could not generate challenge proof.")
 	})
 	t.Run("VerifyChallengeProofWithWrongIdentity", func(t *testing.T){
-		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, acl, storageCertPathFP)
+		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
+		proverIdent, proverPubkey := GetIdentityPublicKey(clientCertPathFP, acl, "")
+		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey)
 		assert.NotNil(t, err, "Proof should not be verifiable using a different public key. " +
 			"(Client signed the proof.)")
 	})
