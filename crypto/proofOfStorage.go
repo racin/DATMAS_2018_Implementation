@@ -141,8 +141,8 @@ func (sp *StorageSample) getSampleIndices() []uint64 {
 	return ret
 }*/
 
-func (sp *StorageSample) GenerateChallenge(privkey *Keys, cid string) *SignedStruct{
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid}
+func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
 
 	for i := 0; i < challengeSamples; i++ {

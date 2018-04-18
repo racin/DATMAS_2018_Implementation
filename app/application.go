@@ -28,8 +28,7 @@ type Application struct {
 	TMRpcClients		map[string]rpcClient.Client
 
 	privKey				*crypto.Keys
-	fingerprint			string
-
+	identity			*conf.Identity
 }
 
 func NewApplication() *Application {
@@ -44,7 +43,8 @@ func NewApplication() *Application {
 		panic("Could not get fingerprint of private key.")
 	} else {
 		app.privKey = myPrivKey
-		app.fingerprint = fp
+		ident := app.GetAccessList().Identities[fp]
+		app.identity = &ident
 	}
 
 	app.setupTMRpcClients()
@@ -126,20 +126,20 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	if err := json.Unmarshal(txBytes, stx); err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
 	} else if tx, ok = stx.Base.(types.Transaction); !ok {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not Marshal transaction (Transaction)"}
+		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
+	identity, pubKey := app.GetIdentityPublicKey(tx.Identity)
 	// Get access list
-	identity, ok := app.GetAccessList().Identities[tx.Identity];
-	if !ok {
+	if identity == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
 	// Check if public key exists and if message is signed.
-	if pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey); err != nil {
+	if pubKey == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
-	} else if !stx.Verify(pk) {
+	} else if !stx.Verify(pubKey) {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
 	}
 
@@ -166,8 +166,36 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}
 			}
 
+			// Load storage sample for the file.
+			storageSample := crypto.LoadStorageSample(conf.AppConfig().StorageSamples, reqUpload.Cid)
+			if storageSample == nil {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not find associated storage sample."}
+			}
+
+			storageChallenge := storageSample.GenerateChallenge(app.privKey)
+			if storageChallenge == nil {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not generate a StorageChallenge for sample."}
+			}
+
 			// Check if a file with this hash exists on an IPFS node and is uploaded to our server.
-			app.queryIPFSproxy(reqUpload.IpfsNode, conf.AppConfig().IpfsChallengeEndpoint, crypto.LoadStorageSample())
+			ipfsResponse := app.queryIPFSproxy(reqUpload.IpfsNode, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+			if ipfsResponse.Codetype != types.CodeType_OK {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Did not get a proof from IPFS node " +
+					reqUpload.IpfsNode + ", Error: " + string(ipfsResponse.Message)}
+			}
+
+			signedProof := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{}}
+			if err := json.Unmarshal(ipfsResponse.Message, signedProof); err != nil {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not unmarshal StorageChallengeProof."}
+			}
+
+			challengeProof, ok := signedProof.Base.(*crypto.StorageChallengeProof)
+			if !ok {
+				return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not type assert StorageChallengeProof."}
+			}
+
+			// Hash of IPFS public key? WHere?
+			if err := challengeProof.VerifyChallengeProof(conf.AppConfig().StorageSamples, app.identity, app.privKey, )
 			fileBytes, err := ioutil.ReadFile(conf.AppConfig().TempUploadPath + reqUpload.Cid)
 			if err != nil {
 				return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data to string"}

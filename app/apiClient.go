@@ -61,7 +61,7 @@ func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
 	switch data := input.(type){
 		case *crypto.SignedStruct:
 			if byteArr, err := json.Marshal(data); err != nil {
-				res.Message = err.Error()
+				res.AddMessage(err.Error())
 				return res
 			} else {
 				*payload = *bytes.NewBuffer(byteArr)
@@ -70,7 +70,7 @@ func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
 		case *map[string]io.Reader:
 			payload, contentType = GetMultipartValues(data)
 		default:
-			res.Message = "Input must be of type *crypto.SignedStruct or *map[string]io.Reader."
+			res.AddMessage("Input must be of type *crypto.SignedStruct or *map[string]io.Reader.")
 			return res
 	}
 
@@ -79,13 +79,13 @@ func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
 	if response, err := app.IpfsHttpClient.Post(ipfsAddr + endpoint, contentType, payload); err == nil{
 		if dat, err := ioutil.ReadAll(response.Body); err == nil{
 			if err := json.Unmarshal(dat, res); err != nil {
-				res.Message = err.Error()
+				res.AddMessage(err.Error())
 			}
 		} else {
-			res.Message = err.Error()
+			res.AddMessage(err.Error())
 		}
 	} else {
-		res.Message = err.Error()
+		res.AddMessage(err.Error())
 	}
 
 	return res
