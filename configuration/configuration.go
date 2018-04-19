@@ -71,9 +71,10 @@ type ClientConfiguration struct {
 var ipfsProxyConfig IPFSProxyConfiguration
 type IPFSProxyConfiguration struct {
 	BasePath 						string		`json:"basePath"`
-	ListenAddr 						string		`json:"listenAddr"`
 	AccessList						string		`json:"accessList"`
+	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
+	ListenAddr 						string		`json:"listenAddr"`
 	TempUploadPath					string		`json:"tempUploadPath"`
 }
 

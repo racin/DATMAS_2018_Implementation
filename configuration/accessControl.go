@@ -6,12 +6,12 @@ import (
 )
 
 type Context int
-type AccessLevel int
+type NodeType int
 const (
-	Anonymous 	AccessLevel = iota
-	User 		AccessLevel = 1
-	Storage		AccessLevel = 2
-	Consensus   AccessLevel = 3
+	Anonymous 	NodeType = iota
+	User 		NodeType = 1
+	Storage		NodeType = 2
+	Consensus   NodeType = 3
 
 	app 	Context = iota
 	ipfs	Context = 1
@@ -21,9 +21,10 @@ const (
 )
 
 type Identity struct {
-	AccessLevel AccessLevel    	`json:"level"`
+	Type 		NodeType    	`json:"type"`
 	Name        string 			`json:"name"`
 	PublicKey   string 			`json:"publickey"`
+	Address  	string 			`json:"address"`
 }
 type AccessList struct {
 	Identities map[string]Identity `json:"identities"`
@@ -57,4 +58,11 @@ func WriteAccessList(acl *AccessList, path string){
 		ioutil.WriteFile(path, data, 0600)
 	}
 	z[path] = acl // Force reloading of access list.
+}
+
+func (acl *AccessList) GetAddress(id string) string {
+	if ident, ok := acl.Identities[id]; ok {
+		return ident.Address
+	}
+	return "";
 }

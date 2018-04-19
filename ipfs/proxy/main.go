@@ -74,8 +74,8 @@ func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message stri
 	json.NewEncoder(*w).Encode(&types.IPFSReponse{Message:message, Codetype:codeType})
 }
 
-func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel app.AccessLevel) (*crypto.SignedStruct, types.CodeType, string) {
-	tx := &crypto.SignedStruct{}
+func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel conf.NodeType) (*crypto.SignedStruct, types.CodeType, string) {
+	tx := &crypto.SignedStruct{Base: &types.Transaction{}}
 	if err := json.Unmarshal([]byte(txString), tx); err != nil {
 		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction"
 	}
@@ -100,7 +100,7 @@ func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel app.AccessL
 	}*/
 
 	// Check access rights
-	if identity.AccessLevel < minAccessLevel {
+	if identity.Type < minAccessLevel {
 		return nil, types.CodeType_Unauthorized, "Insufficient access level"
 	}
 

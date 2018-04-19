@@ -53,7 +53,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stx := &crypto.SignedStruct{}
+	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
 	var tx types.Transaction
 	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
@@ -87,8 +87,8 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if uploader is allowed to upload data.
-	if identity.AccessLevel < 1 {
-		writeUploadResponse(&w, types.CodeType_Unauthorized, "Insufficient access level");
+	if identity.Type != 1 {
+		writeUploadResponse(&w, types.CodeType_Unauthorized, "Only registered clients can upload data.");
 		return
 	}
 

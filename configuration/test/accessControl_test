@@ -2,17 +2,19 @@
 	"identities": {
         "95c73e8028118d18a961dd1da6b5e7c3": {
             "name": "clientA",
-            "level": 1,
+            "type": 1,
             "publickey": "../crypto/test_certificate/client_test.pub"
         },
         "64168bb2f7a0a4d67d83471470ce757c": {
             "name": "storageA",
-            "level": 2,
+            "type": 2,
+            "address": "",
             "publickey": "../crypto/test_certificate/storage_test.pub"
         },
         "cc418e456ae72df5bdb39d65bb8945e8": {
             "name": "consensusA",
-            "level": 3,
+            "type": 3,
+            "address": "",
             "publickey": "../crypto/test_certificate/consensus_test.pub"
         }
 	}

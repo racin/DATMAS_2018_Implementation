@@ -3,6 +3,7 @@ package configuration
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 func TestAccessControl (t *testing.T){
@@ -16,4 +17,7 @@ func TestAccessControl (t *testing.T){
 
 	acl2 := GetAccessList(appConf.BasePath + appConf.AccessList)
 	assert.NotEqual(t, acl, acl2, "Test data is not isolated.")
+
+	fmt.Println(acl)
+	fmt.Println(acl2)
 }

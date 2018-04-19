@@ -41,7 +41,7 @@ rm -rf $GOPATH/src/github.com/tendermint/tendermint/vendor/golang.org/x/net/trac
 ```
 mkdir $HOME/.bcfs
 cd $HOME/.bcfs
-echo -ne '\n' | openssl req -x509 -nodes -newkey rsa:4196 -keyout mycert.pem -out mycert.pem
+echo -ne '\n' | openssl req -x509 -nodes -newkey rsa:4096 -keyout mycert.pem -out mycert.pem
 chmod 0600 mycert.pem
 openssl rsa -in mycert.pem -pubout > mycert.pub
 ```

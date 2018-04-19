@@ -4,16 +4,28 @@
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
   "tempUploadPath": "/tmp/",
-  "storageSamples": "storageSamples/",
-
-  "tendermintNodes": ["testingoffline","localhost"],
-  "tmQueryTimeoutSeconds": 20,
-  "websocketEndpoint": "/websocket",
-  "websocketAddr": "http://$TmNode:46657",
+  "storageSamples": "StorageSamples/",
 
   "listenAddr": "tcp://0.0.0.0:46658",
   "uploadAddr": ":46659",
   "uploadEndpoint": "/upload",
   "rpcType": "grpc",
-  "appInfo": "__bcfs"
+  "appInfo": "__bcfs",
+
+  "tendermintNodes": ["testingoffline","cc418e456ae72df5bdb39d65bb8945e8"],
+  "tmQueryTimeoutSeconds": 20,
+  "websocketEndpoint": "/websocket",
+  "websocketAddr": "http://$TmNode:46657",
+
+  "ipfsNodes": ["testingoffline","64168bb2f7a0a4d67d83471470ce757c"],
+  "ipfsProxyAddr": "http://$IpfsNode:46660",
+  "ipfsProxyTimeoutSeconds": 30,
+  "ipfsIsupEndpoint": "/isup",
+  "ipfsStatusallEndpoint": "/statusall",
+  "ipfsPinfileEndpoint": "/pinfile",
+  "ipfsUnpinfileEndpoint": "/unpinfile",
+  "ipfsGetEndpoint": "/get",
+  "ipfsStatusEndpoint": "/status",
+  "ipfsAddnopinEndpoint": "/addnopin",
+  "ipfsChallengeEndpoint": "/challenge"
 }

@@ -181,7 +181,7 @@ func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, s
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
-	if fp != sample.Identity || (samplerIdentity.AccessLevel != conf.Consensus && samplerIdentity.AccessLevel != conf.User) {
+	if fp != sample.Identity || (samplerIdentity.Type != conf.Consensus && samplerIdentity.Type != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -208,7 +208,7 @@ func (signedStruct *SignedStruct) VerifyChallenge(challengerIdentity *conf.Ident
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
-	if fp != challenge.Identity || (challengerIdentity.AccessLevel != conf.Consensus && challengerIdentity.AccessLevel != conf.User) {
+	if fp != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -249,7 +249,7 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challe
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
-	if fpProver != scp.Identity || proverIdentity.AccessLevel != conf.Storage {
+	if fpProver != scp.Identity || proverIdentity.Type != conf.Storage {
 		return errors.New("Provers identity was unexpected.")
 	}
 
@@ -263,7 +263,7 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challe
 		return errors.New("Could not get fingerprint of Public key.")
 	}
 
-	if fpChallenger != challenge.Identity || (challengerIdentity.AccessLevel != conf.Consensus && challengerIdentity.AccessLevel != conf.User) {
+	if fpChallenger != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.User) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
