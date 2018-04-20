@@ -9,7 +9,7 @@ type Context int
 type NodeType int
 const (
 	Anonymous 	NodeType = iota
-	User 		NodeType = 1
+	Client 		NodeType = 1
 	Storage		NodeType = 2
 	Consensus   NodeType = 3
 

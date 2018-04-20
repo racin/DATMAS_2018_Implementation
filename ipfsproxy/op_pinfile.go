@@ -3,13 +3,10 @@ package ipfsproxy
 import (
 	cid2 "github.com/ipfs/go-cid"
 	mh "github.com/multiformats/go-multihash"
-	ma "github.com/multiformats/go-multiaddr"
-	"os"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"io/ioutil"
-	"bytes"
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
 func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +17,7 @@ func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check access to proxy method
-	tx, codeType, message := proxy.CheckProxyAccess(string(txString), app.User)
+	tx, codeType, message := proxy.CheckProxyAccess(string(txString), conf.Consensus)
 	if codeType != types.CodeType_OK {
 		writeResponse(&w, codeType, message);
 		return
@@ -33,6 +30,13 @@ func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	if !proxy.isCidInLedger(cidStr) {
+		writeResponse(&w, types.CodeType_BCFSUnknownAddress, "Could not find CID in the ledger.");
+		return
+	}
+
+	// Check if we have stored this file locally.
+	// TODO: Test if this is necessary. Might be enough that it has been added to any node in the cluster.
 	err = proxy.client.IPFS().Get(cidStr, conf.IPFSProxyConfig().TempUploadPath)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSUnknownAddress, "Could not find file with hash. Error: " + err.Error());
@@ -50,5 +54,12 @@ func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
 		writeResponse(&w, types.CodeType_OK, "File pinned.");
+		// Add transaction to list of known transactions (message contains hash of tranc)
+		proxy.seenTranc[message] = true
 	}
+}
+
+func (proxy *Proxy) isCidInLedger(cid string) bool {
+	// TODO: Implement
+	return true
 }

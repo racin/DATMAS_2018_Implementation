@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"github.com/gorilla/mux"
 	"github.com/racin/DATMAS_2018_Implementation/types"
-	"github.com/racin/DATMAS_2018_Implementation/app"
 	"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 )
@@ -20,8 +19,37 @@ type Proxy struct {
 	localAPIAddr		ma.Multiaddr
 	remoteAPIAddr		ma.Multiaddr
 	seenTranc			map[string]bool
+
+	privKey				*crypto.Keys
+	identity			*conf.Identity
+	fingerprint			string
 }
 
+func NewProxy() *Proxy {
+	conf.LoadIPFSProxyConfig()
+	localAPIAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
+	remoteAPIAddr, _ := ma.NewMultiaddr(conf.IPFSProxyConfig().ListenAddr)
+
+	proxy := &Proxy {
+		client: getClient(localAPIAddr),
+		localAPIAddr:localAPIAddr,
+		remoteAPIAddr:remoteAPIAddr,
+		seenTranc:make(map[string]bool),
+	}
+
+	// Load private keys in order to later digitally sign transactions
+	if myPrivKey, err := crypto.LoadPrivateKey(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PrivateKey); err != nil {
+		panic("Could not load private key. Error: " + err.Error())
+	} else if fp, err := crypto.GetFingerprint(myPrivKey); err != nil{
+		panic("Could not get fingerprint of private key.")
+	} else {
+		proxy.fingerprint = fp;
+		proxy.privKey = myPrivKey
+		proxy.identity = proxy.GetAccessList().Identities[fp]
+	}
+
+	return proxy
+}
 // Simple check to prevent Replay attacks. Not reliable.
 func (proxy *Proxy) HasSeenTranc(trancHash string) bool{
 	if _, ok := proxy.seenTranc[trancHash]; ok {
@@ -64,7 +92,7 @@ func (proxy *Proxy) StartHTTPAPI(){
 	}
 }
 
-func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel conf.NodeType) (*crypto.SignedStruct, types.CodeType, string) {
+func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeType) (*types.Transaction, types.CodeType, string) {
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
 	var tx types.Transaction
 	var ok bool = false
@@ -74,47 +102,33 @@ func (proxy *Proxy) CheckProxyAccess(txString string, minAccessLevel conf.NodeTy
 		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction."
 	}
 
-	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
-	if signer == nil {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
-	}
-
-	// Check if public key exists and if message is signed.
-	if pubKey == nil {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
-	} else if !stx.Verify(pubKey) {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
-	}
-	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	if err := json.Unmarshal([]byte(txString), tx); err != nil {
-		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction"
-	}
-
 	// Check for replay attack
 	txHash := crypto.HashStruct(tx)
 	if proxy.HasSeenTranc(txHash) {
 		return nil, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack."
 	}
 
-	// Check identity access
-	identity, ok := proxy.GetAccessList().Identities[tx.Identity];
-	if !ok {
+	// Get signers identity and public key
+	signer, pubKey := proxy.GetIdentityPublicKey(tx.Identity)
+	if signer == nil {
 		return nil, types.CodeType_Unauthorized, "Could not get access list"
 	}
 
-
-	// Verify signature in transaction. (Temp disabled)
-	if ok, msg := app.VerifySignature(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PublicKeys + identity.PublicKey,
-		txHash, tx.Signature); !ok {
-		return nil, types.CodeType_BCFSInvalidSignature, msg
+	// Check if public key exists and if message is signed.
+	if pubKey == nil {
+		return nil, types.CodeType_BCFSInvalidSignature, "Could not locate public key"
+	} else if !stx.Verify(pubKey) {
+		return nil, types.CodeType_BCFSInvalidSignature, "Could not verify signature"
 	}
 
 	// Check access rights
-	if identity.Type < minAccessLevel {
-		return nil, types.CodeType_Unauthorized, "Insufficient access level"
+	for allowedType := range openForTypes {
+		if signer.Type == openForTypes[allowedType] {
+			return &tx, types.CodeType_OK, txHash
+		}
 	}
 
-	return tx, types.CodeType_OK, txHash
+	return nil, types.CodeType_Unauthorized, "Insufficient access level"
 }
 
 func (proxy *Proxy) GetAccessList() (*conf.AccessList){

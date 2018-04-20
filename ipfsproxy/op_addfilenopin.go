@@ -1,17 +1,16 @@
 package ipfsproxy
 
 import (
-	cid2 "github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
-	ma "github.com/multiformats/go-multiaddr"
-	"os"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"io/ioutil"
 	"bytes"
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 )
 
+// Adds the file to a single IPFS node. Only a client should be able to do this. (Consensus node can distribute an
+// already uploaded file by pinning it.)
 func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
@@ -26,7 +25,7 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check access to proxy method
-	tx, codeType, message := proxy.CheckProxyAccess(txString[0], app.User)
+	tx, codeType, message := proxy.CheckProxyAccess(txString[0], conf.Client)
 	if codeType != types.CodeType_OK {
 		writeResponse(&w, codeType, message);
 		return
@@ -39,17 +38,18 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Check that exactly one file is sent
 	files, ok := formdata.File["file"]
 	if !ok || len(files) > 1 {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "File parameter should contain exactly one file.");
-		return // Missing files or more than one file
+		return
 	}
 
 	file := files[0]
 	fopen, err := file.Open()
 	defer fopen.Close()
 	if err != nil {
-		fmt.Fprintln(w, err)
+		writeResponse(&w, types.CodeType_InternalError, "Could not access attached file.");
 		return
 	}
 

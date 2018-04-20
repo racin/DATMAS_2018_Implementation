@@ -1,15 +1,11 @@
 package ipfsproxy
 
 import (
-	cid2 "github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
-	ma "github.com/multiformats/go-multiaddr"
-	"os"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"io/ioutil"
-	"bytes"
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
@@ -19,7 +15,7 @@ func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if _, codeType, message := proxy.CheckProxyAccess(string(txString), app.User); codeType != types.CodeType_OK {
+	if _, codeType, message := proxy.CheckProxyAccess(string(txString), conf.Client, conf.Consensus); codeType != types.CodeType_OK {
 		writeResponse(&w, codeType, message);
 	} else if pininfo, err := proxy.client.StatusAll(false); err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());

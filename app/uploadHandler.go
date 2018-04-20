@@ -46,11 +46,11 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx types.Transaction
+	var tx *types.Transaction
 	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
 		return
-	} else if tx, ok = stx.Base.(types.Transaction); !ok {
+	} else if tx, ok = stx.Base.(*types.Transaction); !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (Transaction)");
 		return
 	}
@@ -62,24 +62,24 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Check identity access
-	identity, ok := app.GetAccessList().Identities[tx.Identity];
-	if !ok {
-		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not get access list");
+	// Get signers identity and public key
+	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
+	if signer == nil {
+		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not get access list")
 		return
 	}
 
 	// Check if public key exists and if message is signed.
-	if pk, err := crypto.LoadPublicKey(conf.AppConfig().BasePath + conf.AppConfig().PublicKeys + identity.PublicKey); err != nil {
+	if pubKey == nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key");
 		return
-	} else if pk.Verify(txHash, stx.Signature) {
+	} else if !stx.Verify(pubKey) {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not verify signature");
 		return
 	}
 
-	// Check if uploader is allowed to upload data.
-	if identity.Type != 1 {
+	// Only type Client is allowed to upload data
+	if signer.Type != conf.Client {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Only registered clients can upload data.");
 		return
 	}
@@ -103,7 +103,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	fopen, err := file.Open()
 	defer fopen.Close()
 	if err != nil {
-		fmt.Fprintln(w, err)
+		writeUploadResponse(&w, types.CodeType_InternalError, "Could not access attached file.");
 		return
 	}
 
@@ -171,6 +171,8 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	if len(goodResponses) >= ((2*len(conf.AppConfig().TendermintNodes))+1)/3 {
 		writeUploadResponse(&w, types.CodeType_OK, "File temporary stored and storage sample distributed. " +
 			"After uploading file to IPFS, send a transaction to the mempool.");
+		// Add transaction to list of known transactions
+		app.seenTranc[txHash] = true
 	} else {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Could not distribute storage samples to enough nodes" +
 			" within the time period. Try again later.");

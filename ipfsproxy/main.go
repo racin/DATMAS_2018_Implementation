@@ -33,16 +33,7 @@ func getClient(apiAddr ma.Multiaddr) *client.Client {
 }
 
 func main() {
-	conf.LoadIPFSProxyConfig()
-	localAPIAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
-	remoteAPIAddr, _ := ma.NewMultiaddr(conf.IPFSProxyConfig().ListenAddr)
-	proxy := &Proxy {
-		client: getClient(localAPIAddr),
-		localAPIAddr:localAPIAddr,
-		remoteAPIAddr:remoteAPIAddr,
-		seenTranc:make(map[string]bool),
-	}
-
+	proxy := NewProxy()
 	fmt.Println("Starting IPFS proxy API")
 	proxy.StartHTTPAPI()
 }

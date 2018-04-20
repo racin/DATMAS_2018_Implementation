@@ -189,7 +189,7 @@ func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, s
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
-	if fp != sample.Identity || (samplerIdentity.Type != conf.Consensus && samplerIdentity.Type != conf.User) {
+	if fp != sample.Identity || (samplerIdentity.Type != conf.Consensus && samplerIdentity.Type != conf.Client) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -216,7 +216,7 @@ func (signedStruct *SignedStruct) VerifyChallenge(challengerIdentity *conf.Ident
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
-	if fp != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.User) {
+	if fp != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.Client) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -276,7 +276,7 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 		return errors.New("Could not get fingerprint of Public key.")
 	}
 
-	if fpChallenger != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.User) {
+	if fpChallenger != challenge.Identity || (challengerIdentity.Type != conf.Consensus && challengerIdentity.Type != conf.Client) {
 		return errors.New("Challengers identity was unexpected.")
 	}
 
@@ -340,8 +340,9 @@ func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byt
 
 	lenChal := len(challenge.Challenge)
 	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint, Proof: make([]byte,lenChal)}
+	file := (*fileBytes)
 	for i := 0; i < lenChal; i++ {
-		proof.Proof[i] = (*fileBytes)[challenge.Challenge[i]]
+		proof.Proof[i] = file[challenge.Challenge[i]]
 	}
 
 	newSignedStruct, err := SignStruct(proof, privKey)

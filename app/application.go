@@ -35,7 +35,7 @@ func NewApplication() *Application {
 		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool),
 		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second}}
 
-	// Load my in order to digitally sign transactions
+	// Load private keys in order to later digitally sign transactions
 	if myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey); err != nil {
 		panic("Could not load private key. Error: " + err.Error())
 	} else if fp, err := crypto.GetFingerprint(myPrivKey); err != nil{
@@ -58,11 +58,11 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	txHash, _ := crypto.IPFSHashData(txBytes)
 	fmt.Println("Deliver trigger. Hash of data: " + txHash);
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx types.Transaction
+	var tx *types.Transaction
 	var ok bool = false
 	if err := json.Unmarshal(txBytes, stx); err != nil {
 		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	} else if tx, ok = stx.Base.(types.Transaction); !ok {
+	} else if tx, ok = stx.Base.(*types.Transaction); !ok {
 		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
@@ -82,18 +82,18 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	case types.TransactionType_DownloadData:
 		{
 			fmt.Println("DeliverTx_DownloadData")
-			return *app.DeliverTx_DownloadData(signer, &tx)
+			return *app.DeliverTx_DownloadData(signer, tx)
 		}
 
 	case types.TransactionType_UploadData:
 		{
 			fmt.Println("DeliverTx_UploadData")
-			return *app.DeliverTx_UploadData(signer, &tx)
+			return *app.DeliverTx_UploadData(signer, tx)
 		}
 	case types.TransactionType_RemoveData:
 		{
 			fmt.Println("DeliverTx_RemoveData")
-			return *app.DeliverTx_RemoveData(signer, &tx)
+			return *app.DeliverTx_RemoveData(signer, tx)
 		}
 	case types.TransactionType_VerifyStorage:
 		{
@@ -103,7 +103,7 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	case types.TransactionType_ChangeContentAccess:
 		{
 			fmt.Println("DeliverTx_ChangeContentAccess")
-			return *app.DeliverTx_ChangeContentAccess(signer, &tx)
+			return *app.DeliverTx_ChangeContentAccess(signer, tx)
 		}
 	default:
 		{
@@ -118,11 +118,11 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
 	fmt.Println("Data received: " + string(txBytes))
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx types.Transaction
+	var tx *types.Transaction
 	var ok bool = false
 	if err := json.Unmarshal(txBytes, stx); err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	} else if tx, ok = stx.Base.(types.Transaction); !ok {
+	} else if tx, ok = stx.Base.(*types.Transaction); !ok {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
@@ -143,18 +143,18 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	case types.TransactionType_DownloadData:
 		{
 			fmt.Println("CheckTx_DownloadData")
-			return *app.CheckTx_DownloadData(signer, &tx)
+			return *app.CheckTx_DownloadData(signer, tx)
 		}
 
 	case types.TransactionType_UploadData:
 		{
 			fmt.Println("CheckTx_UploadData")
-			return *app.CheckTx_UploadData(signer, &tx)
+			return *app.CheckTx_UploadData(signer, tx)
 		}
 	case types.TransactionType_RemoveData:
 		{
 			fmt.Println("CheckTx_RemoveData")
-			return *app.CheckTx_RemoveData(signer, &tx)
+			return *app.CheckTx_RemoveData(signer, tx)
 		}
 	case types.TransactionType_VerifyStorage:
 		{
@@ -164,7 +164,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	case types.TransactionType_ChangeContentAccess:
 		{
 			fmt.Println("CheckTx_ChangeContentAccess")
-			return *app.CheckTx_ChangeContentAccess(signer, &tx)
+			return *app.CheckTx_ChangeContentAccess(signer, tx)
 		}
 	default:
 		{
