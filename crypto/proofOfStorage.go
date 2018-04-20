@@ -16,6 +16,7 @@ const (
 )
 
 // By using uint64 as the index it is possible to index files up to 2048 Exa bytes.
+// Identity is the fingerprint of the one that sampled the data. Cid is the identifier for the file.
 type StorageSample struct {
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`

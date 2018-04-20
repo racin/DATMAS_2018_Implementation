@@ -3,7 +3,6 @@ package cmd
 import (
 	"github.com/spf13/cobra"
 	"log"
-	"github.com/racin/DATMAS_2018_Implementation/app"
 	"fmt"
 	"os"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
@@ -39,29 +38,34 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
-		stranc := getSignedTransaction(app.UploadData, fileHash)
-		result, err := getAPI().BeginUploadData(stranc)
-
-		if result != types.CodeType_BCFSBeginUploadOK {
-			log.Fatal(err.Error())
-
-		}
+		// Phase 1. Upload data to Consensus and Storage nodes.
+		stranc := getSignedTransaction(types.TransactionType_UploadData, fileHash)
 		byteArr, _ := json.Marshal(stranc)
-		fmt.Println("Data hash registered in application. Uploading data to service")
 		values := map[string]io.Reader{
 			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
 		}
-
-		res := getAPI().EndUploadData(&values)
-
+		res := getAPI().UploadData(&values)
 		if res.Codetype != types.CodeType_OK {
 			log.Fatal("Error with upload. ", res.Message)
 		}
 
+		// Phase 1b. Generate a sample for the file
+		stat, _ := file.Stat()
+		fileBytes := make([]byte, stat.Size())
+		file.Read(fileBytes)
+		storageSample := crypto.GenerateStorageSample(&fileBytes)
+
+		// Phase 2. Verify the uploaded data is commited to the ledger
 		newBlockCh := make(chan interface{}, 1)
 		if err := subToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
+		}
+
+		result, err := getAPI().VerifyUpload(stranc)
+		if result != types.CodeType_OK {
+			log.Fatal("Error verifying upload. ", res.Message)
+
 		}
 
 		castedTx := tmtypes.Tx(byteArr)
@@ -70,6 +74,7 @@ var uploadCmd = &cobra.Command{
 		if len(args) > 1 {
 			fileDescription = args[2]
 		}
+		// Start timeout to wait for the transaction be put on the ledger.
 		select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.TMEventData).Unwrap().(tmtypes.EventDataNewBlock)
@@ -81,16 +86,14 @@ var uploadCmd = &cobra.Command{
 				if evt.Block.Txs.Index(castedTx) > -1 {
 					// Transaction is put in the latest block.
 					fmt.Println("File successfully uploaded. CID: ", fileHash)
-					client.WriteMetadata(fileHash, &client.MetadataEntry{Name:fileName, Description:fileDescription})
+					client.WriteMetadata(fileHash, &client.MetadataEntry{Name:fileName, Description:fileDescription, StorageSample: *storageSample})
 				}
 			case <-time.After(newBlockTimeout):
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
 					"Try running a status query with CID: " + fileHash)
 		}
-		// Start timeout to wait for the transaction be put on the ledger.
 	},
 }
-
 
 func init() {
 	dataCmd.AddCommand(uploadCmd)

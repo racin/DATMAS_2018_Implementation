@@ -4,7 +4,7 @@ import (
 	"io/ioutil"
 	"encoding/json"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"github.com/racin/DATMAS_2018_Implementation/app"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
 )
 
 /*
@@ -12,7 +12,7 @@ type Metadata struct {
 	Entries		map[string]MetadataEntry	`json:"entries"`
 }*/
 type MetadataEntry struct {
-	app.StorageSample
+	crypto.StorageSample
 	Name 						string		`json:"name"`
 	Description					string		`json:"description"`
 }

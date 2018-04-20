@@ -14,6 +14,7 @@ import (
 	"time"
 	"io"
 	"io/ioutil"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
 )
 
 type BaseClient struct {
@@ -79,11 +80,11 @@ func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
 	return bt.CodeType_InternalError, errors.New("Could not type assert result.")
 }
 
-func (c *BaseClient) BeginUploadData(stx *app.SignedTransaction) (bt.CodeType, error) {
+func (c *BaseClient) VerifyUpload(stx *crypto.SignedStruct) (bt.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
-func (c *BaseClient) EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
+func (c *BaseClient) UploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
 	//data := map[string]io.Reader
 	fmt.Println("Uploadendpoint: " + conf.ClientConfig().UploadAddr)
 	return c.SendMultipartFormData(conf.ClientConfig().UploadAddr, values)

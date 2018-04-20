@@ -1,9 +1,9 @@
 package client
 
 import (
-	"github.com/racin/DATMAS_2018_Implementation/app"
 	bt "github.com/racin/DATMAS_2018_Implementation/types"
 	"io"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
 )
 
 type API interface {
@@ -21,8 +21,8 @@ type ProofAPI interface {
 type DataAPI interface {
 	/*DownloadData(tx app.BasicTransaction) error
 	RemoveData(tx app.BasicTransaction) error*/
-	BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, error)
-	EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload)
+	UploadData(values *map[string]io.Reader) (bt.ResponseUpload)
+	VerifyUpload(tx *crypto.SignedStruct) (bt.CodeType, error)
 	//EndUploadData(values map[string]io.Reader) error
 }
 /*
@@ -72,12 +72,12 @@ func (api *apiClient) RemoveData(tx app.BasicTransaction) (error) {
 	return api.base.GetAccount(id)
 }
 */
-func (api *apiClient) BeginUploadData(tx *app.SignedTransaction) (bt.CodeType, error) {
-	return api.base.BeginUploadData(tx)
+func (api *apiClient) VerifyUpload(stx *crypto.SignedStruct) (bt.CodeType, error) {
+	return api.base.VerifyUpload(stx)
 }
 
-func (api *apiClient) EndUploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
-	return api.base.EndUploadData(values)
+func (api *apiClient) UploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
+	return api.base.UploadData(values)
 }
 
 /** Access API **/

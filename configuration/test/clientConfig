@@ -4,14 +4,14 @@
   "publicKeys": "PubKeys/",
   "metadata": "Metadata/",
 
-  "tendermintNodes": ["testingoffline","cc418e456ae72df5bdb39d65bb8945e8"],
+  "tendermintNodes": ["testingoffline","localhost"],
   "websocketEndpoint": "/websocket",
   "uploadEndpoint": "/upload",
   "remoteAddr": "http://$TmNode:46657",
   "uploadAddr": "http://$TmNode:46659",
   "uploadTimeoutSeconds" : 30,
 
-  "ipfsNodes": ["testingoffline","64168bb2f7a0a4d67d83471470ce757c"],
+  "ipfsNodes": ["testingoffline","localhost"],
   "ipfsProxyAddr": "http://$IpfsNode:46660",
   "ipfsProxyTimeoutSeconds": 30,
   "ipfsIsupEndpoint": "/isup",

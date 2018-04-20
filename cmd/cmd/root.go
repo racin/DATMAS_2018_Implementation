@@ -123,8 +123,10 @@ func getAPI() client.API {
 		ipfsAddr := strings.Replace(conf.ClientConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
 		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
-		if response, err := rootAPI.GetBase().IPFSClient.Get(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint); err != nil {
-			if dat, err := ioutil.ReadAll(response.Body); err == nil && string(dat) == "true" {
+		if response, err := rootAPI.GetBase().IPFSClient.Post(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint, "application/json", nil); err == nil {
+			dat, err := ioutil.ReadAll(response.Body);
+			fmt.Printf("Isup: %s\n",dat)
+			if err == nil /*&& string(dat) == "dHJ1ZQ=="*/ {
 				ipfsProxyFound = true
 				rootAPI.GetBase().IPFSAddr = ipfsAddr
 				break
