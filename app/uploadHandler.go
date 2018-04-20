@@ -27,6 +27,7 @@ func writeUploadResponse(w *http.ResponseWriter, codeType types.CodeType, messag
 }
 
 func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("Uploadhandler")
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
 		fmt.Fprintln(w, err)
@@ -47,7 +48,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
 	var tx *types.Transaction
-	if err := json.Unmarshal([]byte(txString[0]), tx); err != nil {
+	if err := json.Unmarshal([]byte(txString[0]), stx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
 		return
 	} else if tx, ok = stx.Base.(*types.Transaction); !ok {

@@ -2,21 +2,13 @@ package client
 
 import (
 	"fmt"
-	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/spf13/cobra"
 
 	"os"
-	"strings"
-	"io"
-	"math/rand"
-	"time"
-	"strconv"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"io/ioutil"
 	"context"
-	"encoding/json"
 )
 
 var RootCmd = &cobra.Command{

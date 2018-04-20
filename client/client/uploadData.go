@@ -11,7 +11,6 @@ import (
 	"io"
 	"encoding/json"
 	"bytes"
-	"github.com/racin/DATMAS_2018_Implementation/client"
 	"time"
 )
 
@@ -26,6 +25,8 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Not enough arguments.")
 		}
 
+
+		fmt.Printf("TheClient: %+v\n", TheClient)
 		// File and Name is required parameters.
 		filePath := args[0];
 		file, err := os.Open(filePath)
@@ -45,7 +46,7 @@ var uploadCmd = &cobra.Command{
 			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
 		}
-		res := getAPI().UploadData(&values)
+		res := TheClient.UploadData(&values)
 		if res.Codetype != types.CodeType_OK {
 			log.Fatal("Error with upload. ", res.Message)
 		}
@@ -62,7 +63,7 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 
-		result, err := getAPI().VerifyUpload(stranc)
+		result, err := TheClient.VerifyUpload(stranc)
 		if result != types.CodeType_OK {
 			log.Fatal("Error verifying upload. ", res.Message)
 
@@ -86,7 +87,7 @@ var uploadCmd = &cobra.Command{
 				if evt.Block.Txs.Index(castedTx) > -1 {
 					// Transaction is put in the latest block.
 					fmt.Println("File successfully uploaded. CID: ", fileHash)
-					client.WriteMetadata(fileHash, &client.MetadataEntry{Name:fileName, Description:fileDescription, StorageSample: *storageSample})
+					WriteMetadata(fileHash, &MetadataEntry{Name:fileName, Description:fileDescription, StorageSample: *storageSample})
 				}
 			case <-time.After(newBlockTimeout):
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +

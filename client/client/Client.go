@@ -196,8 +196,8 @@ func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (bt.CodeType, error) {
 }
 func (c *Client) UploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
 	//data := map[string]io.Reader
-	fmt.Println("Uploadendpoint: " + conf.ClientConfig().UploadAddr)
-	return c.SendMultipartFormData(conf.ClientConfig().UploadAddr, values)
+	fmt.Println("Uploadendpoint: " + c.TMUploadAPI)
+	return c.SendMultipartFormData(c.TMUploadAPI, values)
 	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 
