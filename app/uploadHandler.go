@@ -13,14 +13,6 @@ import (
 	"time"
 )
 
-// Used to prevent replay attacks.
-func (app *Application) HasSeenTranc(trancHash string) bool{
-	if _, ok := app.seenTranc[trancHash]; ok {
-		return true;
-	}
-	return false;
-}
-
 func (app *Application) StartUploadHandler(){
 	http.HandleFunc(conf.AppConfig().UploadEndpoint, app.UploadHandler)
 	if err := http.ListenAndServe(app.uploadAddr, nil); err != nil {
@@ -129,7 +121,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Create file on disk in temporary storage.
-	// TODO: Confirm the necessity of this step.
+	// TODO: Needed to detect whether the IPFS or Client is acting byzantine. This functionality is however not implemented.
 	out, err := os.Create(conf.AppConfig().TempUploadPath + fileHash)
 	defer out.Close()
 	if err != nil {
@@ -149,7 +141,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Broadcast the signed storage sample to all other tendermint consensus nodes.
-	// TODO: Add some mechanic to resend the sample to the nodes which are unavailble.
+	// TODO: Add some mechanic to resend the sample to the nodes which are unavailble. Use the multicastQuery function.
 	bytearr, err := json.Marshal(signedSample)
 	responseChan := make(chan *QueryBroadcastReponse, len(app.TMRpcClients))
 	done := make(chan int)
@@ -168,11 +160,12 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
+	/*
 	if _, ok := goodResponses[app.fingerprint]; !ok {
 		// Could not store the sample in my own node? Some serious trouble.
 		writeUploadResponse(&w, types.CodeType_OK, "Problems storing Storage sample.");
 		return
-	}
+	}*/
 
 	// Need 2/3+ precommits to make progress. Quorum >= 2f + 1 = (2*n+1)/3
 	if len(goodResponses) >= ((2*len(conf.AppConfig().TendermintNodes))+1)/3 {

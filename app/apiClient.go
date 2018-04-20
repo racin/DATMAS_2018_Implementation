@@ -21,10 +21,11 @@ import (
 
 func (app *Application) setupTMRpcClients() {
 	app.TMRpcClients = make(map[string]rpcClient.Client)
-	for _, addr := range conf.AppConfig().TendermintNodes {
-		if _, ok := app.TMRpcClients[addr]; ok {
+	for _, ident := range conf.AppConfig().TendermintNodes {
+		if _, ok := app.TMRpcClients[ident]; ok {
 			continue;
 		}
+		addr := app.GetAccessList().GetAddress(ident)
 		apiAddr := strings.Replace(conf.AppConfig().WebsocketAddr, "$TmNode", addr, 1)
 		app.TMRpcClients[addr] = rpcClient.NewHTTP(apiAddr, conf.AppConfig().WebsocketEndPoint)
 	}
@@ -35,7 +36,8 @@ func (app *Application) getIPFSProxyAddr() (string, error) {
 	retries := 0
 	RETRY_LOOP:
 	// Get IPFS Proxy API
-	for _, addr := range conf.AppConfig().IpfsNodes {
+	for _, ident := range conf.AppConfig().IpfsNodes {
+		addr := app.GetAccessList().GetAddress(ident)
 		ipfsAddr := strings.Replace(conf.AppConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
 		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
@@ -46,7 +48,7 @@ func (app *Application) getIPFSProxyAddr() (string, error) {
 		}
 	}
 
-	if retries++; retries != maxRetry {
+	if retries++; retries < maxRetry {
 		goto RETRY_LOOP
 	}
 
@@ -131,7 +133,6 @@ func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-
 			result, err := value.ABCIQuery(path, *data)
 			outChan <- &QueryBroadcastReponse{Result: result, Err: err, Identity: key}
 		}()
-
 	}
 }
 

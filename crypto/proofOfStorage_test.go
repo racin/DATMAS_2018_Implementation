@@ -62,12 +62,13 @@ func TestStorageSample(t *testing.T){
 		}
 	})
 	var challenge *SignedStruct
+	var chalHash string
 	t.Run("GenerateChallenge", func(t *testing.T){
 		privKey, err := LoadPrivateKey(consensusCertPathTest + ".pem")
 		if err != nil {
 			t.Fatal("Could not load private key. Error: " + err.Error())
 		}
-		challenge = storageSample.GenerateChallenge(privKey)
+		challenge, chalHash = storageSample.GenerateChallenge(privKey)
 		assert.NotNil(t, challenge, "Could not load Storage Sample")
 		chalng, ok := challenge.Base.(*StorageChallenge)
 
@@ -90,13 +91,34 @@ func TestStorageSample(t *testing.T){
 		challengeProof = challenge.ProveChallenge(privKey, &byteArr)
 		assert.NotNil(t, challengeProof, "Could not generate challenge proof.")
 	})
-	t.Run("VerifyChallengeProof", func(t *testing.T){
+	t.Run("VerifyChallengeProof_Historic", func(t *testing.T){
 		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
 		proverIdent, proverPubkey := GetIdentityPublicKey(storageCertPathFP, acl, "")
-		err := challengeProof.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey)
+
+		err := challengeProof.VerifyChallengeProof_Historic(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey)
 		if err != nil {
 			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
 		}
+	})
+	t.Run("VerifyChallengeProof", func(t *testing.T){
+		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
+		proverIdent, proverPubkey := GetIdentityPublicKey(storageCertPathFP, acl, "")
+		err := challengeProof.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey, chalHash)
+		if err != nil {
+			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
+		}
+	})
+	t.Run("VerifyChallengeProofWithBadNonce", func(t *testing.T){
+		nonce := &challengeProof.Base.(*StorageChallengeProof).Base.(*StorageChallenge).Nonce
+		nonceOld := *nonce
+		*nonce = nonceOld+1
+		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
+		proverIdent, proverPubkey := GetIdentityPublicKey(storageCertPathFP, acl, "")
+
+		err := challengeProof.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey, chalHash)
+		*nonce = nonceOld
+
+		assert.NotNil(t, err, "Challenge proof was verified with a bad nonce.")
 	})
 	var challengeProofWithWrongIdentity *SignedStruct
 	t.Run("GenerateChallengeProofWithWrongIdentity", func(t *testing.T){
@@ -111,7 +133,7 @@ func TestStorageSample(t *testing.T){
 	t.Run("VerifyChallengeProofWithWrongIdentity", func(t *testing.T){
 		challengerIdent, challengerPubkey := GetIdentityPublicKey(consensusCertPathFP, acl, "")
 		proverIdent, proverPubkey := GetIdentityPublicKey(clientCertPathFP, acl, "")
-		err := challengeProofWithWrongIdentity.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey)
+		err := challengeProof.VerifyChallengeProof(testPosPath, challengerIdent, challengerPubkey, proverIdent, proverPubkey, chalHash)
 		assert.NotNil(t, err, "Proof should not be verifiable using a different public key. " +
 			"(Client signed the proof.)")
 	})

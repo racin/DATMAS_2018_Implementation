@@ -7,10 +7,11 @@ import (
 	"io/ioutil"
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"math"
 )
 
 const (
-	numSamples = 30; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
+	numSamples = 3000; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
 	challengeSamples = 10; // Probability of guessing a correct proof is about: 1 / (2^(8*10)
 )
 
@@ -26,6 +27,7 @@ type StorageChallenge struct {
 	Challenge				[]uint64				`json:"challenge"`
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
+	Nonce					uint64					`json:"nonce"`
 }
 
 // We can not use map[uint64]byte as the type to represent the samples, as when iterating the map, the order is not guaranteed to
@@ -141,29 +143,35 @@ func (sp *StorageSample) getSampleIndices() []uint64 {
 	return ret
 }*/
 
-func (sp *StorageSample) GenerateChallenge(privkey *Keys) *SignedStruct{
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid}
+func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStruct, challengeHash string){
+	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
+	if err != nil {
+		return nil, "" // Could not generate nonce.
+	}
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:nonce.Uint64()}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
 
 	for i := 0; i < challengeSamples; i++ {
-		if rnd, err := rand.Int(rand.Reader, max); err == nil {
-			chal.Challenge[i] = sp.Sampleindices[rnd.Uint64()]
+		rnd, err := rand.Int(rand.Reader, max);
+		if err != nil {
+			return nil, ""
 		}
+		chal.Challenge[i] = sp.Sampleindices[rnd.Uint64()]
 	}
 
 	ident, err := GetFingerprint(privkey)
 	if err != nil {
-		return nil // Could not get the keys fingerprint.
+		return nil, "" // Could not get the keys fingerprint.
 	}
 	chal.Identity = ident
 
 	// Sign the challenge with our private key
-	signed, err := SignStruct(chal, privkey)
-	if err != nil {
-		// Problem signing the data.
-		return nil
+	challengeHash = HashStruct(chal)
+	if signature, err := privkey.Sign(challengeHash); err != nil {
+		return nil, ""
+	} else {
+		return &SignedStruct{Base: chal, Signature: signature}, challengeHash
 	}
-	return signed
 }
 
 func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, samplerPubkey *Keys) error {
@@ -228,9 +236,9 @@ func (sp *StorageSample) getSamplesMap() *map[uint64]byte {
 	}
 	return &ret
 }
-// Challenger can simply keep a list of challenges sent, and to whom.
-func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challengerIdentity *conf.Identity, challengerPubkey *Keys,
-		proverIdentity *conf.Identity, proverPubkey *Keys) error{
+
+func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challengerIdentity *conf.Identity, challengerPubkey *Keys,
+	proverIdentity *conf.Identity, proverPubkey *Keys, challengeHash string) error{
 	if challengerIdentity == nil {
 		return errors.New("Challengers identity was nil.")
 	} else if challengerPubkey == nil {
@@ -256,6 +264,11 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challe
 	challenge, ok := scp.Base.(*StorageChallenge)
 	if !ok {
 		return errors.New("Could not type assert the StorageChallenge.")
+	}
+
+	// Prevent the Prover of responding with a stored response to a previous issued challenge.
+	if challengeHash != "" && HashStruct(scp.Base) != challengeHash {
+		return errors.New("The proof contains an unexpected challenge.")
 	}
 
 	fpChallenger, err := GetFingerprint(challengerPubkey)
@@ -298,6 +311,16 @@ func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challe
 	}
 
 	return nil
+}
+
+func (signedStruct *SignedStruct) VerifyChallengeProof_Historic(sampleBase string, challengerIdentity *conf.Identity, challengerPubkey *Keys,
+		proverIdentity *conf.Identity, proverPubkey *Keys) error{
+	return signedStruct.verifyChallengeProof(sampleBase, challengerIdentity, challengerPubkey, proverIdentity, proverPubkey, "")
+}
+
+func (signedStruct *SignedStruct) VerifyChallengeProof(sampleBase string, challengerIdentity *conf.Identity, challengerPubkey *Keys,
+	proverIdentity *conf.Identity, proverPubkey *Keys, challengeHash string) error{
+	return signedStruct.verifyChallengeProof(sampleBase, challengerIdentity, challengerPubkey, proverIdentity, proverPubkey, challengeHash)
 }
 
 func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byte) *SignedStruct {

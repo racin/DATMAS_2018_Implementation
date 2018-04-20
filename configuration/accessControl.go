@@ -27,7 +27,7 @@ type Identity struct {
 	Address  	string 			`json:"address"`
 }
 type AccessList struct {
-	Identities map[string]Identity `json:"identities"`
+	Identities map[string]*Identity `json:"identities"`
 }
 
 var z map[string]*AccessList
@@ -40,7 +40,7 @@ func GetAccessList(path string) (*AccessList){
 		return val
 	}
 
-	z[path] = &AccessList{Identities:make(map[string]Identity)}
+	z[path] = &AccessList{Identities:make(map[string]*Identity)}
 	if data, err := ioutil.ReadFile(path); err == nil {
 		if err := json.Unmarshal(data, z[path]); err != nil {
 			panic(err.Error())

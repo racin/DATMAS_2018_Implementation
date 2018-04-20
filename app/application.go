@@ -11,8 +11,6 @@ import (
 	"net/http"
 	"time"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
-
-	"os"
 )
 
 type Application struct {
@@ -29,6 +27,7 @@ type Application struct {
 
 	privKey				*crypto.Keys
 	identity			*conf.Identity
+	fingerprint			string
 }
 
 func NewApplication() *Application {
@@ -42,9 +41,9 @@ func NewApplication() *Application {
 	} else if fp, err := crypto.GetFingerprint(myPrivKey); err != nil{
 		panic("Could not get fingerprint of private key.")
 	} else {
+		app.fingerprint = fp;
 		app.privKey = myPrivKey
-		ident := app.GetAccessList().Identities[fp]
-		app.identity = &ident
+		app.identity = app.GetAccessList().Identities[fp]
 	}
 
 	app.setupTMRpcClients()
@@ -64,55 +63,53 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	if err := json.Unmarshal(txBytes, stx); err != nil {
 		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
 	} else if tx, ok = stx.Base.(types.Transaction); !ok {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not Marshal transaction (Transaction)"}
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
+
+	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
+	if signer == nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
+	}
+
+	// Check if public key exists and if message is signed.
+	if pubKey == nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
+	} else if !stx.Verify(pubKey) {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
+	}
 	switch tx.Type {
 	case types.TransactionType_DownloadData:
 		{
-			/*if err := deliverAccountAddTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			fmt.Println("Downloaddata")
-			return abci.ResponseDeliverTx{Info: "Error"};
+			fmt.Println("DeliverTx_DownloadData")
+			return *app.DeliverTx_DownloadData(signer, &tx)
 		}
 
 	case types.TransactionType_UploadData:
 		{
-			/*if err := deliverAccountDelTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return abci.ResponseDeliverTx{Info: "Error"};
+			fmt.Println("DeliverTx_UploadData")
+			return *app.DeliverTx_UploadData(signer, &tx)
 		}
 	case types.TransactionType_RemoveData:
 		{
-			/*if err := deliverReputationGiveTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return abci.ResponseDeliverTx{Info: "Error"};
+			fmt.Println("DeliverTx_RemoveData")
+			return *app.DeliverTx_RemoveData(signer, &tx)
 		}
 	case types.TransactionType_VerifyStorage:
 		{
-			/*if err := deliverSecretAddTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
+			// TODO: Is this really needed?
 			return abci.ResponseDeliverTx{Info: "Error"};
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
-			/*if err := deliverSecretUpdateTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			return abci.ResponseDeliverTx{Info: "Error"};
+			fmt.Println("DeliverTx_ChangeContentAccess")
+			return *app.DeliverTx_ChangeContentAccess(signer, &tx)
 		}
 	default:
 		{
-			//return types.Result{Code: types.CodeType_BaseInvalidInput, Log: "unknown transaction type"}
-			return abci.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Info: "Unknown transaction type."};
 		}
 	}
-	//return types.OK
-	return abci.ResponseDeliverTx{Info: "All good"};
 }
 
 
@@ -130,9 +127,8 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
-	identity, pubKey := app.GetIdentityPublicKey(tx.Identity)
-	// Get access list
-	if identity == nil {
+	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
+	if signer == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
@@ -146,49 +142,35 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.R
 	switch tx.Type {
 	case types.TransactionType_DownloadData:
 		{
-			/*if err := checkAccountAddTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			fmt.Println("DownloadData")
-			return abci.ResponseCheckTx{Info: "Error"}
+			fmt.Println("CheckTx_DownloadData")
+			return *app.CheckTx_DownloadData(signer, &tx)
 		}
 
 	case types.TransactionType_UploadData:
 		{
-
+			fmt.Println("CheckTx_UploadData")
+			return *app.CheckTx_UploadData(signer, &tx)
 		}
 	case types.TransactionType_RemoveData:
 		{
-			/*if err := checkReputationGiveTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			fmt.Println("RemoveData")
-			return abci.ResponseCheckTx{Info: "Error"}
+			fmt.Println("CheckTx_RemoveData")
+			return *app.CheckTx_RemoveData(signer, &tx)
 		}
 	case types.TransactionType_VerifyStorage:
 		{
-			/*if err := checkSecretAddTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			fmt.Println("VerifyStorage")
+			// TODO: Remove this type?
 			return abci.ResponseCheckTx{Info: "Error"};
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
-			/*if err := checkSecretUpdateTransaction(tx, app.state); err != nil {
-				return types.Result{Code: types.CodeType_BaseInvalidInput, Log: err.Error()}
-			}*/
-			fmt.Println("ChangeContentAccess")
-			return abci.ResponseCheckTx{Info: "Error"}
+			fmt.Println("CheckTx_ChangeContentAccess")
+			return *app.CheckTx_ChangeContentAccess(signer, &tx)
 		}
 	default:
 		{
-			//return types.Result{Code: types.CodeType_BaseInvalidInput, Log: "unknown transaction type"}
-			return abci.ResponseCheckTx{Info: "Error"}
+			return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Info: "Unknown transaction type."};
 		}
 	}
-	//return types.OK
-	return abci.ResponseCheckTx{Info: "All good", Code: uint32(types.CodeType_OK)}
 }
 
 func (app *Application) Commit() abci.ResponseCommit { //types.Result {
@@ -202,51 +184,11 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
 	switch reqQuery.Path {
 	case "/newsample":
 		{
-			if reqQuery.Data == nil {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Missing data parameter."}
-			}
-			signedStruct := &crypto.SignedStruct{Base: &crypto.StorageSample{}}
-			if err := json.Unmarshal(reqQuery.Data, signedStruct); err != nil {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not unmarshal SignedStruct. Error: " + err.Error()}
-			}
-
-			storageSample, ok := signedStruct.Base.(*crypto.StorageSample)
-			if !ok {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not unmarshal StorageSample."}
-			}
-
-			// Verify the signature and identity of the sample.
-			samplerIdent, samplerPubKey := app.GetIdentityPublicKey(storageSample.Identity)
-			if err := signedStruct.VerifySample(samplerIdent, samplerPubKey); err != nil {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Could not verify sample. Error: " + err.Error()}
-			}
-
-			// Sample must have been generated by a consensus node.
-			if samplerIdent.Type != conf.Consensus {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Identity unauthorized"}
-			}
-
-			// Check if this sample is already stored. Should use a different path if we want to remove it (future work...)
-			// Return OK if the actual sample equals the current stored one.
-			if _, err := os.Lstat(conf.AppConfig().StorageSamples + storageSample.Cid); err == nil {
-				currStoredSample := crypto.LoadStorageSample(conf.AppConfig().StorageSamples, storageSample.Cid)
-				if storageSample.CompareTo(currStoredSample) {
-					return abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "The same sample was already stored."}
-				} else {
-					return abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "A different sample for this file is already stored."}
-				}
-			}
-
-			// Store the sample.
-			if err := signedStruct.StoreSample(conf.AppConfig().StorageSamples); err != nil {
-				return abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Could not store sample. Error: " + err.Error()}
-			}
-
-			return abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Sample stored."}
+			return *app.Query_Newsample(reqQuery)
 		}
 	default:
 		{
-			return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "wrong path"}
+			return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Invalid query path."}
 		}
 	}
 /*
@@ -261,4 +203,12 @@ func (app *Application) GetAccessList() (*conf.AccessList){
 
 func (app *Application) GetIdentityPublicKey(ident string) (identity *conf.Identity, pubkey *crypto.Keys){
 	return crypto.GetIdentityPublicKey(ident, app.GetAccessList(), conf.AppConfig().BasePath + conf.AppConfig().PublicKeys)
+}
+
+// Simple check to prevent replay attacks.
+func (app *Application) HasSeenTranc(trancHash string) bool{
+	if _, ok := app.seenTranc[trancHash]; ok {
+		return true;
+	}
+	return false;
 }
