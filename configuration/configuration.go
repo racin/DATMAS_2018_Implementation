@@ -55,6 +55,7 @@ type ClientConfiguration struct {
 	UploadTimeoutSeconds			int			`json:"uploadTimeoutSeconds"`
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
+	AccessList						string		`json:"accessList"`
 	IpfsNodes						[]string	`json:"ipfsNodes"`
 	IpfsProxyTimeoutSeconds			int			`json:"ipfsProxyTimeoutSeconds"`
 	IpfsProxyAddr					string		`json:"ipfsProxyAddr"`

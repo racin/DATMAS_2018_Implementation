@@ -26,6 +26,21 @@ var RootCmd = &cobra.Command{
 Written by Racin Nygaard.	`,
 }
 
+type Client struct {
+	privKey				*crypto.Keys
+	identity			*conf.Identity
+	fingerprint			string
+	cfgfile				string
+}
+
+func (client *Client) GetAccessList() (*conf.AccessList){
+	return conf.GetAccessList(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().AccessList)
+}
+
+func (client *Client) GetIdentityPublicKey(ident string) (identity *conf.Identity, pubkey *crypto.Keys){
+	return crypto.GetIdentityPublicKey(ident, client.GetAccessList(), conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PublicKeys)
+}
+
 var cfgFile string
 func init() {
 	cobra.OnInitialize(initConfig)
@@ -119,7 +134,8 @@ func getAPI() client.API {
 	}
 
 	// Get IPFS Proxy API
-	for _, addr := range conf.ClientConfig().IpfsNodes {
+	for _, ident := range conf.ClientConfig().IpfsNodes {
+		addr :=
 		ipfsAddr := strings.Replace(conf.ClientConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
 		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
