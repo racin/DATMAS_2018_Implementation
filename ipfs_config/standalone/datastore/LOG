@@ -1077,3 +1077,37 @@
 12:12:42.566703 db@open done T·9.088014ms
 12:34:41.763861 db@close closing
 12:34:41.764037 db@close done T·176.535µs
+=============== Apr 20, 2018 (CEST) ===============
+22:41:42.907261 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+22:41:42.914399 version@stat F·[2 1] S·3MiB[1MiB 1MiB] Sc·[0.50 0.02]
+22:41:42.914455 db@open opening
+22:41:42.914607 journal@recovery F·1
+22:41:42.914734 journal@recovery recovering @241
+22:41:42.919786 memdb@flush created L0@243 N·172 S·21KiB "/F5..KR7,v30334":"/pr..CWY,v30471"
+22:41:42.920092 version@stat F·[3 1] S·3MiB[1MiB 1MiB] Sc·[0.75 0.02]
+22:41:42.920778 db@janitor F·6 G·0
+22:41:42.920815 db@open done T·6.336979ms
+23:30:15.456517 db@close closing
+23:30:15.456766 db@close done T·249.452µs
+=============== Apr 20, 2018 (CEST) ===============
+23:34:57.573861 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+23:34:57.573989 version@stat F·[3 1] S·3MiB[1MiB 1MiB] Sc·[0.75 0.02]
+23:34:57.574004 db@open opening
+23:34:57.574048 journal@recovery F·1
+23:34:57.574419 journal@recovery recovering @244
+23:34:57.585930 memdb@flush created L0@246 N·494 S·59KiB "/F5..KR7,v30506":"/pr..5SI,v30555"
+23:34:57.586360 version@stat F·[4 1] S·3MiB[1MiB 1MiB] Sc·[1.00 0.02]
+23:34:57.586853 db@janitor F·7 G·0
+23:34:57.586962 db@open done T·12.93469ms
+23:34:57.586963 table@compaction L0·4 -> L1·1 S·3MiB Q·31000
+23:34:57.619943 table@build created L1@249 N·2502 S·317KiB "/F5..ODX,v30248":"/pr..6AI,v16367"
+23:34:57.620018 version@stat F·[0 1] S·317KiB[0B 317KiB] Sc·[0.00 0.00]
+23:34:57.623564 table@compaction committed F-4 S-3MiB Ke·0 D·26139 T·36.382221ms
+23:34:57.623661 table@remove removed @246
+23:34:57.623728 table@remove removed @243
+23:34:57.623768 table@remove removed @240
+23:34:57.624020 table@remove removed @237
+23:34:57.624265 table@remove removed @236
+=============== Apr 21, 2018 (CEST) ===============
+01:09:15.283456 db@close closing
+01:09:15.283598 db@close done T·140.311µs

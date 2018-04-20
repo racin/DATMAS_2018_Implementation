@@ -15,15 +15,17 @@ import "github.com/tendermint/tmlibs/common/types.proto";
 // Code types
 
 enum CodeType {
-  OK                    = 0;
+  // Do not use 0 as it seems to be omitted from some print outs (Default value)
+  Invalid               = 0;
+  OK                    = 1;
 
-  // General response codes, 0 ~ 99
-  InternalError         = 1;
-  EncodingError         = 2;
-  BadNonce              = 3;
-  Unauthorized          = 4;
-  InsufficientFunds     = 5;
-  UnknownRequest        = 6;
+  // General response codes, 2 ~ 99
+  InternalError         = 2;
+  EncodingError         = 3;
+  BadNonce              = 4;
+  Unauthorized          = 5;
+  InsufficientFunds     = 6;
+  UnknownRequest        = 7;
 
   // Reserved for BCFS, 300 ~ 399
   BCFSDuplicateAddress  = 101;
