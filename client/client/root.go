@@ -32,7 +32,12 @@ func Execute() {
 	}
 }
 
+// TODO: Fix this.
 func subToNewBlock(newBlock chan interface{}) error {
+	err := TheClient.TMClient.Start()
+	if err != nil {
+		fmt.Println("Error starting: " + err.Error())
+	}
 	return TheClient.TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, newBlock)
 }
 
@@ -41,7 +46,9 @@ func getSignedTransaction(txtype types.TransactionType, data interface{}) (stran
 	fmt.Printf("%+v\n", TheClient.fingerprint)
 	fmt.Printf("%+v\n", txtype)
 	fmt.Printf("%+v\n", TheClient.privKey)
-	stranc, err := crypto.SignStruct(types.NewTx(data, TheClient.fingerprint, txtype), TheClient.privKey);
+	tx := types.NewTx(data, TheClient.fingerprint, txtype)
+	fmt.Printf("Hash of tranc: %v\n", crypto.HashStruct(tx))
+	stranc, err := crypto.SignStruct(tx, TheClient.privKey);
 	if err != nil {
 		panic("Could not sign transaction. Private/Public key pair may not match. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}

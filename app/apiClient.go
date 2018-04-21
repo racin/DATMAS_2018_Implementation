@@ -127,12 +127,18 @@ type QueryBroadcastReponse struct {
 	Result			*core_types.ResultABCIQuery
 	Err				error
 }
-func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-*QueryBroadcastReponse){
+
+func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-*QueryBroadcastReponse, done chan struct{}){
 	for key, value := range app.TMRpcClients {
-		go func() {
-			result, err := value.ABCIQuery(path, *data)
-			outChan <- &QueryBroadcastReponse{Result: result, Err: err, Identity: key}
-		}()
+		fmt.Println("Go func to: " + key)
+		go func(k string, v rpcClient.Client) {
+			result, err := v.ABCIQuery(path, *data)
+			select {
+				case <-done:
+					return
+				case outChan <- &QueryBroadcastReponse{Result: result, Err: err, Identity: k}:
+			}
+		}(key, value)
 	}
 }
 

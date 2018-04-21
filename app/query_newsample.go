@@ -46,7 +46,7 @@ func (app *Application) Query_Newsample(reqQuery abci.RequestQuery) *abci.Respon
 	}
 
 	// Store the sample.
-	if err := signedStruct.StoreSample(conf.AppConfig().StorageSamples); err != nil {
+	if err := signedStruct.StoreSample(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples); err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Could not store sample. Error: " + err.Error()}
 	}
 

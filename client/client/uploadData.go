@@ -12,6 +12,7 @@ import (
 	"encoding/json"
 	"bytes"
 	"time"
+	"io/ioutil"
 )
 
 const newBlockTimeout = 30 * time.Second
@@ -30,31 +31,34 @@ var uploadCmd = &cobra.Command{
 		// File and Name is required parameters.
 		filePath := args[0];
 		file, err := os.Open(filePath)
+		defer file.Close()
 		if err != nil {
 			log.Fatal("Could not open file. Error: ", err.Error())
 		}
-
-		fileHash, err := crypto.IPFSHashFile(filePath)
+		fileBytes, err := ioutil.ReadFile(filePath)
+		if err != nil {
+			log.Fatal("Could not get file bytes. Error: " + err.Error())
+		}
+		fileHash, err := crypto.IPFSHashData(fileBytes)
 		if err != nil {
 			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
 		// Phase 1. Upload data to Consensus and Storage nodes.
-		stranc := getSignedTransaction(types.TransactionType_UploadData, fileHash)
+		stranc := getSignedTransaction(types.TransactionType_UploadData, &types.RequestUpload{Cid:fileHash, IpfsNode:TheClient.IPFSIdent})
+		fmt.Printf("Tranc: %+v\n", stranc.Base.(*types.Transaction))
 		byteArr, _ := json.Marshal(stranc)
 		values := map[string]io.Reader{
 			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
 		}
+
 		res := TheClient.UploadData(&values)
 		if res.Codetype != types.CodeType_OK {
 			log.Fatal("Error with upload. ", res.Message)
 		}
 
 		// Phase 1b. Generate a sample for the file
-		stat, _ := file.Stat()
-		fileBytes := make([]byte, stat.Size())
-		file.Read(fileBytes)
 		storageSample := crypto.GenerateStorageSample(&fileBytes)
 
 		// Phase 2. Verify the uploaded data is commited to the ledger

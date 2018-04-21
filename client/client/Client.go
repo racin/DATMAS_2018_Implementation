@@ -27,9 +27,11 @@ type Client struct {
 
 	TMUploadClient				*http.Client
 	TMUploadAPI					string
+	TMIdent						string
 
 	IPFSClient					*http.Client
 	IPFSAddr					string
+	IPFSIdent					string
 
 	privKey						*crypto.Keys
 	identity					*conf.Identity
@@ -136,12 +138,14 @@ func (c *Client) setupAPI()  {
 		addr := TheClient.GetAccessList().GetAddress(ident)
 		if !tmApiFound {
 			apiAddr := strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1)
-			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
+
 
 			fmt.Println("Trying to connect to (TM_api: " + apiAddr)
+			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
 			if _, err := c.TMClient.Status(); err == nil {
 				//conf.ClientConfig().RemoteAddr = apiAddr
 				tmApiFound = true
+				c.TMIdent = ident
 			}
 		}
 
@@ -179,6 +183,7 @@ func (c *Client) setupAPI()  {
 			if json.Unmarshal(dat, ipfsResp) == nil && ipfsResp.Codetype == types.CodeType_OK {
 				ipfsProxyFound = true
 				c.IPFSAddr = ipfsAddr
+				c.IPFSIdent= ident
 				break
 			}
 		}

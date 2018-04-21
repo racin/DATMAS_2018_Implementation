@@ -24,6 +24,15 @@ type SignedStruct struct {
 
 func HashStruct(in interface{}) string {
 	buffer := bytes.NewBuffer([]byte{38})
+	/*t := reflect.TypeOf(in)
+	for i := 0; i < t.NumField(); i++ {
+		if t.Field(i).Type.String() == "interface {}" {
+			buffer.WriteString(HashStruct(t.Field(i)))
+		} else {
+			fmt.Println(fmt.Sprintf("%v", reflect.ValueOf(&t.Field(i)).Elem()))
+			buffer.WriteString(fmt.Sprintf("%v", reflect.ValueOf(t.Field(i))))
+		}
+	}*/
 	buffer.WriteString(fmt.Sprintf("%v", reflect.ValueOf(in)))
 	hash, _ := HashData(buffer.Bytes())
 	return hash
