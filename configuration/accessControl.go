@@ -64,5 +64,5 @@ func (acl *AccessList) GetAddress(id string) string {
 	if ident, ok := acl.Identities[id]; ok {
 		return ident.Address
 	}
-	return "";
+	return "___";
 }

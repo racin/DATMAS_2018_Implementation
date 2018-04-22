@@ -7,6 +7,7 @@ import (
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"os"
+	"fmt"
 )
 
 func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Transaction) *abci.ResponseCheckTx {
@@ -16,13 +17,13 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 	}
 
 	// Check contents of transaction.
-	reqUpload, ok := tx.Data.(types.RequestUpload)
+	reqUpload, ok := tx.Data.(*types.RequestUpload)
 	if !ok {
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data."}
 	}
 
 	// Load storage sample for the file.
-	storageSample := crypto.LoadStorageSample(conf.AppConfig().StorageSamples, reqUpload.Cid)
+	storageSample := crypto.LoadStorageSample(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, reqUpload.Cid)
 	if storageSample == nil {
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not find associated storage sample."}
 	}
@@ -47,19 +48,28 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 	}
 
 	// Type assert the StorageProof.
-	signedProof := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{}}
+	// signedProof := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct:crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
+	signedProof := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct:crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
+	fmt.Printf("IPFS Response: %+v\n", ipfsResponse.Message)
 	if err := json.Unmarshal(ipfsResponse.Message, signedProof); err != nil {
-		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not unmarshal StorageChallengeProof."}
+		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: err.Error()}
 	}
+	fmt.Printf("IPFS Response Signed: %+v\n", signedProof)
 	challengeProof, ok := signedProof.Base.(*crypto.StorageChallengeProof)
 	if !ok {
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not type assert StorageChallengeProof."}
 	}
+	fmt.Printf("IPFS Response Proof: %+v\n", challengeProof)
+	signedProof.Base.(*crypto.StorageChallengeProof).Base, ok = challengeProof.Base.(*crypto.StorageChallenge)
+	if !ok {
+		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not type assert StorageChallengeProof."}
+	}
+	fmt.Printf("IPFS Response Challenge: %+v\n", signedProof.Base.(*crypto.StorageChallengeProof).Base)
 
 	// Verify the signatures of the StorageChallenge.
-	if err := challengeProof.VerifyChallengeProof(conf.AppConfig().StorageSamples, app.identity, app.privKey,
+	if err := signedProof.VerifyChallengeProof(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, app.identity, app.privKey,
 		proverIdent, proverPubKey, challengeHash); err != nil {
-		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify the StorageChallengeProof."}
+		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: err.Error()}
 	}
 
 	// All checks passed. Return OK.
@@ -92,9 +102,9 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 	}
 
 	// Remove temporary stored file if its stored.
-	filePath := conf.AppConfig().StorageSamples + reqUpload.Cid
+	filePath := conf.AppConfig().BasePath + conf.AppConfig().StorageSamples + reqUpload.Cid
 	if _, err := os.Lstat(filePath); err == nil {
-		os.Remove(conf.AppConfig().StorageSamples + reqUpload.Cid)
+		os.Remove(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples + reqUpload.Cid)
 	}
 
 	// All checks passed. Return OK.

@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"math"
+	"fmt"
 )
 
 const (
@@ -255,6 +256,7 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	}
 
 	fpProver, err := GetFingerprint(proverPubkey)
+	fmt.Println(fpProver)
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
@@ -266,6 +268,9 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	if !ok {
 		return errors.New("Could not type assert the StorageChallenge.")
 	}
+	sc2 := &SignedStruct{Signature:signedStruct.Signature, Base:&StorageChallengeProof{Identity:scp.Identity,
+		Proof:scp.Proof, SignedStruct:SignedStruct{Signature:scp.Signature, Base:&StorageChallenge{Identity:challenge.Identity, Cid:challenge.Cid,
+		Nonce:challenge.Nonce, Challenge:challenge.Challenge}}}}
 
 	// Prevent the Prover of responding with a stored response to a previous issued challenge.
 	if challengeHash != "" && HashStruct(scp.Base) != challengeHash {
@@ -282,7 +287,9 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	}
 
 	// Check if the proof is signed by the expected prover.
-	if !signedStruct.Verify(proverPubkey) {
+	fmt.Printf("Hash of StorageChallengeProof: %v\n", HashStruct(sc2.Base))
+	fmt.Printf("The challenge: %v\n", challenge)
+	if !sc2.Verify(proverPubkey) {
 		return errors.New("Could not verify signature of prover.")
 	}
 

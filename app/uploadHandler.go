@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"time"
+	"sync"
 )
 
 func (app *Application) StartUploadHandler(){
@@ -46,7 +47,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
+	stx := &crypto.SignedStruct{Base: &types.Transaction{Data:&types.RequestUpload{}}}
 	var tx *types.Transaction
 	if err := json.Unmarshal([]byte(txString[0]), stx); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (SignedTransaction)");
@@ -55,6 +56,18 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (Transaction)");
 		return
 	}
+	reqUpload, ok := tx.Data.(*types.RequestUpload);
+	if  !ok {
+		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction (RequestUpload)");
+		return
+	}
+
+	fmt.Printf("Received tranc: %+v\n", stx)
+	fmt.Printf("Received tranc: %+v\n", tx)
+	fmt.Printf("Received tranc: %+v\n", tx.Data)
+	fmt.Printf("Received tranc: %+v\n", reqUpload)
+	fmt.Printf("Hash of tranc: %v\n", crypto.HashStruct(tx))
+
 
 	// Check for replay attack
 	txHash := crypto.HashStruct(tx)
@@ -86,8 +99,8 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if data hash is contained within the transaction.
-	fileHash, ok := tx.Data.(string)
-	if fileHash == "" || !ok {
+	//reqUpload, ok := tx.Data.(types.RequestUpload)
+	if reqUpload.Cid == "" || !ok {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
 		return
 	}
@@ -116,14 +129,14 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	} else if uplFileHash, err := crypto.IPFSHashData(fileBytes); err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get hash of input file.");
 		return
-	} else if uplFileHash != fileHash {
+	} else if uplFileHash != reqUpload.Cid {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Hash of input file not present in transaction.");
 		return
 	}
 
 	// Create file on disk in temporary storage.
 	// TODO: Needed to detect whether the IPFS or Client is acting byzantine. This functionality is however not implemented.
-	out, err := os.Create(conf.AppConfig().TempUploadPath + fileHash)
+	out, err := os.Create(conf.AppConfig().TempUploadPath + reqUpload.Cid)
 	defer out.Close()
 	if err != nil {
 		writeUploadResponse(&w, types.CodeType_Unauthorized, "Unable to create the file for writing. Check your write access privilege");
@@ -145,22 +158,37 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 	// TODO: Add some mechanic to resend the sample to the nodes which are unavailble. Use the multicastQuery function.
 	bytearr, err := json.Marshal(signedSample)
 	responseChan := make(chan *QueryBroadcastReponse, len(app.TMRpcClients))
-	done := make(chan int)
-	app.broadcastQuery("/newsample", &bytearr, responseChan)
+	done := make(chan struct{}, 1)
+	app.broadcastQuery("/newsample", &bytearr, responseChan, done)
 	goodResponses := make(map[string]bool)
-	for {
-		select {
-		case v := <-responseChan:
-			if v.Err == nil && v.Result.Response.Code == uint32(types.CodeType_OK){
-				goodResponses[v.Identity] = true
-			}
-		case <-done:
-			return
-		case <-time.After(time.Duration(conf.AppConfig().TmQueryTimeoutSeconds) * time.Second):
-			return
-		}
-	}
 
+
+	numResponses := len(app.TMRpcClients)
+	var wg sync.WaitGroup
+	wg.Add(numResponses)
+
+	go func(){
+		defer close(responseChan)
+		defer close(done)
+		for {
+			select {
+			case v := <-responseChan:
+				fmt.Printf("Responsechan: %+v\n", v)
+				if v.Err == nil && v.Result.Response.Code == uint32(types.CodeType_OK){
+					goodResponses[v.Identity] = true
+				}
+				wg.Done()
+				numResponses--
+			case <-time.After(time.Duration(conf.AppConfig().TmQueryTimeoutSeconds) * time.Second):
+				fmt.Println("TIMEOUT")
+				wg.Add(-numResponses)
+				return
+			}
+		}
+	}()
+	fmt.Println("Waiting for routines to finish.")
+	wg.Wait()
+	fmt.Println("Done waiting.")
 	/*
 	if _, ok := goodResponses[app.fingerprint]; !ok {
 		// Could not store the sample in my own node? Some serious trouble.

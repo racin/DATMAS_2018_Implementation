@@ -27,9 +27,11 @@ type Client struct {
 
 	TMUploadClient				*http.Client
 	TMUploadAPI					string
+	TMIdent						string
 
 	IPFSClient					*http.Client
 	IPFSAddr					string
+	IPFSIdent					string
 
 	privKey						*crypto.Keys
 	identity					*conf.Identity
@@ -99,7 +101,7 @@ func (c *Client) SendMultipartFormData(endpoint string, values *map[string]io.Re
 }
 
 func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
-	fmt.Printf("Data: %+v\n", commit)
+	fmt.Printf("Data 1: %+v\n", commit)
 	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
 		if err != nil {
 			return bt.CodeType_InternalError, err
@@ -112,10 +114,10 @@ func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
 			return bt.CodeType_OK, nil;
 		}
 	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
-		fmt.Printf("Data: %+v\n", c)
+		fmt.Printf("Data 2: %+v\n", c)
 		code := bt.CodeType(c.Code)
 		if code == bt.CodeType_OK {
-			fmt.Printf("Data: %+v\n", c)
+			fmt.Printf("Data 3: %+v\n", c)
 			return code, nil
 		} else {
 			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + bt.CodeType_name[int32(c.Code)])
@@ -136,12 +138,14 @@ func (c *Client) setupAPI()  {
 		addr := TheClient.GetAccessList().GetAddress(ident)
 		if !tmApiFound {
 			apiAddr := strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1)
-			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
+
 
 			fmt.Println("Trying to connect to (TM_api: " + apiAddr)
+			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
 			if _, err := c.TMClient.Status(); err == nil {
 				//conf.ClientConfig().RemoteAddr = apiAddr
 				tmApiFound = true
+				c.TMIdent = ident
 			}
 		}
 
@@ -179,6 +183,7 @@ func (c *Client) setupAPI()  {
 			if json.Unmarshal(dat, ipfsResp) == nil && ipfsResp.Codetype == types.CodeType_OK {
 				ipfsProxyFound = true
 				c.IPFSAddr = ipfsAddr
+				c.IPFSIdent= ident
 				break
 			}
 		}

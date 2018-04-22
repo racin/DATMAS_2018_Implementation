@@ -22,10 +22,36 @@ type SignedStruct struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
+func internal_hashStruct(in interface{}) []byte {
+	var buffer *bytes.Buffer
+	var v reflect.Value
+	var ok bool
+	if v, ok = in.(reflect.Value); !ok {
+		buffer = bytes.NewBuffer([]byte{38})
+		v = reflect.ValueOf(in);
+		if v.Kind() == reflect.Ptr {
+			v = v.Elem()
+		}
+	} else {
+		buffer = bytes.NewBuffer([]byte{})
+	}
+	for i := 0; i < v.NumField(); i++ {
+		val := v.Field(i)
+
+		if val.Kind() == reflect.Struct{
+			buffer.Write(internal_hashStruct(val))
+		} else if val.Kind() == reflect.Ptr {
+		} else if val.Kind() == reflect.Interface {
+			buffer.Write(internal_hashStruct(val.Interface()))
+		} else {
+			buffer.WriteString(fmt.Sprintf("%v", val))
+		}
+	}
+
+	return buffer.Bytes()
+}
 func HashStruct(in interface{}) string {
-	buffer := bytes.NewBuffer([]byte{38})
-	buffer.WriteString(fmt.Sprintf("%v", reflect.ValueOf(in)))
-	hash, _ := HashData(buffer.Bytes())
+	hash, _ := HashData(internal_hashStruct(in))
 	return hash
 }
 

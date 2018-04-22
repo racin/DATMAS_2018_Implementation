@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("IPFS CHALLENGE")
 	// Both Clients and Consensus can issue challenges.
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -17,6 +19,7 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	//stx := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct:crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
 	stx := &crypto.SignedStruct{Base: &crypto.StorageChallenge{}}
 	var storageChallenge *crypto.StorageChallenge
 	var ok bool = false
@@ -67,6 +70,7 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		// TODO: Fatal error.
 		writeResponse(&w, types.CodeType_InternalError, "Unable to prove challenge.");
 	} else {
+		proof.VerifyChallengeProof_Historic(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, signer, pubKey, proxy.identity, proxy.privKey)
 		byteArr, _ := json.Marshal(proof)
 		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:types.CodeType_OK})
 	}

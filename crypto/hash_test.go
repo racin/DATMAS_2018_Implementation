@@ -3,6 +3,7 @@ package crypto
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
+	"fmt"
 )
 
 type TestHashStruct struct {
@@ -42,8 +43,10 @@ func TestHash(t *testing.T){
 func TestStructHash(t *testing.T) {
 	hashstruct := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
 	hash1 := HashStruct(hashstruct);
+	fmt.Println(hash1)
 	hashstruct.Number = 987
 	hash2 := HashStruct(hashstruct)
+	fmt.Println(hash2)
 
 	assert.NotEqual(t, hash1, hash2, "Output of HashStruct is equal with non-equal input.")
 }

@@ -7,11 +7,13 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 // Adds the file to a single IPFS node. Only a client should be able to do this. (Consensus node can distribute an
 // already uploaded file by pinning it.)
 func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("IPFS ADDNOPIN")
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());

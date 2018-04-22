@@ -11,6 +11,7 @@ import (
 	"net/http"
 	"time"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
+	"github.com/pkg/errors"
 )
 
 type Application struct {
@@ -111,19 +112,43 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 		}
 	}
 }
+/*
+func (app *Application) verifySignatureTx(txBytes []byte, expectedData interface{}) (ident *conf.Identity, pubKey *crypto.Keys, resp *abci.ResponseCheckTx) {
 
+}*/
 
-func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
-	txHash, _ := crypto.IPFSHashData(txBytes)
-	fmt.Println("CheckTx trigger. Hash of data: " + txHash);
-	fmt.Println("Data received: " + string(txBytes))
+func (app *Application) unmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *types.Transaction, error) {
 	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx *types.Transaction
-	var ok bool = false
 	if err := json.Unmarshal(txBytes, stx); err != nil {
+		return nil, nil, err
+	} else if tx, ok := stx.Base.(*types.Transaction); !ok {
+		return nil, nil, errors.New("Could not unmarshal transaction (Transaction)")
+	} else {
+		// Check if the data sent is actually another Struct.
+		derivedStruct, ok := stx.Base.(*types.Transaction).Data.(map[string]interface{})
+
+		// If its not, we can simply return and the different transaction types will get the value themselves.
+		if !ok {
+			return stx, tx, nil
+		}
+
+		// types.RequestUpload
+		if cid, ok := derivedStruct["cid"]; ok {
+			if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
+				reqUpload := &types.RequestUpload{Cid:cid.(string), IpfsNode:ipfsNode.(string)}
+				stx.Base.(*types.Transaction).Data = reqUpload
+				tx.Data = reqUpload
+			}
+		}
+
+		return stx, tx, nil
+	}
+}
+func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
+	//stx := &crypto.SignedStruct{Base: &types.Transaction{}}
+	stx, tx, err := app.unmarshalTransaction(txBytes)
+	if err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	} else if tx, ok = stx.Base.(*types.Transaction); !ok {
-		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
