@@ -1109,3 +1109,14 @@
 05:23:08.831546 version@stat F·[] S·0B[] Sc·[]
 05:23:08.849158 db@janitor F·2 G·0
 05:23:08.849188 db@open done T·17.954969ms
+=============== Apr 22, 2018 (CEST) ===============
+05:45:31.386616 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+05:45:31.386813 version@stat F·[] S·0B[] Sc·[]
+05:45:31.386842 db@open opening
+05:45:31.386925 journal@recovery F·1
+05:45:31.387050 journal@recovery recovering @246
+05:45:31.396972 version@stat F·[] S·0B[] Sc·[]
+05:45:31.409780 db@janitor F·4 G·2
+05:45:31.409813 db@janitor removing manifest-193
+05:45:31.409866 db@janitor removing journal-192
+05:45:31.409926 db@open done T·23.056258ms

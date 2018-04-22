@@ -1185,3 +1185,18 @@
 05:23:13.255007 db@open done T·11.806526ms
 05:24:19.861537 db@close closing
 05:24:19.861622 db@close done T·82.975µs
+=============== Apr 22, 2018 (CEST) ===============
+05:45:35.744061 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+05:45:35.744372 version@stat F·[2 1] S·1MiB[620KiB 785KiB] Sc·[0.50 0.01]
+05:45:35.744389 db@open opening
+05:45:35.744447 journal@recovery F·1
+05:45:35.744653 journal@recovery recovering @265
+05:45:35.749390 memdb@flush created L0@267 N·4 S·1KiB "/F5..KR7,v44742":"/pr..UPY,v44744"
+05:45:35.749820 version@stat F·[3 1] S·1MiB[622KiB 785KiB] Sc·[0.75 0.01]
+05:45:35.750270 db@janitor F·9 G·3
+05:45:35.750289 db@janitor removing journal-254
+05:45:35.750492 db@janitor removing manifest-255
+05:45:35.750534 db@janitor removing table-256
+05:45:35.750655 db@open done T·6.249691ms
+05:46:31.994241 db@close closing
+05:46:31.994347 db@close done T·105.651µs
