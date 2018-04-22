@@ -912,7 +912,6 @@
 22:11:08.402716 version@stat F·[1] S·458B[458B] Sc·[0.25]
 22:11:08.416509 db@janitor F·3 G·0
 22:11:08.416557 db@open done T·15.918976ms
-<<<<<<< HEAD
 =============== Apr 21, 2018 (CEST) ===============
 23:06:10.550822 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
 23:06:10.551925 version@stat F·[1] S·458B[458B] Sc·[0.25]
@@ -1156,5 +1155,3 @@
 05:23:08.783187 version@stat F·[1] S·458B[458B] Sc·[0.25]
 05:23:08.792828 db@janitor F·3 G·0
 05:23:08.792863 db@open done T·13.962071ms
-=======
->>>>>>> master
