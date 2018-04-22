@@ -15,9 +15,10 @@ import "github.com/tendermint/tmlibs/common/types.proto";
 // Code types
 
 enum CodeType {
+  // All checks passed.
   OK                    = 0;
 
-  // General response codes, 2 ~ 99
+  // General response codes, 1 ~ 99
   InternalError         = 1;
   EncodingError         = 2;
   BadNonce              = 3;
@@ -51,7 +52,7 @@ enum TransactionType {
   ChangeContentAccess = 4;
 
   // IPFS Proxy
-  IPFSProxy = 5;
+  IPFSProxyPin = 5;
 }
 
 message RequestUpload {

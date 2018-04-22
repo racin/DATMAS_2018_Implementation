@@ -7,9 +7,11 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"fmt"
 )
 
 func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("IPFS PIN FILE")
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");

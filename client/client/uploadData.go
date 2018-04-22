@@ -30,8 +30,15 @@ var uploadCmd = &cobra.Command{
 		fmt.Printf("TheClient: %+v\n", TheClient)
 		// File and Name is required parameters.
 		filePath := args[0];
+
+		// TODO: Figure out if there is a way to only open the file once.
 		file, err := os.Open(filePath)
 		defer file.Close()
+		if err != nil {
+			log.Fatal("Could not open file. Error: ", err.Error())
+		}
+		file2, err := os.Open(filePath)
+		defer file2.Close()
 		if err != nil {
 			log.Fatal("Could not open file. Error: ", err.Error())
 		}
@@ -48,16 +55,22 @@ var uploadCmd = &cobra.Command{
 		stranc := getSignedTransaction(types.TransactionType_UploadData, &types.RequestUpload{Cid:fileHash, IpfsNode:TheClient.IPFSIdent})
 		fmt.Printf("Tranc: %+v\n", stranc.Base.(*types.Transaction))
 		byteArr, _ := json.Marshal(stranc)
-		values := map[string]io.Reader{
+		valuesTM := map[string]io.Reader{
 			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
 		}
-
-		res := TheClient.UploadData(&values)
-		if res.Codetype != types.CodeType_OK {
-			log.Fatal("Error with upload. ", res.Message)
+		valuesIPFS := map[string]io.Reader{
+			"file":    file2,
+			"transaction": bytes.NewReader(byteArr),
 		}
 
+
+		if res := TheClient.UploadDataToTM(&valuesTM); res.Codetype != types.CodeType_OK {
+			log.Fatal("Error with TM upload. ", res.Message)
+		}
+		if res := TheClient.UploadDataToIPFS(&valuesIPFS); res.Codetype != types.CodeType_OK {
+			log.Fatal("Error with IPFS upload. ", string(res.Message))
+		}
 		// Phase 1b. Generate a sample for the file
 		storageSample := crypto.GenerateStorageSample(&fileBytes)
 

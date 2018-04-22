@@ -19,7 +19,6 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	//stx := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct:crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
 	stx := &crypto.SignedStruct{Base: &crypto.StorageChallenge{}}
 	var storageChallenge *crypto.StorageChallenge
 	var ok bool = false
@@ -70,8 +69,9 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		// TODO: Fatal error.
 		writeResponse(&w, types.CodeType_InternalError, "Unable to prove challenge.");
 	} else {
-		proof.VerifyChallengeProof_Historic(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, signer, pubKey, proxy.identity, proxy.privKey)
+		fmt.Printf("Sending proof... %v %v %v\n", 0, uint32(0), uint(0))
+		//proof.VerifyChallengeProof_Historic(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, signer, pubKey, proxy.identity, proxy.privKey)
 		byteArr, _ := json.Marshal(proof)
-		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:types.CodeType_OK})
+		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:0})
 	}
 }

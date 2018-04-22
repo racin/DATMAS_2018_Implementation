@@ -133,17 +133,14 @@ func (proxy *Proxy) StartHTTPAPI(){
 }
 
 func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeType) (*types.Transaction, types.CodeType, string) {
-	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx types.Transaction
-	var ok bool = false
-	if err := json.Unmarshal([]byte(txString), stx); err != nil {
-		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction. Error: " + err.Error()
-	} else if tx, ok = stx.Base.(types.Transaction); !ok {
-		return nil, types.CodeType_BCFSInvalidInput, "Could not Marshal transaction."
+	stx, tx, err := types.UnmarshalTransaction([]byte(txString))
+	if err != nil {
+		return nil, types.CodeType_InternalError, err.Error()
 	}
 
+	fmt.Printf("Tranc2: %+v\n", tx)
 	// Check for replay attack
-	txHash := crypto.HashStruct(tx)
+	txHash := crypto.HashStruct(*tx)
 	if proxy.HasSeenTranc(txHash) {
 		return nil, types.CodeType_BadNonce, "Could not process transaction. Possible replay attack."
 	}
@@ -164,7 +161,7 @@ func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeT
 	// Check access rights
 	for allowedType := range openForTypes {
 		if signer.Type == openForTypes[allowedType] {
-			return &tx, types.CodeType_OK, txHash
+			return tx, types.CodeType_OK, txHash
 		}
 	}
 

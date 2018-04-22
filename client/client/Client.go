@@ -2,9 +2,8 @@ package client
 
 import (
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
-	"github.com/racin/DATMAS_2018_Implementation/app"
+	"github.com/racin/DATMAS_2018_Implementation/rpc"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	bt "github.com/racin/DATMAS_2018_Implementation/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"encoding/json"
 	ctypes "github.com/tendermint/tendermint/rpc/core/types"
@@ -81,50 +80,69 @@ func (c *Client) GetIdentityPublicKey(ident string) (identity *conf.Identity, pu
 	return crypto.GetIdentityPublicKey(ident, c.GetAccessList(), conf.ClientConfig().BasePath + conf.ClientConfig().PublicKeys)
 }
 
-func (c *Client) SendMultipartFormData(endpoint string, values *map[string]io.Reader) (bt.ResponseUpload) {
-	buffer, boundary := app.GetMultipartValues(values)
-	var result bt.ResponseUpload
+func (c *Client) sendMultipartFormDataToTM(values *map[string]io.Reader) (*types.ResponseUpload) {
+	buffer, boundary := rpc.GetMultipartValues(values)
+	var result *types.ResponseUpload
 
-	response, err := c.TMUploadClient.Post(endpoint, boundary, buffer)
+	response, err := c.TMUploadClient.Post(c.TMUploadAPI, boundary, buffer)
 	if err == nil {
 		if dat, err := ioutil.ReadAll(response.Body); err == nil {
 			fmt.Printf("Got response: %#v\n", string(dat))
 			if err := json.Unmarshal(dat, &result); err != nil {
-				result = bt.ResponseUpload{Codetype:bt.CodeType_InternalError, Message:err.Error()}
+				result = &types.ResponseUpload{Codetype:types.CodeType_InternalError, Message:err.Error()}
 			}
 		}
 	} else {
-		result = bt.ResponseUpload{Codetype:bt.CodeType_InternalError, Message:err.Error()}
+		result = &types.ResponseUpload{Codetype:types.CodeType_InternalError, Message:err.Error()}
 	}
 	fmt.Printf("The result: %#v\n", result)
 	return result
 }
 
-func checkBroadcastResult(commit interface{}, err error) (bt.CodeType, error) {
+func (c *Client) sendMultipartFormDataToIPFS(values *map[string]io.Reader) (*types.IPFSReponse) {
+	buffer, boundary := rpc.GetMultipartValues(values)
+	result := &types.IPFSReponse{}
+
+	response, err := c.IPFSClient.Post(c.IPFSAddr + conf.ClientConfig().IpfsAddnopinEndpoint, boundary, buffer)
+	if err == nil {
+		if dat, err := ioutil.ReadAll(response.Body); err == nil {
+			fmt.Printf("Got response: %#v\n", string(dat))
+			if err := json.Unmarshal(dat, &result); err != nil {
+				result.AddMessageAndError(err.Error(), types.CodeType_InternalError)
+			}
+		}
+	} else {
+		result.AddMessageAndError(err.Error(), types.CodeType_InternalError)
+	}
+	fmt.Printf("The result: %+v\n", result)
+	return result
+}
+
+func checkBroadcastResult(commit interface{}, err error) (types.CodeType, error) {
 	fmt.Printf("Data 1: %+v\n", commit)
 	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
 		if err != nil {
-			return bt.CodeType_InternalError, err
+			return types.CodeType_InternalError, err
 		} else if c.CheckTx.IsErr() {
-			return bt.CodeType_InternalError, errors.New(c.CheckTx.String())
+			return types.CodeType_InternalError, errors.New(c.CheckTx.String())
 		} else if c.DeliverTx.IsErr() {
-			return bt.CodeType_InternalError, errors.New(c.DeliverTx.String())
+			return types.CodeType_InternalError, errors.New(c.DeliverTx.String())
 		} else {
 			fmt.Printf("Data: %+v\n", c)
-			return bt.CodeType_OK, nil;
+			return types.CodeType_OK, nil;
 		}
 	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
 		fmt.Printf("Data 2: %+v\n", c)
-		code := bt.CodeType(c.Code)
-		if code == bt.CodeType_OK {
+		code := types.CodeType(c.Code)
+		if code == types.CodeType_OK {
 			fmt.Printf("Data 3: %+v\n", c)
 			return code, nil
 		} else {
-			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + bt.CodeType_name[int32(c.Code)])
+			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + types.CodeType_name[int32(c.Code)])
 		}
 	}
 	/**/
-	return bt.CodeType_InternalError, errors.New("Could not type assert result.")
+	return types.CodeType_InternalError, errors.New("Could not type assert result.")
 }
 
 func (c *Client) setupAPI()  {
@@ -158,7 +176,7 @@ func (c *Client) setupAPI()  {
 			}
 
 			c.TMUploadAPI = uploadAddr + conf.ClientConfig().UploadEndPoint
-			response := c.SendMultipartFormData(c.TMUploadAPI, &values);
+			response := c.sendMultipartFormDataToTM(&values);
 			if response.Codetype == types.CodeType_OK && response.Message == reqNum{
 				//conf.ClientConfig().UploadAddr = uploadAddr
 				tmUplApiFound = true
@@ -195,14 +213,20 @@ func (c *Client) setupAPI()  {
 }
 
 
-func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (bt.CodeType, error) {
+func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (types.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
-func (c *Client) UploadData(values *map[string]io.Reader) (bt.ResponseUpload) {
+func (c *Client) UploadDataToTM(values *map[string]io.Reader) (*types.ResponseUpload) {
 	//data := map[string]io.Reader
 	fmt.Println("Uploadendpoint: " + c.TMUploadAPI)
-	return c.SendMultipartFormData(c.TMUploadAPI, values)
+	return c.sendMultipartFormDataToTM(values)
+	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
+}
+func (c *Client) UploadDataToIPFS(values *map[string]io.Reader) (*types.IPFSReponse) {
+	//data := map[string]io.Reader
+	fmt.Println("IPFS Upload: " + c.IPFSAddr + conf.ClientConfig().IpfsAddnopinEndpoint)
+	return c.sendMultipartFormDataToIPFS(values)
 	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 

@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/json"
 	"log"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
@@ -11,7 +10,6 @@ import (
 	"net/http"
 	"time"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
-	"github.com/pkg/errors"
 )
 
 type Application struct {
@@ -56,15 +54,9 @@ func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	return abci.ResponseInfo{Data: app.info}
 }
 func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
-	txHash, _ := crypto.IPFSHashData(txBytes)
-	fmt.Println("Deliver trigger. Hash of data: " + txHash);
-	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	var tx *types.Transaction
-	var ok bool = false
-	if err := json.Unmarshal(txBytes, stx); err != nil {
+	stx, tx, err := types.UnmarshalTransaction(txBytes)
+	if err != nil {
 		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	} else if tx, ok = stx.Base.(*types.Transaction); !ok {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not unmarshal transaction (Transaction)"}
 	}
 	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
@@ -89,7 +81,9 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	case types.TransactionType_UploadData:
 		{
 			fmt.Println("DeliverTx_UploadData")
-			return *app.DeliverTx_UploadData(signer, tx)
+			ret := *app.DeliverTx_UploadData(signer, tx)
+			fmt.Printf("Ret: %+v\n", ret)
+			return ret
 		}
 	case types.TransactionType_RemoveData:
 		{
@@ -117,36 +111,9 @@ func (app *Application) verifySignatureTx(txBytes []byte, expectedData interface
 
 }*/
 
-func (app *Application) unmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *types.Transaction, error) {
-	stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	if err := json.Unmarshal(txBytes, stx); err != nil {
-		return nil, nil, err
-	} else if tx, ok := stx.Base.(*types.Transaction); !ok {
-		return nil, nil, errors.New("Could not unmarshal transaction (Transaction)")
-	} else {
-		// Check if the data sent is actually another Struct.
-		derivedStruct, ok := stx.Base.(*types.Transaction).Data.(map[string]interface{})
 
-		// If its not, we can simply return and the different transaction types will get the value themselves.
-		if !ok {
-			return stx, tx, nil
-		}
-
-		// types.RequestUpload
-		if cid, ok := derivedStruct["cid"]; ok {
-			if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
-				reqUpload := &types.RequestUpload{Cid:cid.(string), IpfsNode:ipfsNode.(string)}
-				stx.Base.(*types.Transaction).Data = reqUpload
-				tx.Data = reqUpload
-			}
-		}
-
-		return stx, tx, nil
-	}
-}
-func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx { //types.Result {
-	//stx := &crypto.SignedStruct{Base: &types.Transaction{}}
-	stx, tx, err := app.unmarshalTransaction(txBytes)
+func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
+	stx, tx, err := types.UnmarshalTransaction(txBytes)
 	if err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
 	}

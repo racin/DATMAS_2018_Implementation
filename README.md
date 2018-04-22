@@ -33,7 +33,7 @@ go build main.go
 ## Common problems:
 'http: multiple registrations for /debug/requests'
 ```
-go get -u "golang.org/x/net/trace"
+go get -u golang.org/x/net/trace
 rm -rf $GOPATH/src/github.com/tendermint/tendermint/vendor/golang.org/x/net/trace
 ```
 

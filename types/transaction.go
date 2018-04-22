@@ -5,6 +5,9 @@ import (
 	"crypto/rand"
 	"math/big"
 	"math"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
+	"encoding/json"
+	"errors"
 )
 
 type Transaction struct {
@@ -23,4 +26,32 @@ func NewTx(data interface{}, identity string, t TransactionType) *Transaction {
 	return &Transaction{Data: data, Identity: identity, Type: t,
 		Timestamp: time.Now().Format(time.RFC3339), Nonce:nonce.Uint64()}
 
+}
+
+func UnmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *Transaction, error) {
+	stx := &crypto.SignedStruct{Base: &Transaction{}}
+	if err := json.Unmarshal(txBytes, stx); err != nil {
+		return nil, nil, err
+	} else if tx, ok := stx.Base.(*Transaction); !ok {
+		return nil, nil, errors.New("Could not unmarshal transaction (Transaction)")
+	} else {
+		// Check if the data sent is actually another Struct.
+		derivedStruct, ok := stx.Base.(*Transaction).Data.(map[string]interface{})
+
+		// If its not, we can simply return and the different transaction types will get the value themselves.
+		if !ok {
+			return stx, tx, nil
+		}
+
+		// types.RequestUpload
+		if cid, ok := derivedStruct["cid"]; ok {
+			if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
+				reqUpload := &RequestUpload{Cid:cid.(string), IpfsNode:ipfsNode.(string)}
+				stx.Base.(*Transaction).Data = reqUpload
+				tx.Data = reqUpload
+			}
+		}
+
+		return stx, tx, nil
+	}
 }

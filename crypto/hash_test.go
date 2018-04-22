@@ -10,6 +10,7 @@ type TestHashStruct struct {
 	Message			string
 	Number			int
 	Data			[]byte
+	Iface			interface{}
 }
 
 func TestIPFSHash(t *testing.T){
@@ -41,7 +42,7 @@ func TestHash(t *testing.T){
 }
 
 func TestStructHash(t *testing.T) {
-	hashstruct := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
+	hashstruct := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:"inface"}
 	hash1 := HashStruct(hashstruct);
 	fmt.Println(hash1)
 	hashstruct.Number = 987

@@ -62,13 +62,6 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Received tranc: %+v\n", stx)
-	fmt.Printf("Received tranc: %+v\n", tx)
-	fmt.Printf("Received tranc: %+v\n", tx.Data)
-	fmt.Printf("Received tranc: %+v\n", reqUpload)
-	fmt.Printf("Hash of tranc: %v\n", crypto.HashStruct(tx))
-
-
 	// Check for replay attack
 	txHash := crypto.HashStruct(tx)
 	if app.HasSeenTranc(txHash) {
@@ -123,6 +116,7 @@ func (app *Application) UploadHandler(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the hash of the upload file equals the hash contained in the transaction
 	fileBytes, err := ioutil.ReadAll(fopen);
+	fmt.Printf("Filebytes: %v\n", fileBytes)
 	if err != nil {
 		writeUploadResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
 		return

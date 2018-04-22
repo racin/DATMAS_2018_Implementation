@@ -2,19 +2,18 @@ package app
 
 import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"github.com/racin/DATMAS_2018_Implementation/rpc"
 	"strings"
 	"fmt"
 	"io/ioutil"
 	"github.com/pkg/errors"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
-	cmn "github.com/tendermint/tmlibs/common"
 	"github.com/tendermint/tendermint/rpc/core/types"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"encoding/json"
 	"bytes"
-	"mime/multipart"
-	"os"
+
 	"io"
 )
 
@@ -59,67 +58,39 @@ func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
 	input interface{}) (*types.IPFSReponse) {
 	var payload *bytes.Buffer
 	var contentType string
-	res := &types.IPFSReponse{Codetype:types.CodeType_InternalError}
+	res := &types.IPFSReponse{}
 	switch data := input.(type){
 		case *crypto.SignedStruct:
 			if byteArr, err := json.Marshal(data); err != nil {
-				res.AddMessage(err.Error())
+				res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 				return res
 			} else {
 				payload = bytes.NewBuffer(byteArr)
 			}
 			contentType = "application/json"
 		case *map[string]io.Reader:
-			payload, contentType = GetMultipartValues(data)
+			payload, contentType = rpc.GetMultipartValues(data)
 		default:
-			res.AddMessage("Input must be of type *crypto.SignedStruct or *map[string]io.Reader.")
+			res.AddMessageAndError("Input must be of type *crypto.SignedStruct or *map[string]io.Reader.", types.CodeType_InternalError)
 			return res
 	}
 
+	fmt.Println("Was: " + conf.AppConfig().IpfsProxyAddr)
 	ipfsAddr := strings.Replace(conf.AppConfig().IpfsProxyAddr, "$IpfsNode", ipfsproxy, 1)
 	fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 	if response, err := app.IpfsHttpClient.Post(ipfsAddr + endpoint, contentType, payload); err == nil{
 		if dat, err := ioutil.ReadAll(response.Body); err == nil{
 			if err := json.Unmarshal(dat, res); err != nil {
-				res.AddMessage(err.Error())
+				res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 			}
 		} else {
-			res.AddMessage(err.Error())
+			res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 		}
 	} else {
-		res.AddMessage(err.Error())
+		res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 	}
 
 	return res
-}
-
-func GetMultipartValues(values *map[string]io.Reader) (buffer *bytes.Buffer, boundary string){
-	var b bytes.Buffer
-	var err error
-	w := multipart.NewWriter(&b)
-	defer w.Close()
-
-	for index, element := range *values {
-		var writer io.Writer
-		// If file has a close method.
-		if file, ok := element.(io.Closer); ok {
-			defer file.Close()
-		}
-
-		// Check if a file is added. Else add it as a regular data element.
-		if file, ok := element.(*os.File); ok {
-			writer, err = w.CreateFormFile(index, file.Name());
-		} else {
-			writer, err = w.CreateFormField(index);
-		}
-
-		// If there was no errors creating the form element, try to copy the element to it
-		if err == nil {
-			io.Copy(writer, element)
-		}
-	}
-
-	return &b, w.FormDataContentType()
 }
 
 type QueryBroadcastReponse struct {
@@ -142,13 +113,13 @@ func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-
 	}
 }
 
-func (app *Application) multicastQuery(path string, data cmn.HexBytes, tmNodes []string) map[string]*QueryBroadcastReponse{
+func (app *Application) multicastQuery(path string, data *[]byte, tmNodes []string) map[string]*QueryBroadcastReponse{
 	response := make(map[string]*QueryBroadcastReponse)
 	for _, addr := range tmNodes {
 		if tmClient, ok := app.TMRpcClients[addr]; !ok {
 			continue // Not connected to node with that address
 		} else {
-			result, err := tmClient.ABCIQuery(path, data)
+			result, err := tmClient.ABCIQuery(path, *data)
 			response[addr] = &QueryBroadcastReponse{Result: result, Err: err}
 		}
 	}

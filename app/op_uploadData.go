@@ -42,8 +42,9 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 
 	// Issue a StorageChallenge to the IPFS node and check that the response is OK.
 	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+	fmt.Printf("%+v\n", ipfsResponse)
 	if ipfsResponse.Codetype != types.CodeType_OK {
-		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "Did not get a proof from IPFS node " +
+		return &abci.ResponseCheckTx{Code: uint32(ipfsResponse.Codetype), Log: "Did not get a proof from IPFS node " +
 			proverIdent.Address + ", Error: " + string(ipfsResponse.Message)}
 	}
 
@@ -78,7 +79,7 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 
 func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Transaction) *abci.ResponseDeliverTx {
 	// Check contents of transaction.
-	reqUpload, ok := tx.Data.(types.RequestUpload)
+	reqUpload, ok := tx.Data.(*types.RequestUpload)
 	if !ok {
 		return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data."}
 	}
@@ -90,16 +91,25 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 	}
 
 	// TODO: Check how IPFS handles many Pin requests. If this is a problem we need make sure just one does it.
-	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsPinfileEndpoint, reqUpload.Cid)
+	pinTx := types.NewTx(reqUpload.Cid, app.fingerprint, types.TransactionType_IPFSProxyPin)
+	fmt.Printf("Tx: %+v\n", pinTx)
+	pinStx, err := crypto.SignStruct(*pinTx, app.privKey)
+	fmt.Printf("Stx: %+v\n", pinStx)
+	if err != nil {
+		return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Could not sign Pin request: " + err.Error()}
+	}
+	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsPinfileEndpoint, pinStx)
 	if ipfsResponse.Codetype != types.CodeType_OK {
+		fmt.Printf("Error: %v\n", string(ipfsResponse.Message))
 		// Couldnt pin the file.. Not good. Attempt send the same request to a different proxy.
 		if proxyAddr, err := app.getIPFSProxyAddr(); err == nil {
-			ipfsResponse = app.queryIPFSproxy(proxyAddr, conf.AppConfig().IpfsPinfileEndpoint, reqUpload.Cid)
+			ipfsResponse = app.queryIPFSproxy(proxyAddr, conf.AppConfig().IpfsPinfileEndpoint, pinStx)
 		}
 		if ipfsResponse.Codetype != types.CodeType_OK {
 			return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: "Unable to pin the file. Error: " + string(ipfsResponse.Message)}
 		}
 	}
+	fmt.Printf("IPFS Resp: %+v\n", ipfsResponse)
 
 	// Remove temporary stored file if its stored.
 	filePath := conf.AppConfig().BasePath + conf.AppConfig().StorageSamples + reqUpload.Cid

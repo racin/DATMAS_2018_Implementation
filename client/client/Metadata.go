@@ -34,7 +34,7 @@ func GetMetadata(cid string, mePath ...string) (*MetadataEntry){
 }
 
 func WriteMetadata(cid string, me *MetadataEntry) error {
-	if data, err := json.Marshal(&me); err == nil {
+	if data, err := json.Marshal(*me); err == nil {
 		return ioutil.WriteFile(conf.ClientConfig().BasePath + conf.ClientConfig().Metadata + cid, data, 0600)
 	} else {
 		return err

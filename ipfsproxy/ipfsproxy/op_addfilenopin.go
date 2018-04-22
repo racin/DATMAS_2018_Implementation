@@ -26,6 +26,7 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	fmt.Printf("Got tranc: %+v\n", txString)
 	// Check access to proxy method
 	tx, codeType, message := proxy.CheckProxyAccess(txString[0], conf.Client)
 	if codeType != types.CodeType_OK {
@@ -34,8 +35,8 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Check if data hash is contained within the transaction.
-	fileHash, ok := tx.Data.(string)
-	if (fileHash == "" || !ok) {
+	reqUpload, ok := tx.Data.(*types.RequestUpload)
+	if (reqUpload.Cid == "" || !ok) {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing data hash parameter.");
 		return
 	}
@@ -57,13 +58,14 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the hash of the upload file equals the hash contained in the transaction
 	fileBytes, err := ioutil.ReadAll(fopen)
+	fmt.Printf("Filebytes: %v\n", fileBytes)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
 		return
 	} else if uplFileHash, err := crypto.IPFSHashData(fileBytes); err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get hash of input file.");
 		return
-	} else if uplFileHash != fileHash {
+	} else if uplFileHash != reqUpload.Cid {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash parameter does not equal hash of uploaded file.");
 		return
 	}

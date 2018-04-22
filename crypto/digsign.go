@@ -42,7 +42,14 @@ func internal_hashStruct(in interface{}) []byte {
 			buffer.Write(internal_hashStruct(val))
 		} else if val.Kind() == reflect.Ptr {
 		} else if val.Kind() == reflect.Interface {
-			buffer.Write(internal_hashStruct(val.Interface()))
+			inf := val.Interface()
+			if infVal, ok := inf.(string); ok {
+				buffer.WriteString(infVal)
+			} else if infVal, ok := inf.(int); ok {
+				buffer.WriteByte(byte(infVal))
+			} else {
+				buffer.Write(internal_hashStruct(val.Interface()))
+			}
 		} else {
 			buffer.WriteString(fmt.Sprintf("%v", val))
 		}
