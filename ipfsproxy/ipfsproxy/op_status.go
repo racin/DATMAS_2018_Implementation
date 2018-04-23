@@ -1,8 +1,8 @@
 package ipfsproxy
 
 import (
-	cid2 "github.com/ipfs/go-cid"
-	mh "github.com/multiformats/go-multihash"
+	cid2 "gx/ipfs/QmcZfnkapfECQGcLZaf9B79NRg7cRa9EnZh4LSbkCzwNvY/go-cid"
+	mh "gx/ipfs/QmZyZDi491cCNTLfAhwcaDii2Kg4pwKRkhqQzURGDvY6ua/go-multihash"
 	"io/ioutil"
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"

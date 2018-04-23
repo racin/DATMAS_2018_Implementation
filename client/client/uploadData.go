@@ -94,7 +94,7 @@ var uploadCmd = &cobra.Command{
 		// Start timeout to wait for the transaction be put on the ledger.
 		select {
 			case b := <-newBlockCh:
-				evt := b.(tmtypes.TMEventData).Unwrap().(tmtypes.EventDataNewBlock)
+				evt := b.(tmtypes.EventDataNewBlock)
 				// Validate
 				if err := evt.Block.ValidateBasic(); err != nil {
 					// System is broken. Notify administrators

@@ -5,7 +5,7 @@ import (
 	"github.com/ipfs/ipfs-cluster/api/rest"
 	"strings"
 
-	ma "github.com/multiformats/go-multiaddr"
+	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 
 	"net/http"

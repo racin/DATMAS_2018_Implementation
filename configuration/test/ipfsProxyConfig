@@ -1,7 +1,7 @@
 {
     "basePath": "$HOME/.bcfs/",
     "accessList": "accessList",
-    "privateKey": "mycert.pem",
+    "privateKey": "storage.pem",
     "publicKeys": "PubKeys/",
 
     "listenAddr": ":46660",

@@ -12,7 +12,8 @@
     "ipfs_sync_interval": "2m10s",
     "replication_factor_min": -1,
     "replication_factor_max": -1,
-    "monitor_ping_interval": "15s"
+    "monitor_ping_interval": "15s",
+    "peer_watch_interval": "5s"
   },
   "consensus": {
     "raft": {
@@ -32,7 +33,8 @@
   },
   "api": {
     "restapi": {
-      "listen_multiaddress": "/ip4/127.0.0.1/tcp/9094",
+      "listen_multiaddress": "",
+      "http_listen_multiaddress": "/ip4/127.0.0.1/tcp/9094",
       "read_timeout": "30s",
       "read_header_timeout": "5s",
       "write_timeout": "1m0s",

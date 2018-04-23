@@ -1,6 +1,6 @@
 {
   "basePath": "$HOME/.bcfs/",
-  "privateKey": "mycert.pem",
+  "privateKey": "consensus.pem",
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
   "tempUploadPath": "/tmp/",
@@ -12,12 +12,12 @@
   "rpcType": "grpc",
   "appInfo": "__bcfs",
 
-  "tendermintNodes": ["testingoffline","cc418e456ae72df5bdb39d65bb8945e8"],
+  "tendermintNodes": ["cc418e456ae72df5bdb39d65bb8945e8"],
   "tmQueryTimeoutSeconds": 20,
   "websocketEndpoint": "/websocket",
   "websocketAddr": "http://$TmNode:46657",
 
-  "ipfsNodes": ["testingoffline","64168bb2f7a0a4d67d83471470ce757c"],
+  "ipfsNodes": ["64168bb2f7a0a4d67d83471470ce757c"],
   "ipfsProxyAddr": "http://$IpfsNode:46660",
   "ipfsProxyTimeoutSeconds": 30,
   "ipfsIsupEndpoint": "/isup",
