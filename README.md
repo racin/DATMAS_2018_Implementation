@@ -43,10 +43,6 @@ go build ipfsproxy/main.go
 ```
 
 ## Running 
-Make sure $HOME/.tendermint/config/config.toml:
-1. abci = "grpc"
-2. create_empty_blocks = false
-
 1. Start tendermint core with "tendermint node"
 2. Start tendermint app with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation && ./main"
 3. Start IPFS with "ipfs daemon"
@@ -76,6 +72,13 @@ Edit: $GOPATH/src/gx/ipfs/QmZ4Qi3GaRbjcx28Sme5eMH7RQjGkt8wHxt2a65oLaeFEV/gogo-pr
 go get -u golang.org/x/net/trace
 rm -rf $GOPATH/src/github.com/tendermint/tendermint/vendor/golang.org/x/net/trace
 ```
+
+### Tendermint configuration
+(Installation script will do this).
+Make sure $HOME/.tendermint/config/config.toml:
+1. abci = "grpc"
+2. create_empty_blocks = false
+
 
 ## Generate certificate:
 ```

@@ -44,3 +44,6 @@ sed -i -e 's/cc418e456ae72df5bdb39d65bb8945e8/'"$consensus_FP"'/g' appConfig
 sed -i -e 's/cc418e456ae72df5bdb39d65bb8945e8/'"$consensus_FP"'/g' clientConfig
 sed -i -e 's/64168bb2f7a0a4d67d83471470ce757c/'"$storage_FP"'/g' appConfig
 sed -i -e 's/64168bb2f7a0a4d67d83471470ce757c/'"$storage_FP"'/g' clientConfig
+
+sed -i -e 's/create_empty_blocks = true/create_empty_blocks = false/g' $HOME/.tendermint/config/config.toml
+sed -i -e 's/abci = "socket"/abci = "grpc"/g' $HOME/.tendermint/config/config.toml
