@@ -49,8 +49,8 @@ go build ipfsproxy/main.go
 4. Start IPFS-cluster with "ipfs-cluster-service"
 5. Start IPFS proxy with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/ipfsproxy && ./main"
 6. Run the client with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/client && ./main"
-6a. Example client command: "./main data upload [file] [name] [description]"
-6b. After upload is completed, open http://localhost:8080/ipfs/[CID]
+7. Example client command: "./main data upload [file] [name] [description]"
+8. After upload is completed, open http://localhost:8080/ipfs/[CID]
 
 ## New protobuf:
 ```
