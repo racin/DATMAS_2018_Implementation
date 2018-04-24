@@ -19,6 +19,7 @@ import (
 	"math/rand"
 	"strconv"
 	"strings"
+	"context"
 )
 
 type Client struct {
@@ -162,6 +163,10 @@ func (c *Client) setupAPI()  {
 			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
 			if _, err := c.TMClient.Status(); err == nil {
 				//conf.ClientConfig().RemoteAddr = apiAddr
+				err := c.TMClient.Start()
+				if err != nil {
+					fmt.Println("Error starting: " + err.Error())
+				}
 				tmApiFound = true
 				c.TMIdent = ident
 			}
@@ -230,203 +235,15 @@ func (c *Client) UploadDataToIPFS(values *map[string]io.Reader) (*types.IPFSRepo
 	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 
-/*
-func (c *BaseClient) AddAccount(acc *state.Account) error {
-	tx := transaction.New(transaction.AccountAdd, &transaction.AccountAddData{Account: acc})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
+func (c *Client) SubToNewBlock(newBlock chan interface{}) error {
+	return c.TMClient.Subscribe(context.Background(), "bcfs-client", tmtypes.EventQueryNewBlock, newBlock)
 }
 
-func (c *BaseClient) DelAccount(id string) error {
-	tx := transaction.New(transaction.AccountDel, &transaction.AccountDelData{ID: id})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
+func (c *Client) GetSignedTransaction(txtype types.TransactionType, data interface{}) (stranc *crypto.SignedStruct) {
+	tx := types.NewTx(data, TheClient.fingerprint, txtype)
+	stranc, err := crypto.SignStruct(tx, TheClient.privKey);
 	if err != nil {
-		return err
+		panic("Could not sign transaction. Private/Public key pair may not match. Use the --generateKeys to generate a new one. Error: " + err.Error())
 	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
+	return
 }
-
-func (c *BaseClient) GiveReputation(from, to string, value int) error {
-	tx := transaction.New(transaction.ReputationGive, &transaction.ReputationGiveData{
-		From:  from,
-		To:    to,
-		Value: value,
-	})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
-}
-
-func (c *BaseClient) GetAccount(id string) (*state.Account, error) {
-	resp, err := c.tm.ABCIQuery("/account", []byte(id), false)
-	if err != nil {
-		return nil, err
-	}
-	if len(resp.Value) == 0 {
-		return nil, errors.New("account not found")
-	}
-	acc := &state.Account{}
-	if err = json.Unmarshal(resp.Value, acc); err != nil {
-		log.Printf("request account but got rubbish: %v", string(resp.Value))
-		return nil, err
-	}
-	return acc, nil
-}
-
-func (c *BaseClient) ListAccounts() ([]*state.Account, error) {
-	resp, err := c.tm.ABCIQuery("/account", nil, false)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
-	if len(resp.Value) == 0 {
-		return nil, errors.New("account not found")
-	}
-	acc := []*state.Account{}
-	if err = json.Unmarshal(resp.Value, &acc); err != nil {
-		return nil, err
-	}
-	return acc, nil
-}
-
-func (c *BaseClient) ListSecrets() ([]*state.Secret, error) {
-	resp, err := c.tm.ABCIQuery("/secret", nil, false)
-	if err != nil {
-		log.Print(err)
-		return nil, err
-	}
-	if len(resp.Value) == 0 {
-		return nil, errors.New("secret not found")
-	}
-	acc := []*state.Secret{}
-	if err = json.Unmarshal(resp.Value, &acc); err != nil {
-		return nil, err
-	}
-	return acc, nil
-}
-
-func (c *BaseClient) GetSecret(id string) (*state.Secret, error) {
-	resp, err := c.tm.ABCIQuery("/secret", []byte(id), false)
-	if err != nil {
-		return nil, err
-	}
-	if len(resp.Value) == 0 {
-		return nil, errors.New("secret not found")
-	}
-	acc := &state.Secret{}
-	if err = json.Unmarshal(resp.Value, acc); err != nil {
-		return nil, err
-	}
-	return acc, nil
-}
-
-func (c *BaseClient) AddSecret(acc *state.Secret) error {
-	tx := transaction.New(transaction.SecretAdd, &transaction.SecretAddData{Secret: acc})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
-}
-
-func (c *BaseClient) DelSecret(id string) error {
-	tx := transaction.New(transaction.SecretDel, &transaction.SecretDelData{
-		ID:       id,
-		SenderID: c.AccountID,
-	})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
-}
-
-func (c *BaseClient) UpdateSecret(acc *state.Secret) error {
-	tx := transaction.New(transaction.SecretUpdate, &transaction.SecretUpdateData{
-		Secret:   acc,
-		SenderID: c.AccountID,
-	})
-	if err := tx.ProofOfWork(transaction.DefaultProofOfWorkCost); err != nil {
-		return err
-	}
-	if err := tx.Sign(c.Key); err != nil {
-		return err
-	}
-	bs, _ := tx.ToBytes()
-	res, err := c.tm.BroadcastTxCommit(types.Tx(bs))
-	if err != nil {
-		return err
-	}
-	if res.CheckTx.IsErr() {
-		return errors.New(res.CheckTx.Error())
-	}
-	if res.DeliverTx.IsErr() {
-		return errors.New(res.DeliverTx.Error())
-	}
-	return nil
-}
-*/

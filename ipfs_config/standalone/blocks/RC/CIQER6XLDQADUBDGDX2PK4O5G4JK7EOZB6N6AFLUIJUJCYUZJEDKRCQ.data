@@ -1,7 +1,0 @@
-
-3-*.gem
-.bundle
-Gemfile.lock
-pkg
-vendor/bundle
--

@@ -15,6 +15,7 @@ type MetadataEntry struct {
 	crypto.StorageSample
 	Name 						string		`json:"name"`
 	Description					string		`json:"description"`
+	Blockheight					int64		`json:"blockheight"`
 }
 
 func GetMetadata(cid string, mePath ...string) (*MetadataEntry){

@@ -1,9 +1,0 @@
-
-MGlanguage: go
-go:
-- 1.5
-- tip
-matrix:
-  allow_failures:
-      - go: tip
-G

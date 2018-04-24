@@ -1,5 +1,0 @@
-
-93
-# TYPE metric summary
-metric{quantile="bla"} 3.14
-3
