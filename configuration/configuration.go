@@ -77,6 +77,10 @@ type IPFSProxyConfiguration struct {
 	PublicKeys						string		`json:"publicKeys"`
 	ListenAddr 						string		`json:"listenAddr"`
 	TempUploadPath					string		`json:"tempUploadPath"`
+	TendermintNodes					[]string	`json:"tendermintNodes"`
+	TmQueryTimeoutSeconds			int			`json:"tmQueryTimeoutSeconds"`
+	WebsocketEndPoint				string		`json:"websocketEndpoint"`
+	WebsocketAddr					string		`json:"websocketAddr"`
 }
 
 func LoadAppConfig(path ...string) (*AppConfiguration, error) {

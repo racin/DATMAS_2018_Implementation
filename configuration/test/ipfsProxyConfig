@@ -4,6 +4,11 @@
     "privateKey": "storage.pem",
     "publicKeys": "PubKeys/",
 
+    "tendermintNodes": ["cc418e456ae72df5bdb39d65bb8945e8"],
+    "tmQueryTimeoutSeconds": 20,
+    "websocketEndpoint": "/websocket",
+    "websocketAddr": "http://$TmNode:46657",
+
     "listenAddr": ":46660",
     "tempUploadPath": "/tmp/"
 }

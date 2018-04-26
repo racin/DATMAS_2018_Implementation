@@ -1,6 +1,8 @@
 package ipfsproxy
 
 import (
+	rpcClient "github.com/tendermint/tendermint/rpc/client"
+
 	"github.com/ipfs/ipfs-cluster/api/rest/client"
 	"github.com/ipfs/ipfs-cluster/api/rest"
 	"strings"
@@ -25,6 +27,9 @@ type Proxy struct {
 	privKey				*crypto.Keys
 	identity			*conf.Identity
 	fingerprint			string
+
+	TMClient        	rpcClient.Client
+	TMIdent				string
 }
 
 func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message string){
