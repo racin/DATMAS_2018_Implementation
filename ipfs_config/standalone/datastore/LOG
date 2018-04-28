@@ -1,45 +1,32 @@
-=============== Apr 24, 2018 (CEST) ===============
-09:56:16.740157 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-09:56:16.740422 db@open opening
-09:56:16.741930 version@stat F·[] S·0B[] Sc·[]
-09:56:16.746242 db@janitor F·2 G·0
-09:56:16.746284 db@open done T·5.831263ms
-09:59:24.734627 db@close closing
-09:59:24.734681 db@close done T·53.245µs
-=============== Apr 24, 2018 (CEST) ===============
-10:01:18.247239 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-10:01:18.247357 version@stat F·[] S·0B[] Sc·[]
-10:01:18.247369 db@open opening
-10:01:18.247404 journal@recovery F·1
-10:01:18.248206 journal@recovery recovering @1
-10:01:18.252491 memdb@flush created L0@2 N·1 S·162B "/lo..oot,v1":"/lo..oot,v1"
-10:01:18.252874 version@stat F·[1] S·162B[162B] Sc·[0.25]
-10:01:18.253208 db@janitor F·3 G·0
-10:01:18.253228 db@open done T·5.848514ms
-10:04:19.627291 db@close closing
-10:04:19.627355 db@close done T·63.674µs
-=============== Apr 24, 2018 (CEST) ===============
-10:07:54.300296 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-10:07:54.300494 version@stat F·[1] S·162B[162B] Sc·[0.25]
-10:07:54.300511 db@open opening
-10:07:54.300590 journal@recovery F·1
-10:07:54.301744 journal@recovery recovering @3
-10:07:54.306447 memdb@flush created L0@5 N·1 S·162B "/lo..oot,v3":"/lo..oot,v3"
-10:07:54.306939 version@stat F·[2] S·324B[324B] Sc·[0.50]
-10:07:54.307469 db@janitor F·4 G·0
-10:07:54.307508 db@open done T·6.983775ms
-10:21:51.295247 db@close closing
-10:21:51.295326 db@close done T·78.613µs
-=============== Apr 26, 2018 (CEST) ===============
-19:20:42.054134 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
-19:20:42.054826 version@stat F·[2] S·324B[324B] Sc·[0.50]
-19:20:42.054843 db@open opening
-19:20:42.054926 journal@recovery F·1
-19:20:42.056103 journal@recovery recovering @6
-19:20:42.061696 memdb@flush created L0@8 N·12 S·1KiB "/lo..oot,v16":"/pr..UPY,v5"
-19:20:42.062230 version@stat F·[3] S·1KiB[1KiB] Sc·[0.75]
-19:20:42.063095 db@janitor F·5 G·0
-19:20:42.063182 db@open done T·8.28294ms
 =============== Apr 28, 2018 (CEST) ===============
-10:52:39.249124 db@close closing
-10:52:39.249374 db@close done T·789.643µs
+21:49:51.416922 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:49:51.417068 db@open opening
+21:49:51.418261 version@stat F·[] S·0B[] Sc·[]
+21:49:51.422903 db@janitor F·2 G·0
+21:49:51.422927 db@open done T·5.845688ms
+21:49:51.607514 db@close closing
+21:49:51.607575 db@close done T·57.779µs
+=============== Apr 28, 2018 (CEST) ===============
+21:49:51.608484 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:49:51.608625 version@stat F·[] S·0B[] Sc·[]
+21:49:51.608641 db@open opening
+21:49:51.608696 journal@recovery F·1
+21:49:51.609067 journal@recovery recovering @1
+21:49:51.618602 memdb@flush created L0@2 N·2 S·211B "/lo..oot,v2":"/lo..ins,v1"
+21:49:51.621433 version@stat F·[1] S·211B[211B] Sc·[0.25]
+21:49:51.622043 db@janitor F·3 G·0
+21:49:51.622080 db@open done T·13.425657ms
+21:49:51.655666 db@close closing
+21:49:51.655735 db@close done T·66.506µs
+=============== Apr 28, 2018 (CEST) ===============
+21:49:58.773692 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+21:49:58.774132 version@stat F·[1] S·211B[211B] Sc·[0.25]
+21:49:58.774160 db@open opening
+21:49:58.774251 journal@recovery F·1
+21:49:58.774674 journal@recovery recovering @3
+21:49:58.779178 memdb@flush created L0@5 N·4 S·1KiB "/F5..JEP,v5":"/lo..ins,v4"
+21:49:58.779695 version@stat F·[2] S·1KiB[1KiB] Sc·[0.50]
+21:49:58.780234 db@janitor F·4 G·0
+21:49:58.780271 db@open done T·6.092346ms
+22:06:50.745145 db@close closing
+22:06:50.745230 db@close done T·84.199µs

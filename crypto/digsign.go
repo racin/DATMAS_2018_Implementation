@@ -29,12 +29,41 @@ func internal_hashStruct(in interface{}) []byte {
 	if v, ok = in.(reflect.Value); !ok {
 		buffer = bytes.NewBuffer([]byte{38})
 		v = reflect.ValueOf(in);
-		if v.Kind() == reflect.Ptr {
+		if v.Kind() == reflect.Invalid  {
+			return buffer.Bytes()
+		} else if v.Kind() == reflect.Ptr {
 			v = v.Elem()
+		}
+
+		if v.Kind() == reflect.Map {
+			for _, key := range v.MapKeys() {
+				val := v.MapIndex(key)
+				if val.Kind() == reflect.Struct{
+					buffer.Write(internal_hashStruct(val))
+				} else if val.Kind() == reflect.Ptr {
+				} else if val.Kind() == reflect.Interface {
+					inf := val.Interface()
+					if infVal, ok := inf.(string); ok {
+						buffer.WriteString(infVal)
+					} else if infVal, ok := inf.(int); ok {
+						buffer.WriteByte(byte(infVal))
+					} else if infVal, ok := inf.(int64); ok {
+						buffer.WriteByte(byte(infVal))
+					} else if infVal, ok := inf.(float64); ok {
+						buffer.WriteByte(byte(infVal))
+					} else {
+						buffer.Write(internal_hashStruct(val.Interface()))
+					}
+				} else {
+					buffer.WriteString(fmt.Sprintf("%v", val))
+				}
+			}
+			return buffer.Bytes()
 		}
 	} else {
 		buffer = bytes.NewBuffer([]byte{})
 	}
+
 	for i := 0; i < v.NumField(); i++ {
 		val := v.Field(i)
 
@@ -46,6 +75,10 @@ func internal_hashStruct(in interface{}) []byte {
 			if infVal, ok := inf.(string); ok {
 				buffer.WriteString(infVal)
 			} else if infVal, ok := inf.(int); ok {
+				buffer.WriteByte(byte(infVal))
+			} else if infVal, ok := inf.(int64); ok {
+				buffer.WriteByte(byte(infVal))
+			} else if infVal, ok := inf.(float64); ok {
 				buffer.WriteByte(byte(infVal))
 			} else {
 				buffer.Write(internal_hashStruct(val.Interface()))

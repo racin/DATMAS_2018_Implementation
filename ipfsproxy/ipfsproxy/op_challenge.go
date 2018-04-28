@@ -50,7 +50,7 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		writeResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not locate public key")
 		return
 	} else if err := stx.VerifyChallenge(signer, pubKey); err != nil {
-		writeResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not verify signature")
+		writeResponse(&w, types.CodeType_BCFSInvalidSignature, "Could not verify signature b")
 		return
 	}
 

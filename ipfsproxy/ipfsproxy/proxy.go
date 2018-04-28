@@ -93,6 +93,9 @@ func NewProxy() *Proxy {
 		proxy.identity = proxy.GetAccessList().Identities[fp]
 	}
 
+	// Listen for new blocks and process them if necessary.
+	go proxy.SubscribeToNewBlocks()
+
 	return proxy
 }
 // Simple check to prevent Replay attacks. Not reliable.
@@ -143,6 +146,7 @@ func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeT
 		return nil, types.CodeType_InternalError, err.Error()
 	}
 
+	fmt.Printf("Stx2: %+v\n", stx)
 	fmt.Printf("Tranc2: %+v\n", tx)
 	// Check for replay attack
 	txHash := crypto.HashStruct(*tx)
@@ -160,7 +164,7 @@ func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeT
 	if pubKey == nil {
 		return nil, types.CodeType_BCFSInvalidSignature, "Could not locate public key"
 	} else if !stx.Verify(pubKey) {
-		return nil, types.CodeType_BCFSInvalidSignature, "Could not verify signature"
+		return nil, types.CodeType_BCFSInvalidSignature, "Could not verify signature a"
 	}
 
 	// Check access rights

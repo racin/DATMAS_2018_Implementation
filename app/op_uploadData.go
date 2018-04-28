@@ -12,7 +12,7 @@ import (
 
 func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Transaction) *abci.ResponseCheckTx {
 	// Check if uploader is allowed to upload data.
-	if signer.Type != 1 {
+	if signer.Type != conf.Client {
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Only registered clients can upload data."}
 	}
 

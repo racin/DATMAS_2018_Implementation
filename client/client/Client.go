@@ -217,7 +217,6 @@ func (c *Client) setupAPI()  {
 	}
 }
 
-
 func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (types.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
 	return checkBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))

@@ -23,6 +23,7 @@ type StorageSample struct {
 	Cid						string					`json:"cid"`
 	Sampleindices			[]uint64				`json:"sampleIndices"`
 	Samplevalues			[]byte					`json:"sampleValues"`
+	Filesize				int64					`json:"filesize"`
 }
 
 type StorageChallenge struct {
@@ -35,11 +36,13 @@ type StorageChallenge struct {
 // We can not use map[uint64]byte as the type to represent the samples, as when iterating the map, the order is not guaranteed to
 // be equal between iterations. Therefore the hash of the struct may differ, and signatures will fail to verify.
 // Instead we rely on the guaranteed ordering of arrays and use the underlying Challenge []uint64 to specify the index
-// of each byte in Proof.
+// of each byte in Proof. We include filesize in order to detect a client and a single storage node colluding to report
+// erroneous file size to the consensus node.
 type StorageChallengeProof struct {
 	SignedStruct // Of type StorageChallenge
-	Proof					[]byte					`json:"proof"`
+	Proof					string					`json:"proof"`
 	Identity				string					`json:"identity"`
+	Filesize				int64					`json:"filesize"`
 }
 
 func min(x, y int) int {
@@ -58,10 +61,12 @@ func GenerateStorageSample(fileBytes *[]byte) *StorageSample{
 		return nil
 	}
 	// If the file is smaller than numSamples, we simply store the whole file.
-	nSamples := min(numSamples, len(*fileBytes))
+	lenFile := len(*fileBytes)
+	nSamples := min(numSamples, lenFile)
 
-	ret := &StorageSample{Cid: cid, Sampleindices: make([]uint64, nSamples), Samplevalues:make([]byte, nSamples)}
-	max := new(big.Int).SetUint64(uint64(len(*fileBytes)))
+	ret := &StorageSample{Cid: cid, Sampleindices: make([]uint64, nSamples),
+		Samplevalues:make([]byte, nSamples), Filesize:int64(lenFile)}
+	max := new(big.Int).SetUint64(uint64(lenFile))
 	addedSamples := make(map[uint64]bool)
 	for i := 0; i < nSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max)
@@ -268,7 +273,7 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	if !ok {
 		return errors.New("Could not type assert the StorageChallenge.")
 	}
-	sc2 := &SignedStruct{Signature:signedStruct.Signature, Base:&StorageChallengeProof{Identity:scp.Identity,
+	sc2 := &SignedStruct{Signature:signedStruct.Signature, Base:&StorageChallengeProof{Identity:scp.Identity, Filesize: scp.Filesize,
 		Proof:scp.Proof, SignedStruct:SignedStruct{Signature:scp.Signature, Base:&StorageChallenge{Identity:challenge.Identity, Cid:challenge.Cid,
 		Nonce:challenge.Nonce, Challenge:challenge.Challenge}}}}
 
@@ -288,7 +293,8 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 
 	// Check if the proof is signed by the expected prover.
 	fmt.Printf("Hash of StorageChallengeProof: %v\n", HashStruct(sc2.Base))
-	fmt.Printf("The challenge: %v\n", challenge)
+	fmt.Printf("The proof: %+v\n", scp)
+	fmt.Printf("The challenge: %+v\n", challenge)
 	if !sc2.Verify(proverPubkey) {
 		return errors.New("Could not verify signature of prover.")
 	}
@@ -304,18 +310,21 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	}
 
 	lenChal := len(challenge.Challenge)
-	lenProof := len(scp.Proof)
-
-	if lenChal != lenProof {
-		return errors.New("Length of challenge and proof is not equal.")
-	}
-
+	byteArr := make([]byte, lenChal)
 	mapSamples := storageSample.getSamplesMap()
 	for i := 0; i < lenChal; i++ {
 		index := challenge.Challenge[i]
-		if scp.Proof[i] != (*mapSamples)[index] {
-			return errors.Errorf("Incorrect value on proof for challenge byte: %v", index)
+		if val, ok := (*mapSamples)[index]; !ok {
+			return errors.Errorf("Missing sample for byte index: %v", index)
+		} else {
+			byteArr[i] = val
 		}
+	}
+
+	if hash, err := HashData(byteArr); err != nil {
+		return err
+	} else if hash != scp.Proof {
+		return errors.Errorf("Could not verify hash of proof.")
 	}
 
 	return nil
@@ -347,12 +356,15 @@ func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byt
 	}
 
 	lenChal := len(challenge.Challenge)
-	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint, Proof: make([]byte,lenChal)}
 	file := (*fileBytes)
+	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint,	Filesize: int64(len(file))}
+
+	byteArr := make([]byte, lenChal)
 	for i := 0; i < lenChal; i++ {
-		proof.Proof[i] = file[challenge.Challenge[i]]
+		byteArr[i] = file[challenge.Challenge[i]]
 	}
 
+	proof.Proof, err = HashData(byteArr)
 	newSignedStruct, err := SignStruct(proof, privKey)
 
 	if err != nil {

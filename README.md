@@ -54,7 +54,7 @@ go build ipfsproxy/main.go
 
 ## New protobuf:
 ```
-protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:types/ 
+protoc -I=types/ -I=$GOPATH/src -I=$GOPATH/src/github.com/gogo/protobuf/protobuf --go_out=plugins=grpc:types/ types.proto
 ```
 
 ## Common problems:

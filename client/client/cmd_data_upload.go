@@ -37,6 +37,10 @@ var uploadCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("Could not open file. Error: ", err.Error())
 		}
+		fileStat, err := file.Stat()
+		if err != nil {
+			log.Fatal("Could not get Stat of file. Error: ", err.Error())
+		}
 		file2, err := os.Open(filePath)
 		defer file2.Close()
 		if err != nil {
@@ -51,40 +55,56 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
-		// Phase 1. Upload data to Consensus and Storage nodes.
-		stranc := TheClient.GetSignedTransaction(types.TransactionType_UploadData, &types.RequestUpload{Cid:fileHash, IpfsNode:TheClient.IPFSIdent})
+
+		// Phase 1. Upload data to one Storage node.
+		ipfsIdentity, ipfsPubKey := crypto.GetIdentityPublicKey(TheClient.IPFSIdent, TheClient.GetAccessList(),
+			conf.ClientConfig().BasePath + conf.ClientConfig().PublicKeys)
+		fmt.Printf("Identity: %+v\n", ipfsIdentity)
+		if ipfsIdentity == nil {
+			log.Fatal("Could not find IPFS node in the access list.")
+		}
+		sentReqUpload := &types.RequestUpload{Cid:fileHash, IpfsNode:TheClient.IPFSIdent, Length:fileStat.Size()}
+		stranc := TheClient.GetSignedTransaction(types.TransactionType_UploadData, sentReqUpload)
 		fmt.Printf("Tranc: %+v\n", stranc.Base.(*types.Transaction))
 		byteArr, _ := json.Marshal(stranc)
-		valuesTM := map[string]io.Reader{
-			"file":    file,
-			"transaction": bytes.NewReader(byteArr),
-		}
-		valuesIPFS := map[string]io.Reader{
+		values := map[string]io.Reader{
 			"file":    file2,
 			"transaction": bytes.NewReader(byteArr),
 		}
 
+		ipfsResponse := TheClient.UploadDataToIPFS(&values);
+		if ipfsResponse.Codetype != types.CodeType_OK {
+			log.Fatal("Error with IPFS upload. ", string(ipfsResponse.Message))
+		}
+		ipfsStx := &crypto.SignedStruct{Base: &types.RequestUpload{}}
+		if err := json.Unmarshal(ipfsResponse.Message, ipfsStx); err != nil {
+			log.Fatal("Erroneous response from IPFS. Err:", err.Error())
+		} else if reqUpload, ok := ipfsStx.Base.(*types.RequestUpload); !ok {
+			log.Fatal("Erroneous response from IPFS")
+		} else if !reqUpload.CompareTo(sentReqUpload) {
+			log.Fatal("Sent upload request is not equal to response.")
+		}
+		fmt.Printf("IpfsStx: %+v\n", ipfsStx)
+		fmt.Printf("IpfsPubkey: %+v\n", ipfsPubKey)
+		if !ipfsStx.Verify(ipfsPubKey) {
+			log.Fatal("Could not verify IPFS signature.")
+		}
 
-		if res := TheClient.UploadDataToTM(&valuesTM); res.Codetype != types.CodeType_OK {
-			log.Fatal("Error with TM upload. ", res.Message)
-		}
-		if res := TheClient.UploadDataToIPFS(&valuesIPFS); res.Codetype != types.CodeType_OK {
-			log.Fatal("Error with IPFS upload. ", string(res.Message))
-		}
 		// Phase 1b. Generate a sample for the file
 		storageSample := crypto.GenerateStorageSample(&fileBytes)
 
-		// Phase 2. Verify the uploaded data is commited to the ledger
+		// Phase 2. Send metadata to TM
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 
-
-		if _, err := TheClient.VerifyUpload(stranc); err != nil {
+		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
+		if _, err := TheClient.VerifyUpload(strancTM); err != nil {
 			log.Fatal("Error verifying upload. Error: " + err.Error())
 		}
 
+		// Phase 3. Verify the uploaded data is commited to the ledger
 		castedTx := tmtypes.Tx(byteArr)
 		fileName := args[1];
 		var fileDescription string;

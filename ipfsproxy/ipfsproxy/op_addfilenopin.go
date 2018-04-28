@@ -8,6 +8,8 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"fmt"
+	"encoding/json"
+	"strconv"
 )
 
 // Adds the file to a single IPFS node. Only a client should be able to do this. (Consensus node can distribute an
@@ -68,12 +70,27 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 	} else if uplFileHash != reqUpload.Cid {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Data hash parameter does not equal hash of uploaded file.");
 		return
+	} else if file.Size != reqUpload.Length {
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "File size did not match the uploaded file. LS: " +
+			strconv.Itoa(int(file.Size)) + ", RS: " + strconv.Itoa(int(reqUpload.Length)));
+		return
 	}
 
 	if resStr, err := proxy.client.IPFS().AddNoPin(bytes.NewReader(fileBytes)); err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, resStr + ". Error: " + err.Error());
 	} else {
-		writeResponse(&w, types.CodeType_OK, resStr);
+		signedStruct, err := crypto.SignStruct(reqUpload, proxy.privKey)
+		if err != nil {
+			writeResponse(&w, types.CodeType_InternalError, "Could not sign response: " + err.Error());
+			return
+		}
+		byteArr, err := json.Marshal(signedStruct)
+		if err != nil {
+			writeResponse(&w, types.CodeType_InternalError, "Could not sign response: " + err.Error());
+			return
+		}
+		writeResponse(&w, types.CodeType_OK, string(byteArr));
+
 		// Add transaction to list of known transactions (message contains hash of tranc)
 		proxy.seenTranc[message] = true
 	}

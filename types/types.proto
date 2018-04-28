@@ -27,16 +27,18 @@ enum CodeType {
   UnknownRequest        = 6;
 
   // Reserved for BCFS, 300 ~ 399
-  BCFSDuplicateAddress  = 101;
-  BCFSEncodingError     = 102;
-  BCFSInvalidInput      = 106;
-  BCFSInvalidOutput     = 107;
-  BCFSInvalidPubKey     = 108;
-  BCFSInvalidSignature  = 110;
-  BCFSUnknownAddress    = 111;
-  BCFSUnknownPubKey     = 112;
-  BCFSUnknownPlugin     = 113;
-  BCFSBeginUploadOK     = 114;
+  BCFSDuplicateAddress    = 301;
+  BCFSEncodingError       = 302;
+  BCFSInvalidInput        = 303;
+  BCFSInvalidOutput       = 304;
+  BCFSInvalidPubKey       = 305;
+  BCFSInvalidSignature    = 306;
+  BCFSUnknownAddress      = 307;
+  BCFSUnknownPubKey       = 308;
+  BCFSUnknownPlugin       = 309;
+  BCFSBeginUploadOK       = 310;
+  BCFSInvalidBlock        = 311;
+  BCFSInvalidBlockHeight  = 312;
 
 }
 
@@ -56,8 +58,9 @@ enum TransactionType {
 }
 
 message RequestUpload {
-  string cid = 1; // Hash of file
+  string cid = 1; // Hash of the file.
   string ipfsNode = 2; // IPFS node which has temporarily stored the file.
+  int64 length = 3; // Length of the file.
 }
 
 message Request {

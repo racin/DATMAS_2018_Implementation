@@ -8,6 +8,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"encoding/json"
 	"errors"
+	"fmt"
 )
 
 type Transaction struct {
@@ -43,13 +44,12 @@ func UnmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *Transaction, e
 			return stx, tx, nil
 		}
 
+		fmt.Printf("DerivedStruct: %+v\n", derivedStruct)
+
 		// types.RequestUpload
-		if cid, ok := derivedStruct["cid"]; ok {
-			if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
-				reqUpload := &RequestUpload{Cid:cid.(string), IpfsNode:ipfsNode.(string)}
-				stx.Base.(*Transaction).Data = reqUpload
-				tx.Data = reqUpload
-			}
+		if reqUpload := GetRequestUploadFromMap(derivedStruct); err == nil {
+			stx.Base.(*Transaction).Data = reqUpload
+			tx.Data = reqUpload
 		}
 
 		return stx, tx, nil

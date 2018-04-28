@@ -73,7 +73,13 @@ func TestSignature(t *testing.T){
 		assert.NotEqual(t, signature, signature2, "Signatures is not properly salted.")
 	})
 	t.Run("SignHashStruct", func(t *testing.T){
-		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc"}
+		sumMap := make(map[string]interface{})
+		sumMap["a"] = "abc"
+		sumMap["b"] = 123
+		sumMap["c"] = make(map[string]interface{})
+		sumMap["c"].(map[string]interface{})["a"] = "def"
+		sumMap["c"].(map[string]interface{})["b"] = 789
+		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:&sumMap}
 		if err != nil {
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}

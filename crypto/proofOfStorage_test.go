@@ -6,6 +6,7 @@ import (
 
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"io/ioutil"
+	"fmt"
 )
 
 const (
@@ -108,6 +109,7 @@ func TestStorageSample(t *testing.T){
 			t.Fatal("Could not verify challenge proof. Error: " + err.Error())
 		}
 	})
+	fmt.Printf("Chalproof: %+v", challengeProof)
 	t.Run("VerifyChallengeProofWithBadNonce", func(t *testing.T){
 		nonce := &challengeProof.Base.(*StorageChallengeProof).Base.(*StorageChallenge).Nonce
 		nonceOld := *nonce
