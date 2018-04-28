@@ -30,3 +30,16 @@
 10:07:54.307508 db@open done T·6.983775ms
 10:21:51.295247 db@close closing
 10:21:51.295326 db@close done T·78.613µs
+=============== Apr 26, 2018 (CEST) ===============
+19:20:42.054134 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+19:20:42.054826 version@stat F·[2] S·324B[324B] Sc·[0.50]
+19:20:42.054843 db@open opening
+19:20:42.054926 journal@recovery F·1
+19:20:42.056103 journal@recovery recovering @6
+19:20:42.061696 memdb@flush created L0@8 N·12 S·1KiB "/lo..oot,v16":"/pr..UPY,v5"
+19:20:42.062230 version@stat F·[3] S·1KiB[1KiB] Sc·[0.75]
+19:20:42.063095 db@janitor F·5 G·0
+19:20:42.063182 db@open done T·8.28294ms
+=============== Apr 28, 2018 (CEST) ===============
+10:52:39.249124 db@close closing
+10:52:39.249374 db@close done T·789.643µs

@@ -67,6 +67,7 @@ type ClientConfiguration struct {
 	IpfsStatusEndpoint				string		`json:"ipfsStatusEndpoint"`
 	IpfsAddnopinEndpoint			string		`json:"ipfsAddnopinEndpoint"`
 	IpfsChallengeEndpoint			string		`json:"ipfsChallengeEndpoint"`
+	NewBlockTimeout					int			`json:"newblocktimeout"`
 }
 
 var ipfsProxyConfig IPFSProxyConfiguration
@@ -75,6 +76,7 @@ type IPFSProxyConfiguration struct {
 	AccessList						string		`json:"accessList"`
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
+	LastSeenBlockHeight				string		`json:"lastSeenBlockHeight"`
 	ListenAddr 						string		`json:"listenAddr"`
 	TempUploadPath					string		`json:"tempUploadPath"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`

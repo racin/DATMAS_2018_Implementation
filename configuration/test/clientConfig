@@ -22,5 +22,6 @@
   "ipfsGetEndpoint": "/get",
   "ipfsStatusEndpoint": "/status",
   "ipfsAddnopinEndpoint": "/addnopin",
-  "ipfsChallengeEndpoint": "/challenge"
+  "ipfsChallengeEndpoint": "/challenge",
+  "newBlockTimeoutSeconds": 30
 }

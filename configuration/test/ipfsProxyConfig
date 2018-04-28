@@ -3,6 +3,7 @@
     "accessList": "accessList",
     "privateKey": "storage.pem",
     "publicKeys": "PubKeys/",
+    "lastSeenBlockHeight": "blockHeight",
 
     "tendermintNodes": ["cc418e456ae72df5bdb39d65bb8945e8"],
     "tmQueryTimeoutSeconds": 20,

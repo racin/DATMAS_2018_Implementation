@@ -8,6 +8,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	tmtypes "github.com/tendermint/tendermint/types"
+	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"io"
 	"encoding/json"
 	"bytes"
@@ -15,7 +16,6 @@ import (
 	"io/ioutil"
 )
 
-const newBlockTimeout = 30 * time.Second
 // getAccountCmd represents the getAccount command
 var uploadCmd = &cobra.Command{
 	Use:   "upload [file] [name] [description]",
@@ -107,7 +107,7 @@ var uploadCmd = &cobra.Command{
 					WriteMetadata(fileHash, &MetadataEntry{Name:fileName, Description:fileDescription,
 						StorageSample: *storageSample, Blockheight:evt.Block.Height})
 				}
-			case <-time.After(newBlockTimeout):
+			case <-time.After(time.Duration(conf.ClientConfig().NewBlockTimeout) * time.Second):
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
 					"Try running a status query with CID: " + fileHash)
 		}
