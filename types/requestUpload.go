@@ -3,6 +3,7 @@ package types
 import (
 	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
+	"encoding/base64"
 )
 
 func (ru *RequestUpload) CompareTo(other *RequestUpload) bool {
@@ -14,9 +15,11 @@ func GetSignedRequestUploadFromMap(derivedStruct map[string]interface{}) *crypto
 		fmt.Println("dS: base")
 		if signature, ok := derivedStruct["signature"]; ok {
 			fmt.Println("dS: sig")
-			ss := &crypto.SignedStruct{Base: *GetRequestUploadFromMap(base.(map[string]interface{})), Signature: []byte(signature.(string))}
-			fmt.Printf("SS: %+v\n", ss)
-			return ss
+			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
+				ss := &crypto.SignedStruct{Base: *GetRequestUploadFromMap(base.(map[string]interface{})), Signature: data}
+				fmt.Printf("SS: %+v\n", ss)
+				return ss
+			}
 		}
 	}
 	return nil

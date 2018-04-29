@@ -80,6 +80,10 @@ func internal_hashStruct(in interface{}) []byte {
 				}
 			}
 			return buffer.Bytes()
+		} else if v.Kind() == reflect.Slice {
+			fmt.Printf("Slice: %v\n", v)
+			buffer.WriteString(fmt.Sprintf("%v", v))
+			return buffer.Bytes()
 		}
 	} else {
 		fmt.Println("ELSE...")
@@ -114,7 +118,9 @@ func internal_hashStruct(in interface{}) []byte {
 }
 func HashStruct(in interface{}) string {
 	fmt.Printf("Iface: %+v\n", in)
-	hash, _ := HashData(internal_hashStruct(in))
+	bytes := internal_hashStruct(in)
+	fmt.Printf("BYTES: %+v\n", string(bytes))
+	hash, _ := HashData(bytes)
 	fmt.Printf("Hash: %v\n", hash)
 
 	return hash
@@ -161,6 +167,9 @@ func (k *Keys) Sign(dh interface{}) ([]byte, error) {
 }
 
 func (k *Keys) Verify(dh interface{}, signature []byte) (bool) {
+	if k.public == nil {
+		return false
+	}
 	if err := rsa.VerifyPSS(k.public, crypto.SHA256, convertDataHash(dh), signature,
 		&rsa.PSSOptions{SaltLength: rsa.PSSSaltLengthAuto}); err != nil {
 		return false;

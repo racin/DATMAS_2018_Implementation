@@ -42,3 +42,23 @@
 00:52:34.236756 db@open done T·7.509341ms
 04:30:36.940336 db@close closing
 04:30:36.940473 db@close done T·135.577µs
+=============== Apr 29, 2018 (CEST) ===============
+10:24:37.288119 log@legend F·NumFile S·FileSize N·Entry C·BadEntry B·BadBlock Ke·KeyError D·DroppedEntry L·Level Q·SeqNum T·TimeElapsed
+10:24:37.288320 version@stat F·[3] S·34KiB[34KiB] Sc·[0.75]
+10:24:37.288344 db@open opening
+10:24:37.288434 journal@recovery F·1
+10:24:37.288880 journal@recovery recovering @9
+10:24:37.307789 memdb@flush created L0@11 N·1941 S·231KiB "/F5..JEP,v279":"/pr..AXA,v538"
+10:24:37.308564 version@stat F·[4] S·266KiB[266KiB] Sc·[1.00]
+10:24:37.309570 db@janitor F·6 G·0
+10:24:37.309623 db@open done T·21.249342ms
+10:24:37.309683 table@compaction L0·4 -> L1·0 S·266KiB Q·2219
+10:24:37.328499 table@build created L1@14 N·2030 S·257KiB "/F5..JEP,v279":"/pr..AXA,v538"
+10:24:37.328603 version@stat F·[0 1] S·257KiB[0B 257KiB] Sc·[0.00 0.00]
+10:24:37.332324 table@compaction committed F-3 S-8KiB Ke·0 D·185 T·22.592587ms
+10:24:37.332496 table@remove removed @11
+10:24:37.332554 table@remove removed @8
+10:24:37.332593 table@remove removed @5
+10:24:37.332631 table@remove removed @2
+14:03:27.260096 db@close closing
+14:03:27.260179 db@close done T·82.026µs

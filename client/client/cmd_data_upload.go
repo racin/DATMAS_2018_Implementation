@@ -84,7 +84,11 @@ var uploadCmd = &cobra.Command{
 		} else if !reqUpload.CompareTo(sentReqUpload) {
 			log.Fatal("Sent upload request is not equal to response.")
 		}
+		z := &types.RequestUpload{Cid:ipfsStx.Base.(*types.RequestUpload).Cid, Length: ipfsStx.Base.(*types.RequestUpload).Length,
+			IpfsNode: ipfsStx.Base.(*types.RequestUpload).IpfsNode}
 		fmt.Printf("IpfsStx: %+v\n", ipfsStx)
+		fmt.Printf("IpfsStx Base: %+v\n", z)
+		fmt.Printf("IpfsStx Base2: %+v\n", ipfsStx.Base.(*types.RequestUpload))
 		fmt.Printf("IpfsPubkey: %+v\n", ipfsPubKey)
 		if !ipfsStx.Verify(ipfsPubKey) {
 			log.Fatal("Could not verify IPFS signature.")
@@ -99,7 +103,9 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 
+		fmt.Printf("Getting signed tranc. \n")
 		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
+		fmt.Printf("StrancTM: %+v\n", strancTM)
 		fmt.Printf("Hash strancTM: %v\n", crypto.HashStruct(strancTM))
 		fmt.Printf("Hash ipfsStx: %v\n", crypto.HashStruct(ipfsStx))
 		if _, err := TheClient.VerifyUpload(strancTM); err != nil {

@@ -80,12 +80,12 @@ func TestSignature(t *testing.T){
 	t.Run("SignHashStruct", func(t *testing.T){
 		sumMap := make(map[string]interface{})
 		sumMap["a"] = "abc"
-		sumMap["b"] = 123
+		sumMap["b"] = []byte{14,25,69,28,11,66,137,201,105}
 		sumMap["c"] = make(map[string]interface{})
 		sumMap["c"].(map[string]interface{})["a"] = "def"
 		sumMap["c"].(map[string]interface{})["b"] = 789
-		//trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:nil}
-		trans := RequestUpload{Cid:"QmWix123Lx9GwSVNZXiGGbU3cE4RtDS2YwdtLP7QpwB9wo", IpfsNode:"96b36b94714693fc6ae4260ef8b0ab8a", Length:7}
+		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:sumMap}
+		//trans := RequestUpload{Cid:"QmWix123Lx9GwSVNZXiGGbU3cE4RtDS2YwdtLP7QpwB9wo", IpfsNode:"96b36b94714693fc6ae4260ef8b0ab8a", Length:7}
 		if err != nil {
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}

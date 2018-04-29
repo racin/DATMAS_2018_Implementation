@@ -124,13 +124,10 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	fmt.Printf("STX asd: %+v olo\n", stx)
+	/*fmt.Printf("STX asd: %+v olo\n", stx)
 	hash := crypto.HashStruct(stx.Base)
-	fmt.Printf("STX hash: %+v\n", hash)
-	hash = crypto.HashStruct(stx.Base)
-	fmt.Printf("STX hash: %+v\n", hash)
-	hash = crypto.HashStruct(stx.Base)
-	fmt.Printf("STX hash: %+v\n", hash)
+	fmt.Printf("STX hash: %+v\n", hash)*/
+	fmt.Printf("Verifying STX\n")
 	// Check if public key exists and if message is signed.
 	if pubKey == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
@@ -210,4 +207,13 @@ func (app *Application) HasSeenTranc(trancHash string) bool{
 		return true;
 	}
 	return false;
+}
+
+func (app *Application) GetSignedTransaction(txtype types.TransactionType, data interface{}) (stranc *crypto.SignedStruct) {
+	tx := types.NewTx(data, app.fingerprint, txtype)
+	stranc, err := crypto.SignStruct(tx, app.privKey);
+	if err != nil {
+		panic("Could not sign transaction. Private/Public key pair may not match. Use the --generateKeys to generate a new one. Error: " + err.Error())
+	}
+	return
 }
