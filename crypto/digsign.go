@@ -15,6 +15,7 @@ import (
 	"reflect"
 	"bytes"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"sort"
 )
 
 type SignedStruct struct {
@@ -22,6 +23,21 @@ type SignedStruct struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
+func sortMapKeys(keys []reflect.Value) []reflect.Value{
+	sortedKeys := make([]reflect.Value,len(keys))
+	strKeys := make([]string, len(keys))
+	mapKeys := make(map[string]reflect.Value, len(keys))
+	for i, key := range keys {
+		strKeys[i] = key.String()
+		mapKeys[key.String()] = key
+	}
+	sort.Strings(strKeys)
+	for i, key := range strKeys {
+		sortedKeys[i] = mapKeys[key]
+	}
+
+	return sortedKeys
+}
 func internal_hashStruct(in interface{}) []byte {
 	var buffer *bytes.Buffer
 	var v reflect.Value
@@ -29,14 +45,19 @@ func internal_hashStruct(in interface{}) []byte {
 	if v, ok = in.(reflect.Value); !ok {
 		buffer = bytes.NewBuffer([]byte{38})
 		v = reflect.ValueOf(in);
-		if v.Kind() == reflect.Invalid  {
+		if v.Kind() == reflect.Invalid {
 			return buffer.Bytes()
 		} else if v.Kind() == reflect.Ptr {
+			fmt.Println("PTR")
 			v = v.Elem()
+			if v.Kind() == reflect.Invalid {
+				return buffer.Bytes()
+			}
 		}
 
 		if v.Kind() == reflect.Map {
-			for _, key := range v.MapKeys() {
+			for _, key := range sortMapKeys(v.MapKeys()) {
+				fmt.Printf("Key: %v\n", key.String())
 				val := v.MapIndex(key)
 				if val.Kind() == reflect.Struct{
 					buffer.Write(internal_hashStruct(val))
@@ -61,9 +82,10 @@ func internal_hashStruct(in interface{}) []byte {
 			return buffer.Bytes()
 		}
 	} else {
+		fmt.Println("ELSE...")
 		buffer = bytes.NewBuffer([]byte{})
 	}
-
+	fmt.Printf("Value: %+v\n", v)
 	for i := 0; i < v.NumField(); i++ {
 		val := v.Field(i)
 
@@ -91,7 +113,10 @@ func internal_hashStruct(in interface{}) []byte {
 	return buffer.Bytes()
 }
 func HashStruct(in interface{}) string {
+	fmt.Printf("Iface: %+v\n", in)
 	hash, _ := HashData(internal_hashStruct(in))
+	fmt.Printf("Hash: %v\n", hash)
+
 	return hash
 }
 

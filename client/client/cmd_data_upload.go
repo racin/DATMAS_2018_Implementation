@@ -100,6 +100,8 @@ var uploadCmd = &cobra.Command{
 		}
 
 		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
+		fmt.Printf("Hash strancTM: %v\n", crypto.HashStruct(strancTM))
+		fmt.Printf("Hash ipfsStx: %v\n", crypto.HashStruct(ipfsStx))
 		if _, err := TheClient.VerifyUpload(strancTM); err != nil {
 			log.Fatal("Error verifying upload. Error: " + err.Error())
 		}

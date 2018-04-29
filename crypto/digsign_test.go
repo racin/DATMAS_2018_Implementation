@@ -19,6 +19,11 @@ const (
 	consensusCertPathFP		= "cc418e456ae72df5bdb39d65bb8945e8"
 	testKeysBits	= 1024
 )
+type RequestUpload struct {
+	Cid      string `protobuf:"bytes,1,opt,name=cid" json:"cid,omitempty"`
+	IpfsNode string `protobuf:"bytes,2,opt,name=ipfsNode" json:"ipfsNode,omitempty"`
+	Length   int64  `protobuf:"varint,3,opt,name=length" json:"length,omitempty"`
+}
 
 func TestSignature(t *testing.T){
 	if _, err := conf.LoadAppConfig("../configuration/test/appConfig"); err != nil {
@@ -79,7 +84,8 @@ func TestSignature(t *testing.T){
 		sumMap["c"] = make(map[string]interface{})
 		sumMap["c"].(map[string]interface{})["a"] = "def"
 		sumMap["c"].(map[string]interface{})["b"] = 789
-		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:&sumMap}
+		//trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:nil}
+		trans := RequestUpload{Cid:"QmWix123Lx9GwSVNZXiGGbU3cE4RtDS2YwdtLP7QpwB9wo", IpfsNode:"96b36b94714693fc6ae4260ef8b0ab8a", Length:7}
 		if err != nil {
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}

@@ -46,8 +46,12 @@ func UnmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *Transaction, e
 
 		fmt.Printf("DerivedStruct: %+v\n", derivedStruct)
 
-		// types.RequestUpload
-		if reqUpload := GetRequestUploadFromMap(derivedStruct); err == nil {
+		if signedReqUpload := GetSignedRequestUploadFromMap(derivedStruct); signedReqUpload != nil { // Signed types.RequestUpload
+			fmt.Printf("Signed ReqUpload: %+v\n", signedReqUpload)
+			stx.Base.(*Transaction).Data = signedReqUpload
+			tx.Data = signedReqUpload
+		} else if reqUpload := GetRequestUploadFromMap(derivedStruct); reqUpload != nil { // types.RequestUpload
+			fmt.Printf("ReqUpload: %+v\n", reqUpload)
 			stx.Base.(*Transaction).Data = reqUpload
 			tx.Data = reqUpload
 		}

@@ -124,6 +124,13 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
+	fmt.Printf("STX asd: %+v olo\n", stx)
+	hash := crypto.HashStruct(stx.Base)
+	fmt.Printf("STX hash: %+v\n", hash)
+	hash = crypto.HashStruct(stx.Base)
+	fmt.Printf("STX hash: %+v\n", hash)
+	hash = crypto.HashStruct(stx.Base)
+	fmt.Printf("STX hash: %+v\n", hash)
 	// Check if public key exists and if message is signed.
 	if pubKey == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
