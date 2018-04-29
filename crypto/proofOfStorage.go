@@ -45,6 +45,24 @@ type StorageChallengeProof struct {
 	Filesize				int64					`json:"filesize"`
 }
 
+type StorageChallengeCollection struct {
+	client_StorageChallengeProof
+	consensus_StorageChallengeProof []
+}
+func GetRequestUploadFromMap(derivedStruct map[string]interface{}) *RequestUpload {
+	if cid, ok := derivedStruct["cid"]; ok {
+		fmt.Println("dS: a")
+		if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
+			fmt.Println("dS: b")
+			if length, ok := derivedStruct["length"]; ok {
+				fmt.Println("dS: c")
+				return &RequestUpload{Cid: cid.(string), IpfsNode: ipfsNode.(string), Length:int64(length.(float64))}
+			}
+		}
+	}
+	return nil
+}
+
 func min(x, y int) int {
 	if x < y {
 		return x
