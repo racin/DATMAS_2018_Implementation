@@ -16,7 +16,7 @@ func GetSignedRequestUploadFromMap(derivedStruct map[string]interface{}) *crypto
 		if signature, ok := derivedStruct["signature"]; ok {
 			fmt.Println("dS: sig")
 			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
-				ss := &crypto.SignedStruct{Base: *GetRequestUploadFromMap(base.(map[string]interface{})), Signature: data}
+				ss := &crypto.SignedStruct{Base: GetRequestUploadFromMap(base.(map[string]interface{})), Signature: data}
 				fmt.Printf("SS: %+v\n", ss)
 				return ss
 			}

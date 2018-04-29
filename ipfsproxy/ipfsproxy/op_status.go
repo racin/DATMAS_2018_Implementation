@@ -11,6 +11,7 @@ import (
 )
 
 func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("IPFS STATUS")
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");

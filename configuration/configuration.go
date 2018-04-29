@@ -67,7 +67,7 @@ type ClientConfiguration struct {
 	IpfsStatusEndpoint				string		`json:"ipfsStatusEndpoint"`
 	IpfsAddnopinEndpoint			string		`json:"ipfsAddnopinEndpoint"`
 	IpfsChallengeEndpoint			string		`json:"ipfsChallengeEndpoint"`
-	NewBlockTimeout					int			`json:"newblocktimeout"`
+	NewBlockTimeout					int			`json:"newBlockTimeoutSeconds"`
 }
 
 var ipfsProxyConfig IPFSProxyConfiguration

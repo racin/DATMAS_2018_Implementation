@@ -1,12 +1,12 @@
 package app
 
 import (
-	"encoding/json"
+	//"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"os"
+	//"os"
 	"fmt"
 )
 
@@ -22,6 +22,7 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data."}
 	}
 
+	fmt.Printf("StxReq Base: %+v\n", stxReq.Base)
 	// Check contents of transaction.
 	reqUpload, ok := stxReq.Base.(*types.RequestUpload)
 	if !ok {
@@ -42,7 +43,7 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 	// of the transaction instead.
 
 	cidStx := app.GetSignedTransaction(types.TransactionType_IPFSProxyPin, reqUpload.Cid)
-	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsChallengeEndpoint, cidStx)
+	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsStatusEndpoint, cidStx)
 	fmt.Printf("%+v\n", ipfsResponse)
 	if ipfsResponse.Codetype != types.CodeType_OK {
 		return &abci.ResponseCheckTx{Code: uint32(ipfsResponse.Codetype), Log: "Storage node does not claim to still hold the file. Addr: " +
@@ -97,7 +98,7 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 		}*/
 
 	// All checks passed. Return OK.
-	return &abci.ResponseCheckTx{Code: uint32(types.CodeType_OK), Log: "All checks passed."}
+	return &abci.ResponseCheckTx{Code: uint32(types.CodeType_OK), Log: "All checks passed. CID: " + reqUpload.Cid}
 }
 
 func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Transaction) *abci.ResponseDeliverTx {
@@ -108,7 +109,7 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 	}
 
 	// Check contents of transaction.
-	_, ok = stxReq.Base.(*types.RequestUpload)
+	reqUpload, ok := stxReq.Base.(*types.RequestUpload)
 	if !ok {
 		return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert StxReq."}
 	}
@@ -148,5 +149,5 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 	}*/
 
 	// All checks passed. Return OK.
-	return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Log: "File uploaded and recorded on the ledger. CID: " + string(ipfsResponse.Message)}
+	return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Log: "File uploaded and recorded on the ledger. CID: " + reqUpload.Cid}
 }

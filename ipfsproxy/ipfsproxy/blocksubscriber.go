@@ -12,10 +12,12 @@ import (
 	"encoding/binary"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"strconv"
+	"log"
+	"github.com/racin/DATMAS_2018_Implementation/crypto"
 )
 
 func loadMaxSeenBlockHeight() int64 {
-	if byteArr, err := ioutil.ReadFile(conf.IPFSProxyConfig().LastSeenBlockHeight); err == nil {
+	if byteArr, err := ioutil.ReadFile(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().LastSeenBlockHeight); err == nil {
 		blockHeight, _ := binary.Varint(byteArr)
 		return blockHeight
 	}
@@ -24,14 +26,17 @@ func loadMaxSeenBlockHeight() int64 {
 func saveMaxSeenBlockHeight(height int64) error {
 	byteArr := make([]byte, binary.MaxVarintLen64)
 	_ = binary.PutVarint(byteArr, height)
-	if err := ioutil.WriteFile(conf.IPFSProxyConfig().LastSeenBlockHeight, byteArr, 0600); err != nil {
+	if err := ioutil.WriteFile(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().LastSeenBlockHeight, byteArr, 0600); err != nil {
 		return err
 	}
 	return nil
 }
 func (proxy *Proxy) SubscribeToNewBlocks() {
 	newBlockCh := make(chan interface{}, 1)
-	proxy.subToNewBlock(newBlockCh)
+	if err := proxy.subToNewBlock(newBlockCh); err != nil {
+		log.Fatal("Could not subscribe to new blocks. Error: " + err.Error())
+	}
+	fmt.Println("Starting listening for new blocks..")
 	for {
 		select {
 		case b := <-newBlockCh:
@@ -68,21 +73,26 @@ func (proxy *Proxy) processNewBlocks(height int64) error {
 func (proxy *Proxy) handleBlock(block *tmtypes.Block) types.CodeType{
 	fmt.Println("Handling block height: " + strconv.Itoa(int(block.Height)))
 	if block == nil || block.ValidateBasic() != nil {
+		fmt.Println("Invalid block");
 		return types.CodeType_BCFSInvalidBlock// Could not validate the block. Do not process it.
 	}
 	seenHeight := loadMaxSeenBlockHeight()
 	if seenHeight+1 != block.Height {
+		fmt.Println("Invalid block height");
 		return types.CodeType_BCFSInvalidBlockHeight
 	}
 	for i := int64(0); i < block.NumTxs; i++ {
-		_, tx, _ := types.UnmarshalTransaction([]byte(block.Txs[i].String()))
-		// Attempt to PIN all new upload transactions
-		if ipfsResp, ok := tx.Data.(*types.RequestUpload); ok {
-			if proxy.fingerprint != ipfsResp.IpfsNode {
-				continue
+		fmt.Println("Trying to unmarshal Tx")
+
+		if _, tx, err := types.UnmarshalTransaction([]byte(block.Txs[i])); err == nil {
+			// Attempt to PIN all new upload transactions
+			if ipfsResp, ok := tx.Data.(*crypto.SignedStruct).Base.(*types.RequestUpload); ok {
+				if proxy.fingerprint != ipfsResp.IpfsNode {
+					continue
+				}
+				fmt.Println("Pinning file with CID: " + ipfsResp.Cid)
+				proxy.pinFile(ipfsResp.Cid)
 			}
-			fmt.Println("Pinning file with CID: " + ipfsResp.Cid)
-			proxy.pinFile(ipfsResp.Cid)
 		}
 	}
 	fmt.Println("Updating seen block height to: " + strconv.Itoa(int(block.Height)))
@@ -101,8 +111,8 @@ func (proxy *Proxy) subToNewBlock(newBlockCh chan interface{}) error {
 }
 func (proxy *Proxy) setupTMConnection() error{
 	// Get Tendermint blockchain API
-	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
-	for _, ident := range conf.ClientConfig().TendermintNodes {
+	fmt.Printf("%+v\n", conf.IPFSProxyConfig().TendermintNodes)
+	for _, ident := range conf.IPFSProxyConfig().TendermintNodes {
 		apiAddr := strings.Replace(conf.IPFSProxyConfig().WebsocketAddr, "$TmNode", proxy.GetAccessList().GetAddress(ident), 1)
 		fmt.Println("Trying to connect to (TM_api: " + apiAddr)
 		proxy.TMClient = rpcClient.NewHTTP(apiAddr, conf.IPFSProxyConfig().WebsocketEndPoint)

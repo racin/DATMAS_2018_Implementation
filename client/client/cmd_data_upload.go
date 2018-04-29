@@ -96,6 +96,7 @@ var uploadCmd = &cobra.Command{
 
 		// Phase 1b. Generate a sample for the file
 		storageSample := crypto.GenerateStorageSample(&fileBytes)
+		storageSample.Identity = TheClient.fingerprint
 
 		// Phase 2. Send metadata to TM
 		newBlockCh := make(chan interface{}, 1)
@@ -105,6 +106,11 @@ var uploadCmd = &cobra.Command{
 
 		fmt.Printf("Getting signed tranc. \n")
 		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
+
+		byteArrTranc, err := json.Marshal(strancTM)
+		if err != nil {
+			log.Fatal("Could not generate a byte array of transaction.")
+		}
 		fmt.Printf("StrancTM: %+v\n", strancTM)
 		fmt.Printf("Hash strancTM: %v\n", crypto.HashStruct(strancTM))
 		fmt.Printf("Hash ipfsStx: %v\n", crypto.HashStruct(ipfsStx))
@@ -113,7 +119,7 @@ var uploadCmd = &cobra.Command{
 		}
 
 		// Phase 3. Verify the uploaded data is commited to the ledger
-		castedTx := tmtypes.Tx(byteArr)
+		castedTx := tmtypes.Tx(byteArrTranc)
 		fileName := args[1];
 		var fileDescription string;
 		if len(args) > 1 {
@@ -123,6 +129,7 @@ var uploadCmd = &cobra.Command{
 		select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.EventDataNewBlock)
+				fmt.Printf("New block: %+v\n", evt.Block)
 				// Validate
 				if err := evt.Block.ValidateBasic(); err != nil {
 					// System is broken. Notify administrators
