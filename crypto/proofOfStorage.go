@@ -44,7 +44,7 @@ type StorageChallengeProof struct {
 	Identity				string					`json:"identity"`
 	Filesize				int64					`json:"filesize"`
 }
-
+/*
 type StorageChallengeCollection struct {
 	client_StorageChallengeProof
 	consensus_StorageChallengeProof []
@@ -61,7 +61,7 @@ func GetRequestUploadFromMap(derivedStruct map[string]interface{}) *RequestUploa
 		}
 	}
 	return nil
-}
+}*/
 
 func min(x, y int) int {
 	if x < y {
@@ -168,34 +168,38 @@ func (sp *StorageSample) getSampleIndices() []uint64 {
 	return ret
 }*/
 
-func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStruct, challengeHash string){
+func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStruct, challengeHash string, proof string){
 	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
 	if err != nil {
-		return nil, "" // Could not generate nonce.
+		return nil, "", "" // Could not generate nonce.
 	}
 	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:nonce.Uint64()}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
-
+	proofBytes := make([]byte, len(sp.Sampleindices))
 	for i := 0; i < challengeSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max);
 		if err != nil {
-			return nil, ""
+			return nil, "", ""
 		}
 		chal.Challenge[i] = sp.Sampleindices[rnd.Uint64()]
+		proofBytes[i] = sp.Samplevalues[rnd.Uint64()]
+	}
+	if proof, err = HashData(proofBytes); err != nil {
+		return nil, "", ""
 	}
 
 	ident, err := GetFingerprint(privkey)
 	if err != nil {
-		return nil, "" // Could not get the keys fingerprint.
+		return nil, "", "" // Could not get the keys fingerprint.
 	}
 	chal.Identity = ident
 
 	// Sign the challenge with our private key
 	challengeHash = HashStruct(chal)
 	if signature, err := privkey.Sign(challengeHash); err != nil {
-		return nil, ""
+		return nil, "", ""
 	} else {
-		return &SignedStruct{Base: chal, Signature: signature}, challengeHash
+		return &SignedStruct{Base: chal, Signature: signature}, challengeHash, proof
 	}
 }
 

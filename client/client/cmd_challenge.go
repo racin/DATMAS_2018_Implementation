@@ -18,16 +18,18 @@ import (
 )
 
 var challengeCmd = &cobra.Command{
-	Use:     "challenge [CID] [challenge]",
+	Use:     "challenge [CID] [challenge] [proof]",
 	Aliases: []string{"challenge"},
 	Short:   "Challenge storage nodes",
 	Long:    `Challenge storage nodes to prove that they still possess all the data for a CID.`,
 	Run: func(cmd *cobra.Command, args []string) {
 		var cid string
 		var challengeIndices []uint64
+		var proof string
 		if len(args) < 1 {
 			log.Fatal("Not enough arguments.")
-		} else if len(args) == 2 {
+		} else if len(args) == 3 {
+			proof = args[2]
 			strArr := strings.Split(args[1], ",")
 			for i, val := range strArr{
 				if index, err := strconv.Atoi(val); err == nil {
@@ -36,12 +38,13 @@ var challengeCmd = &cobra.Command{
 			}
 		}
 		var challenge *crypto.SignedStruct
+		var hashChal string
 		if challengeIndices == nil{
 			me := GetMetadata(cid)
 			if me == nil {
 				log.Fatal("Could not find stored metadata for CID: " + cid)
 			}
-			challenge, _ = me.GenerateChallenge(TheClient.privKey)
+			challenge, hashChal, proof = me.GenerateChallenge(TheClient.privKey)
 		} else {
 			nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
 			if err != nil {
@@ -51,21 +54,21 @@ var challengeCmd = &cobra.Command{
 			if challenge, err = crypto.SignStruct(chal, TheClient.privKey); err != nil {
 				log.Fatal(err.Error())
 			}
+			hashChal = crypto.HashStruct(challenge)
 		}
 		byteArr, err := json.Marshal(challenge);
 		if err != nil {
 			log.Fatal(err.Error())
 		}
 
-		queryResp, err := TheClient.TMClient.ABCIQuery("/challenge", byteArr)
-		if err != nil {
+		if _, err = TheClient.TMClient.ABCIQuery("/challenge", byteArr); err != nil {
 			log.Fatal(err.Error())
 		}
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
-		castedTx := tmtypes.Tx(byteArr)
+		foundChallenge := false
 		for {
 			select {
 			case b := <-newBlockCh:
@@ -80,26 +83,31 @@ var challengeCmd = &cobra.Command{
 					fmt.Println("Trying to unmarshal Tx")
 					// Check if the transaction contains a StorageProofCollection
 					if _, tx, err := types.UnmarshalTransaction([]byte(evt.Block.Txs[i])); err == nil {
-						// Attempt to PIN all new upload transactions
-						if ipfsResp, ok := tx.Data.(*crypto.SignedStruct).Base.(*types.RequestUpload); ok {
-							if proxy.fingerprint != ipfsResp.IpfsNode {
+						// Is this an array of StorageChallangeProof ?
+						scpArr, ok := tx.Data.([]crypto.StorageChallengeProof);
+						if !ok {
+							continue
+						}
+						for _, scp := range scpArr {
+							// A response to our challenge.
+							if hashChal != crypto.HashStruct(scp.Base) {
 								continue
 							}
-							fmt.Println("Pinning file with CID: " + ipfsResp.Cid)
-							proxy.pinFile(ipfsResp.Cid)
+							foundChallenge = true
+							if proof == scp.Proof {
+								fmt.Printf("Node: %v. Proof matched. Got: %v", scp.Identity, proof)
+							} else {
+								fmt.Printf("Node: %v. Proof did not match. Wanted: %v, Got: %v", scp.Identity, proof, scp.Proof)
+							}
 						}
+
 					}
 				}
-				if evt.Block.Txs.Index(castedTx) > -1 {
-					// Transaction is put in the latest block.
-					fmt.Println("File successfully uploaded. CID: ", fileHash)
-					fmt.Printf("Block height: %v\n", evt.Block.Height)
-					WriteMetadata(fileHash, &MetadataEntry{Name: fileName, Description: fileDescription,
-						StorageSample: *storageSample, Blockheight: evt.Block.Height})
+				if foundChallenge {
+					return
 				}
 			case <-time.After(time.Duration(conf.ClientConfig().NewBlockTimeout) * time.Second):
-				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
-					"Try running a status query with CID: " + fileHash)
+				fmt.Println("Could not verify the ledger within the timeout. The proof may still be published on the ledger.")
 				return
 			}
 		}

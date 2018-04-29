@@ -1,4 +1,4 @@
-package client
+package types
 
 import (
 	"io/ioutil"
@@ -11,6 +11,11 @@ import (
 type Metadata struct {
 	Entries		map[string]MetadataEntry	`json:"entries"`
 }*/
+type SimpleMetadataEntry struct {
+	CID							string
+	FileSize					int64
+}
+
 type MetadataEntry struct {
 	crypto.StorageSample
 	Name 						string		`json:"name"`
@@ -37,6 +42,23 @@ func GetMetadata(cid string, mePath ...string) (*MetadataEntry){
 func WriteMetadata(cid string, me *MetadataEntry) error {
 	if data, err := json.Marshal(*me); err == nil {
 		return ioutil.WriteFile(conf.ClientConfig().BasePath + conf.ClientConfig().Metadata + cid, data, 0600)
+	} else {
+		return err
+	}
+}
+
+func GetSimpleMetadata(path string, cid string) (*SimpleMetadataEntry){
+	var sme *SimpleMetadataEntry = &SimpleMetadataEntry{}
+	if data, err := ioutil.ReadFile(path + cid); err == nil {
+		json.Unmarshal(data, sme)
+	}
+
+	return sme
+}
+
+func WriteSimpleMetadata(path string, cid string, sme *SimpleMetadataEntry) error {
+	if data, err := json.Marshal(*sme); err == nil {
+		return ioutil.WriteFile(path + cid, data, 0600)
 	} else {
 		return err
 	}

@@ -182,6 +182,10 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
 		{
 			return *app.Query_Newsample(reqQuery)
 		}
+	case "/challenge":
+		{
+			return *app.Query_Challenge(reqQuery)
+		}
 	default:
 		{
 			return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Invalid query path."}

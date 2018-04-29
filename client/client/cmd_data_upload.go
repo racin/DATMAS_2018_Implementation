@@ -139,7 +139,7 @@ var uploadCmd = &cobra.Command{
 					// Transaction is put in the latest block.
 					fmt.Println("File successfully uploaded. CID: ", fileHash)
 					fmt.Printf("Block height: %v\n", evt.Block.Height)
-					WriteMetadata(fileHash, &MetadataEntry{Name:fileName, Description:fileDescription,
+					types.WriteMetadata(fileHash, &types.MetadataEntry{Name:fileName, Description:fileDescription,
 						StorageSample: *storageSample, Blockheight:evt.Block.Height})
 				}
 			case <-time.After(time.Duration(conf.ClientConfig().NewBlockTimeout) * time.Second):

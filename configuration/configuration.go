@@ -25,6 +25,7 @@ type AppConfiguration struct {
 	PublicKeys						string		`json:"publicKeys"`
 	AccessList						string		`json:"accessList"`
 	StorageSamples					string		`json:"storageSamples"`
+	SimpleMetadata					string		`json:"simpleMetadata"`
 	TempUploadPath					string		`json:"tempUploadPath"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	TmQueryTimeoutSeconds			int			`json:"tmQueryTimeoutSeconds"`

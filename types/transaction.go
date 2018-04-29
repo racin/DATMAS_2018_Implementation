@@ -54,7 +54,7 @@ func UnmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *Transaction, e
 			fmt.Printf("ReqUpload: %+v\n", reqUpload)
 			stx.Base.(*Transaction).Data = reqUpload
 			tx.Data = reqUpload
-		} else if storProofCol :=
+		}
 
 		return stx, tx, nil
 	}

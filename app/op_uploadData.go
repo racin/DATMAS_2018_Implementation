@@ -114,6 +114,8 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 		return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert StxReq."}
 	}
 
+	types.WriteSimpleMetadata(conf.AppConfig().BasePath + conf.AppConfig().SimpleMetadata, reqUpload.Cid,
+		&types.SimpleMetadataEntry{CID:reqUpload.Cid, FileSize:reqUpload.Length})
 	/*
 	// Check if we have registered the public key of the IPFS node which holds the uploaded file in temporary storage.
 	proverIdent, proverPubKey := app.GetIdentityPublicKey(reqUpload.IpfsNode)
