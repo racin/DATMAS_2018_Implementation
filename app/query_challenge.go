@@ -40,6 +40,27 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Could not find a stored SimpleMetaData for this CID. Fatal error." +
 			" Re-upload file to resolve this."}
 	}
+
+	// Generate a random challenge which we don't know the answer to.
+	rndChal, err := crypto.GenerateRandomChallenge(simpleMetaData.FileSize)
+	if err != nil {
+		return &abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Could not generate random challenge."}
+	}
+	signRndChal, err := crypto.SignStruct(rndChal, app.privKey)
+
+	lenStorNodes := len(conf.AppConfig().IpfsNodes)
+	proofs := make([]crypto.StorageChallengeProof, lenStorNodes*2)
+
+	// Issue the challenge from the Client first
+	for i, ipfsNode := range conf.AppConfig().IpfsNodes {
+		app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+	}
+
+	// Then the randomly generated ones
+	for i, ipfsNode := range conf.AppConfig().IpfsNodes {
+		///proofs[i + lenStorNodes] = *interface{}
+		app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
+	}
 	// Check if this sample is already stored. Should use a different path if we want to remove it (future work...)
 	// Return OK if the actual sample equals the current stored one.
 	if _, err := os.Lstat(conf.AppConfig().StorageSamples + storageChallenge.Cid); err == nil {

@@ -203,6 +203,19 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStru
 	}
 }
 
+func GenerateRandomChallenge(maxIndex int64) ([]uint64, error){
+	max := big.NewInt(maxIndex)
+	output := make([]uint64, challengeSamples)
+	for i := 0; i < challengeSamples; i++ {
+		rndIndex, err := rand.Int(rand.Reader, max)
+		if err != nil {
+			return nil, err
+		}
+		output[i] = rndIndex.Uint64()
+	}
+	return output, nil
+}
+
 func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, samplerPubkey *Keys) error {
 	if samplerIdentity == nil {
 		return errors.New("Samplers identity was nil.")

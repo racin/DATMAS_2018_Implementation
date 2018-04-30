@@ -40,7 +40,7 @@ var challengeCmd = &cobra.Command{
 		var challenge *crypto.SignedStruct
 		var hashChal string
 		if challengeIndices == nil{
-			me := GetMetadata(cid)
+			me := types.GetMetadata(cid)
 			if me == nil {
 				log.Fatal("Could not find stored metadata for CID: " + cid)
 			}
@@ -91,13 +91,15 @@ var challengeCmd = &cobra.Command{
 						for _, scp := range scpArr {
 							// A response to our challenge.
 							if hashChal != crypto.HashStruct(scp.Base) {
+								fmt.Printf("Node: %v. Random challenge. Got proof: %v\n", scp.Identity, scp.Proof)
 								continue
 							}
+							// A response to our challenge.
 							foundChallenge = true
 							if proof == scp.Proof {
-								fmt.Printf("Node: %v. Proof matched. Got: %v", scp.Identity, proof)
+								fmt.Printf("Node: %v. Proof matched. Got: %v\n", scp.Identity, proof)
 							} else {
-								fmt.Printf("Node: %v. Proof did not match. Wanted: %v, Got: %v", scp.Identity, proof, scp.Proof)
+								fmt.Printf("Node: %v. Proof did not match. Wanted: %v, Got: %v\n", scp.Identity, proof, scp.Proof)
 							}
 						}
 
