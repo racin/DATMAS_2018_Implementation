@@ -6,7 +6,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"os"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
 func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.ResponseQuery{
@@ -49,33 +49,40 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	signRndChal, err := crypto.SignStruct(rndChal, app.privKey)
 
 	lenStorNodes := len(conf.AppConfig().IpfsNodes)
-	proofs := make([]crypto.StorageChallengeProof, lenStorNodes*2)
+	proofs := make([]crypto.SignedStruct, lenStorNodes*2)
 
 	// Issue the challenge from the Client first
 	for i, ipfsNode := range conf.AppConfig().IpfsNodes {
-		app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+		ipfsResp := app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+		if (ipfsResp.Codetype != types.CodeType_OK) {
+			continue // Not a valid proof. Do not care about why
+		}
+		scp := &crypto.SignedStruct{Base:&crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
+		if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
+			proofs[i] = *scp
+		}
 	}
 
 	// Then the randomly generated ones
 	for i, ipfsNode := range conf.AppConfig().IpfsNodes {
-		///proofs[i + lenStorNodes] = *interface{}
-		app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
-	}
-	// Check if this sample is already stored. Should use a different path if we want to remove it (future work...)
-	// Return OK if the actual sample equals the current stored one.
-	if _, err := os.Lstat(conf.AppConfig().StorageSamples + storageChallenge.Cid); err == nil {
-		currStoredSample := crypto.LoadStorageSample(conf.AppConfig().StorageSamples, storageSample.Cid)
-		if storageSample.CompareTo(currStoredSample) {
-			return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "The same sample was already stored."}
-		} else {
-			return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "A different sample for this file is already stored."}
+		ipfsResp := app.queryIPFSproxy(ipfsNode, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
+		if (ipfsResp.Codetype != types.CodeType_OK) {
+			continue // Not a valid proof. Do not care about why
+		}
+		scp := &crypto.SignedStruct{Base:&crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
+		if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
+			proofs[i + lenStorNodes] = *scp
 		}
 	}
 
-	// Store the sample.
-	if err := signedStruct.StoreSample(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples); err != nil {
-		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Could not store sample. Error: " + err.Error()}
+	// Now lets send the proofs to the mempool
+	tx := types.NewTx(proofs, app.fingerprint, types.TransactionType_VerifyStorage)
+	stx,err := crypto.SignStruct(tx, app.privKey)
+	if err != nil {
+		return &abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not sign StorageChallengeProofs"}
 	}
 
-	return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Sample stored."}
+	stxByteArr, _ := json.Marshal(stx)
+	app.TMRpcClients[app.fingerprint].BroadcastTxAsync(tmtypes.Tx(stxByteArr))
+	return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Transaction with proofs sent to mempool. Wait for commit."}
 }
