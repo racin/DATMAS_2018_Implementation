@@ -23,7 +23,6 @@ var challengeCmd = &cobra.Command{
 	Short:   "Challenge storage nodes",
 	Long:    `Challenge storage nodes to prove that they still possess all the data for a CID.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		var cid string
 		var challengeIndices []uint64
 		var proof string
 		if len(args) < 1 {
@@ -37,6 +36,7 @@ var challengeCmd = &cobra.Command{
 				}
 			}
 		}
+		cid := args[0]
 		var challenge *crypto.SignedStruct
 		var hashChal string
 		if challengeIndices == nil{
@@ -44,7 +44,8 @@ var challengeCmd = &cobra.Command{
 			if me == nil {
 				log.Fatal("Could not find stored metadata for CID: " + cid)
 			}
-			challenge, hashChal, proof = me.GenerateChallenge(TheClient.privKey)
+			fmt.Printf("ME: %+v\n", me)
+			challenge, hashChal, proof = me.StorageSample.GenerateChallenge(TheClient.privKey)
 		} else {
 			nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
 			if err != nil {
@@ -61,8 +62,12 @@ var challengeCmd = &cobra.Command{
 			log.Fatal(err.Error())
 		}
 
-		if _, err = TheClient.TMClient.ABCIQuery("/challenge", byteArr); err != nil {
+		queryResult, err := TheClient.TMClient.ABCIQuery("/challenge", byteArr)
+		if err != nil {
 			log.Fatal(err.Error())
+		}
+		if queryResult.Response.Code != uint32(types.CodeType_OK) {
+			log.Fatal(queryResult.Response.Log)
 		}
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
@@ -113,7 +118,6 @@ var challengeCmd = &cobra.Command{
 				return
 			}
 		}
-
 	},
 }
 

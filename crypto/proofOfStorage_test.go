@@ -69,7 +69,7 @@ func TestStorageSample(t *testing.T){
 		if err != nil {
 			t.Fatal("Could not load private key. Error: " + err.Error())
 		}
-		challenge, chalHash = storageSample.GenerateChallenge(privKey)
+		challenge, chalHash, _ = storageSample.GenerateChallenge(privKey)
 		assert.NotNil(t, challenge, "Could not load Storage Sample")
 		chalng, ok := challenge.Base.(*StorageChallenge)
 

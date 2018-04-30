@@ -93,7 +93,7 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 	case types.TransactionType_VerifyStorage:
 		{
 			// TODO: Is this really needed?
-			return abci.ResponseDeliverTx{Info: "Error"};
+			return abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Info: "123"};
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
@@ -155,7 +155,7 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	case types.TransactionType_VerifyStorage:
 		{
 			// TODO: Remove this type?
-			return abci.ResponseCheckTx{Info: "Error"};
+			return abci.ResponseCheckTx{Code: uint32(types.CodeType_OK), Info: "Error"};
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
@@ -184,7 +184,9 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
 		}
 	case "/challenge":
 		{
-			return *app.Query_Challenge(reqQuery)
+			res := app.Query_Challenge(reqQuery)
+			fmt.Printf("Result query: %+v\n", res)
+			return *res
 		}
 	default:
 		{

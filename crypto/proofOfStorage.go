@@ -175,7 +175,7 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStru
 	}
 	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:nonce.Uint64()}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
-	proofBytes := make([]byte, len(sp.Sampleindices))
+	proofBytes := make([]byte, challengeSamples)
 	for i := 0; i < challengeSamples; i++ {
 		rnd, err := rand.Int(rand.Reader, max);
 		if err != nil {
