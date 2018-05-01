@@ -6,9 +6,9 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"encoding/json"
-	ctypes "github.com/tendermint/tendermint/rpc/core/types"
+
 	"github.com/racin/DATMAS_2018_Implementation/types"
-	"github.com/pkg/errors"
+
 	"fmt"
 	"net/http"
 	"time"
@@ -119,33 +119,6 @@ func (c *Client) sendMultipartFormDataToIPFS(values *map[string]io.Reader) (*typ
 	return result
 }
 
-func checkBroadcastResult(commit interface{}, err error) (types.CodeType, error) {
-	fmt.Printf("Data 1: %+v\n", commit)
-	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
-		if err != nil {
-			return types.CodeType_InternalError, err
-		} else if c.CheckTx.IsErr() {
-			return types.CodeType_InternalError, errors.New(c.CheckTx.String())
-		} else if c.DeliverTx.IsErr() {
-			return types.CodeType_InternalError, errors.New(c.DeliverTx.String())
-		} else {
-			fmt.Printf("Data: %+v\n", c)
-			return types.CodeType_OK, nil;
-		}
-	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
-		fmt.Printf("Data 2: %+v\n", c)
-		code := types.CodeType(c.Code)
-		if code == types.CodeType_OK {
-			fmt.Printf("Data 3: %+v\n", c)
-			return code, nil
-		} else {
-			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + types.CodeType_name[int32(c.Code)])
-		}
-	}
-	/**/
-	return types.CodeType_InternalError, errors.New("Could not type assert result.")
-}
-
 func (c *Client) setupAPI()  {
 	tmApiFound, tmUplApiFound, ipfsProxyFound := false, false, false
 
@@ -219,7 +192,7 @@ func (c *Client) setupAPI()  {
 
 func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (types.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
-	return checkBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
+	return types.CheckBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 func (c *Client) UploadDataToTM(values *map[string]io.Reader) (*types.ResponseUpload) {
 	//data := map[string]io.Reader

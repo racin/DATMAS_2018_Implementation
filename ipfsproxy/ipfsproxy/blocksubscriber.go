@@ -60,7 +60,7 @@ func (proxy *Proxy) processNewBlocks(height int64) error {
 			return err
 		}
 	}
-	for i:=loadMaxSeenBlockHeight()+1; i<height; i++ {
+	for i:=loadMaxSeenBlockHeight()+1; i<=height; i++ {
 		if block, err := proxy.TMClient.Block(&i); err != nil {
 			return err
 		} else if codetype := proxy.handleBlock(block.Block); codetype != types.CodeType_OK {
@@ -86,12 +86,14 @@ func (proxy *Proxy) handleBlock(block *tmtypes.Block) types.CodeType{
 
 		if _, tx, err := types.UnmarshalTransaction([]byte(block.Txs[i])); err == nil {
 			// Attempt to PIN all new upload transactions
-			if ipfsResp, ok := tx.Data.(*crypto.SignedStruct).Base.(*types.RequestUpload); ok {
-				if proxy.fingerprint != ipfsResp.IpfsNode {
+			if ss, ok := tx.Data.(*crypto.SignedStruct); ok {
+				if ipfsResp, ok := ss.Base.(*types.RequestUpload); ok {
+					if proxy.fingerprint != ipfsResp.IpfsNode {
 					continue
 				}
-				fmt.Println("Pinning file with CID: " + ipfsResp.Cid)
-				proxy.pinFile(ipfsResp.Cid)
+					fmt.Println("Pinning file with CID: " + ipfsResp.Cid)
+					proxy.pinFile(ipfsResp.Cid)
+				}
 			}
 		}
 	}

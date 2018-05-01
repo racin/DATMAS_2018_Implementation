@@ -69,7 +69,7 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		// TODO: Fatal error.
 		writeResponse(&w, types.CodeType_InternalError, "Unable to prove challenge.");
 	} else {
-		fmt.Printf("Sending proof... %v %v %v\n", 0, uint32(0), uint(0))
+		fmt.Printf("Sending proof... %v\n", proof)
 		//proof.VerifyChallengeProof_Historic(conf.AppConfig().BasePath + conf.AppConfig().StorageSamples, signer, pubKey, proxy.identity, proxy.privKey)
 		byteArr, _ := json.Marshal(proof)
 		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:0})

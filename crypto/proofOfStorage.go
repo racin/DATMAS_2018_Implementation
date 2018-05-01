@@ -7,8 +7,8 @@ import (
 	"io/ioutil"
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"math"
 	"fmt"
+	"encoding/base64"
 )
 
 const (
@@ -30,7 +30,7 @@ type StorageChallenge struct {
 	Challenge				[]uint64				`json:"challenge"`
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
-	Nonce					uint64					`json:"nonce"`
+	Nonce					float64					`json:"nonce"` // Must be float64 because of interface conversion and overflow issues. (Could possibly be uint64 if unsafe pointers were used.
 }
 
 // We can not use map[uint64]byte as the type to represent the samples, as when iterating the map, the order is not guaranteed to
@@ -44,25 +44,82 @@ type StorageChallengeProof struct {
 	Identity				string					`json:"identity"`
 	Filesize				int64					`json:"filesize"`
 }
-/*
-type StorageChallengeCollection struct {
-	client_StorageChallengeProof
-	consensus_StorageChallengeProof []
+func GetStorageChallengeProofArray(derivedArray []interface{}) []SignedStruct {
+	scpSlice := make([]SignedStruct, len(derivedArray))
+	for i, val := range derivedArray {
+		if mapInf, ok := val.(map[string]interface{}); ok {
+			if signedChalProof := GetSignedStorageChallengeProofFromMap(mapInf); signedChalProof == nil {
+				return nil
+			} else {
+				scpSlice[i] = *signedChalProof
+			}
+		}
+	}
+	return scpSlice
 }
-func GetRequestUploadFromMap(derivedStruct map[string]interface{}) *RequestUpload {
-	if cid, ok := derivedStruct["cid"]; ok {
-		fmt.Println("dS: a")
-		if ipfsNode, ok := derivedStruct["ipfsNode"]; ok {
-			fmt.Println("dS: b")
-			if length, ok := derivedStruct["length"]; ok {
-				fmt.Println("dS: c")
-				return &RequestUpload{Cid: cid.(string), IpfsNode: ipfsNode.(string), Length:int64(length.(float64))}
+func GetSignedStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *SignedStruct {
+	fmt.Printf("GetSignedStorageChallengeProofFromMap: %+v\n", derivedStruct)
+	if base, ok := derivedStruct["Base"]; ok {
+		fmt.Println("dS: base")
+		if signature, ok := derivedStruct["signature"]; ok {
+			fmt.Println("dS: sig")
+			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
+				ss := &SignedStruct{Base: GetStorageChallengeProofFromMap(base.(map[string]interface{})), Signature: data}
+				fmt.Printf("SS: %+v\n", ss)
+				return ss
 			}
 		}
 	}
 	return nil
-}*/
+}
+func GetStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *StorageChallengeProof {
+	fmt.Printf("GetStorageChallengeProofFromMap: %+v\n", derivedStruct)
+	if proof, ok := derivedStruct["proof"]; ok {
+		if identity, ok := derivedStruct["identity"]; ok {
+			if filesize, ok := derivedStruct["filesize"]; ok {
+				ss := &StorageChallengeProof{SignedStruct: *GetSignedStorageChallengeFromMap(derivedStruct),
+					Proof: proof.(string), Identity: identity.(string), Filesize: int64(filesize.(float64))}
+				fmt.Printf("StorageChallengeProof: %+v\n", ss)
+				return ss
+			}
+		}
+	}
+	return nil
+}
+func GetSignedStorageChallengeFromMap(derivedStruct map[string]interface{}) *SignedStruct {
+	fmt.Printf("GetSignedStorageChallengeFromMap: %+v\n", derivedStruct)
+	if base, ok := derivedStruct["Base"]; ok {
+		if signature, ok := derivedStruct["signature"]; ok {
+			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
+				ss := &SignedStruct{Base: GetStorageChallengeFromMap(base.(map[string]interface{})), Signature: data}
+				fmt.Printf("SignedStruct: %+v\n", ss)
+				return ss
+			}
+		}
+	}
+	return nil
+}
+func GetStorageChallengeFromMap(derivedStruct map[string]interface{}) *StorageChallenge {
+	fmt.Printf("GetStorageChallengeFromMap: %+v\n", derivedStruct)
+	if cid, ok := derivedStruct["cid"]; ok {
+		if nonce, ok := derivedStruct["nonce"]; ok {
+			if identity, ok := derivedStruct["identity"]; ok {
+				if challenge, ok := derivedStruct["challenge"]; ok {
+					if clg, ok := challenge.([]interface{}); ok {
+						chal := make([]uint64, len(clg))
+						for i, val := range clg {
+							chal[i] = uint64(val.(float64))
+						}
 
+						return &StorageChallenge{Cid: cid.(string), Challenge: chal,
+							Identity: identity.(string), Nonce:nonce.(float64)}
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
 func min(x, y int) int {
 	if x < y {
 		return x
@@ -169,11 +226,11 @@ func (sp *StorageSample) getSampleIndices() []uint64 {
 }*/
 
 func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStruct, challengeHash string, proof string){
-	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
+	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(2 << 52)) // 9007199254740992
 	if err != nil {
 		return nil, "", "" // Could not generate nonce.
 	}
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:nonce.Uint64()}
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:float64(nonce.Int64())}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
 	proofBytes := make([]byte, challengeSamples)
 	for i := 0; i < challengeSamples; i++ {
@@ -203,17 +260,35 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStru
 	}
 }
 
-func GenerateRandomChallenge(maxIndex int64) ([]uint64, error){
+func GenerateRandomChallenge(privkey *Keys, cid string, maxIndex int64) (challenge *SignedStruct, challengeHash string){
+	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(2 << 52)) // 9007199254740992
+	if err != nil {
+		return nil, "" // Could not generate nonce.
+	}
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid, Nonce:float64(nonce.Int64())}
 	max := big.NewInt(maxIndex)
-	output := make([]uint64, challengeSamples)
+	fmt.Printf("Max is: %v\n", max)
 	for i := 0; i < challengeSamples; i++ {
 		rndIndex, err := rand.Int(rand.Reader, max)
 		if err != nil {
-			return nil, err
+			return nil, ""
 		}
-		output[i] = rndIndex.Uint64()
+		chal.Challenge[i] = rndIndex.Uint64()
 	}
-	return output, nil
+
+	ident, err := GetFingerprint(privkey)
+	if err != nil {
+		return nil, ""  // Could not get the keys fingerprint.
+	}
+	chal.Identity = ident
+
+	// Sign the challenge with our private key
+	challengeHash = HashStruct(chal)
+	if signature, err := privkey.Sign(challengeHash); err != nil {
+		return nil, ""
+	} else {
+		return &SignedStruct{Base: chal, Signature: signature}, challengeHash
+	}
 }
 
 func (signedStruct *SignedStruct) VerifySample(samplerIdentity *conf.Identity, samplerPubkey *Keys) error {

@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	ctypes "github.com/tendermint/tendermint/rpc/core/types"
 )
 
 type Transaction struct {
@@ -37,25 +38,59 @@ func UnmarshalTransaction(txBytes []byte) (*crypto.SignedStruct, *Transaction, e
 		return nil, nil, errors.New("Could not unmarshal transaction (Transaction)")
 	} else {
 		// Check if the data sent is actually another Struct.
-		derivedStruct, ok := stx.Base.(*Transaction).Data.(map[string]interface{})
+
 
 		// If its not, we can simply return and the different transaction types will get the value themselves.
-		if !ok {
-			return stx, tx, nil
+		if derivedStruct, ok := stx.Base.(*Transaction).Data.(map[string]interface{}); ok {
+			fmt.Printf("DerivedStruct: %+v\n", derivedStruct)
+
+			if signedReqUpload := GetSignedRequestUploadFromMap(derivedStruct); signedReqUpload != nil { // Signed types.RequestUpload
+				fmt.Printf("Signed ReqUpload: %+v\n", signedReqUpload)
+				stx.Base.(*Transaction).Data = signedReqUpload
+				tx.Data = signedReqUpload
+			} else if reqUpload := GetRequestUploadFromMap(derivedStruct); reqUpload != nil { // types.RequestUpload
+				fmt.Printf("ReqUpload: %+v\n", reqUpload)
+				stx.Base.(*Transaction).Data = reqUpload
+				tx.Data = reqUpload
+			}
+		} else if derivedArray, ok := stx.Base.(*Transaction).Data.([]interface{}); ok {
+			fmt.Printf("DerivedArray: %+v\n", derivedArray)
+			if storProofArr := crypto.GetStorageChallengeProofArray(derivedArray); storProofArr != nil { // Signed types.RequestUpload
+				fmt.Printf("Storage Proof array: %+v\n", storProofArr)
+				stx.Base.(*Transaction).Data = storProofArr
+				tx.Data = storProofArr
+			}
 		}
 
-		fmt.Printf("DerivedStruct: %+v\n", derivedStruct)
 
-		if signedReqUpload := GetSignedRequestUploadFromMap(derivedStruct); signedReqUpload != nil { // Signed types.RequestUpload
-			fmt.Printf("Signed ReqUpload: %+v\n", signedReqUpload)
-			stx.Base.(*Transaction).Data = signedReqUpload
-			tx.Data = signedReqUpload
-		} else if reqUpload := GetRequestUploadFromMap(derivedStruct); reqUpload != nil { // types.RequestUpload
-			fmt.Printf("ReqUpload: %+v\n", reqUpload)
-			stx.Base.(*Transaction).Data = reqUpload
-			tx.Data = reqUpload
-		}
 
 		return stx, tx, nil
 	}
+}
+
+func CheckBroadcastResult(commit interface{}, err error) (CodeType, error) {
+	fmt.Printf("Data 1: %+v\n", commit)
+	if c, ok := commit.(*ctypes.ResultBroadcastTxCommit); ok && c != nil {
+		if err != nil {
+			return CodeType_InternalError, err
+		} else if c.CheckTx.IsErr() {
+			return CodeType_InternalError, errors.New(c.CheckTx.String())
+		} else if c.DeliverTx.IsErr() {
+			return CodeType_InternalError, errors.New(c.DeliverTx.String())
+		} else {
+			fmt.Printf("Data: %+v\n", c)
+			return CodeType_OK, nil;
+		}
+	} else if c, ok := commit.(*ctypes.ResultBroadcastTx); ok && c != nil {
+		fmt.Printf("Data 2: %+v\n", c)
+		code := CodeType(c.Code)
+		if code == CodeType_OK {
+			fmt.Printf("Data 3: %+v\n", c)
+			return code, nil
+		} else {
+			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + CodeType_name[int32(c.Code)])
+		}
+	}
+	/**/
+	return CodeType_InternalError, errors.New("Could not type assert result.")
 }

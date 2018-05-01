@@ -92,8 +92,8 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 		}
 	case types.TransactionType_VerifyStorage:
 		{
-			// TODO: Is this really needed?
-			return abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Info: "123"};
+			fmt.Println("DeliverTx_VerifyStorage")
+			return *app.DeliverTx_VerifyStorage(signer, tx)
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
@@ -128,6 +128,8 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	hash := crypto.HashStruct(stx.Base)
 	fmt.Printf("STX hash: %+v\n", hash)*/
 	fmt.Printf("Verifying STX\n")
+	fmt.Printf("Hash of STX base: %v\n", crypto.HashStruct(stx.Base))
+	fmt.Printf("Hash of TX data: %v\n", stx.Base.(*types.Transaction).Data)
 	// Check if public key exists and if message is signed.
 	if pubKey == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
@@ -154,8 +156,8 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 		}
 	case types.TransactionType_VerifyStorage:
 		{
-			// TODO: Remove this type?
-			return abci.ResponseCheckTx{Code: uint32(types.CodeType_OK), Info: "Error"};
+			fmt.Println("CheckTx_VerifyStorage")
+			return *app.CheckTx_VerifyStorage(signer, tx)
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{

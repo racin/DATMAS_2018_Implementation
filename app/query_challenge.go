@@ -44,11 +44,10 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	}
 
 	// Generate a random challenge which we don't know the answer to.
-	rndChal, err := crypto.GenerateRandomChallenge(simpleMetaData.FileSize)
-	if err != nil {
+	signRndChal, _ := crypto.GenerateRandomChallenge(app.privKey, storageChallenge.Cid, simpleMetaData.FileSize)
+	if signRndChal == nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Could not generate random challenge."}
 	}
-	signRndChal, err := crypto.SignStruct(rndChal, app.privKey)
 
 	//lenStorNodes := len(conf.AppConfig().IpfsNodes)
 	proofs := make([]crypto.SignedStruct, 0)
@@ -56,7 +55,7 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	// Issue the challenge from the Client first
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
-		ipfsResp := app.queryIPFSproxy(addr, conf.AppConfig().IpfsChallengeEndpoint, storageChallenge)
+		ipfsResp := app.queryIPFSproxy(addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
 		fmt.Printf("IpfsResp: %v\n", ipfsResp)
 
 		if (ipfsResp.Codetype != types.CodeType_OK) {
@@ -84,14 +83,16 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	fmt.Printf("Proofs: %v\n", proofs)
 	// Now lets send the proofs to the mempool
 	tx := types.NewTx(proofs, app.fingerprint, types.TransactionType_VerifyStorage)
-	stx,err := crypto.SignStruct(tx, app.privKey)
+	stx, err := crypto.SignStruct(tx, app.privKey)
 	if err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not sign StorageChallengeProofs"}
 	}
 
 	stxByteArr, err := json.Marshal(stx)
-	fmt.Printf("Stx: %v\n", stx)
-	fmt.Printf("ByteArr: %v\n", stxByteArr)
+	fmt.Printf("TX: %+v\n", tx.Data)
+	fmt.Printf("Stx: %+v\n", stx)
+	fmt.Printf("Stx Base: %+v\n", stx.Base)
+	fmt.Printf("Hash of STX base: %v\n", crypto.HashStruct(stx.Base))
 	if err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Error marshalling: Error: " + err.Error()}
 	}
@@ -100,6 +101,23 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	//res := app.CheckTx(stxByteArr)
 	//fmt.Printf("CheckTx result: %+v\n", res)
 	// Sends the transaction to itself though the RPC client
-	app.TMRpcClients[app.fingerprint].BroadcastTxAsync(tmtypes.Tx(stxByteArr))
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+
+	stx2, tx2, err := types.UnmarshalTransaction(stxByteArr)
+	tx2.Data = proofs
+	fmt.Printf("TX2: %+v\n", tx2.Data)
+	fmt.Printf("Stx2: %+v\n", stx2)
+	fmt.Printf("Hash of STX2 base: %v\n", crypto.HashStruct(stx2.Base))
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+	fmt.Println("-----------------------------------------------------------")
+
+	codetype, err := types.CheckBroadcastResult(app.TMRpcClients[app.fingerprint].BroadcastTxSync(tmtypes.Tx(stxByteArr)))
+	fmt.Printf("CodeType: %v, Error: %v", codetype, err)
+
 	return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Transaction with proofs sent to mempool. Wait for commit."}
 }

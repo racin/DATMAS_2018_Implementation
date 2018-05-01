@@ -9,7 +9,6 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"crypto/rand"
 	"math/big"
-	"math"
 	"encoding/json"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"time"
@@ -47,11 +46,11 @@ var challengeCmd = &cobra.Command{
 			fmt.Printf("ME: %+v\n", me)
 			challenge, hashChal, proof = me.StorageSample.GenerateChallenge(TheClient.privKey)
 		} else {
-			nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(math.MaxUint64)) // 1 << 64 - 1
+			nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(2 << 52)) // 9007199254740992
 			if err != nil {
 				log.Fatal(err.Error()) // Could not generate nonce.
 			}
-			chal := &crypto.StorageChallenge{Identity:TheClient.fingerprint, Cid:cid, Challenge:challengeIndices, Nonce:nonce.Uint64()}
+			chal := &crypto.StorageChallenge{Identity:TheClient.fingerprint, Cid:cid, Challenge:challengeIndices, Nonce:float64(nonce.Int64())}
 			if challenge, err = crypto.SignStruct(chal, TheClient.privKey); err != nil {
 				log.Fatal(err.Error())
 			}
@@ -74,6 +73,7 @@ var challengeCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 		foundChallenge := false
+		proof, _ = crypto.HashData([]byte("racin test"))
 		for {
 			select {
 			case b := <-newBlockCh:
@@ -90,13 +90,15 @@ var challengeCmd = &cobra.Command{
 					if _, tx, err := types.UnmarshalTransaction([]byte(evt.Block.Txs[i])); err == nil {
 						// Is this an array of StorageChallangeProof ?
 						fmt.Printf("TxData: %+v\n", tx.Data)
-						scpArr, ok := tx.Data.([]crypto.StorageChallengeProof);
+						signedStructArr, ok := tx.Data.([]crypto.SignedStruct);
 						if !ok {
 							fmt.Println("Continue")
 							continue
 						}
 						fmt.Println("Pass")
-						for _, scp := range scpArr {
+						for _, signedStruct := range signedStructArr {
+							scp := signedStruct.Base.(*crypto.StorageChallengeProof)
+							fmt.Printf("-------------\nBlock height: %v\n", evt.Block.Height)
 							// A response to our challenge.
 							if hashChal != crypto.HashStruct(scp.Base) {
 								fmt.Printf("Node: %v. Random challenge. Got proof: %v\n", scp.Identity, scp.Proof)

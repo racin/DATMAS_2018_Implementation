@@ -38,6 +38,28 @@ func sortMapKeys(keys []reflect.Value) []reflect.Value{
 
 	return sortedKeys
 }
+
+func internal_handleValue(val reflect.Value, buffer *bytes.Buffer){
+	if val.Kind() == reflect.Struct{
+		buffer.Write(internal_hashStruct(val))
+	} else if val.Kind() == reflect.Ptr {
+	} else if val.Kind() == reflect.Interface {
+		inf := val.Interface()
+		if infVal, ok := inf.(string); ok {
+			buffer.WriteString(infVal)
+		} else if infVal, ok := inf.(int); ok {
+			buffer.WriteByte(byte(infVal))
+		} else if infVal, ok := inf.(int64); ok {
+			buffer.WriteByte(byte(infVal))
+		} else if infVal, ok := inf.(float64); ok {
+			buffer.WriteByte(byte(infVal))
+		} else {
+			buffer.Write(internal_hashStruct(inf))
+		}
+	} else {
+		buffer.WriteString(fmt.Sprintf("%v", val))
+	}
+}
 func internal_hashStruct(in interface{}) []byte {
 	var buffer *bytes.Buffer
 	var v reflect.Value
@@ -57,32 +79,22 @@ func internal_hashStruct(in interface{}) []byte {
 
 		if v.Kind() == reflect.Map {
 			for _, key := range sortMapKeys(v.MapKeys()) {
-				fmt.Printf("Key: %v\n", key.String())
-				val := v.MapIndex(key)
-				if val.Kind() == reflect.Struct{
-					buffer.Write(internal_hashStruct(val))
-				} else if val.Kind() == reflect.Ptr {
-				} else if val.Kind() == reflect.Interface {
-					inf := val.Interface()
-					if infVal, ok := inf.(string); ok {
-						buffer.WriteString(infVal)
-					} else if infVal, ok := inf.(int); ok {
-						buffer.WriteByte(byte(infVal))
-					} else if infVal, ok := inf.(int64); ok {
-						buffer.WriteByte(byte(infVal))
-					} else if infVal, ok := inf.(float64); ok {
-						buffer.WriteByte(byte(infVal))
-					} else {
-						buffer.Write(internal_hashStruct(val.Interface()))
-					}
-				} else {
-					buffer.WriteString(fmt.Sprintf("%v", val))
-				}
+				internal_handleValue(v.MapIndex(key), buffer)
 			}
 			return buffer.Bytes()
 		} else if v.Kind() == reflect.Slice {
+			for i := 0; i < v.Len(); i++ {
+				val := v.Index(i)
+				if val.Kind() == reflect.Map {
+					for _, key := range sortMapKeys(val.MapKeys()) {
+						internal_handleValue(val.MapIndex(key), buffer)
+					}
+				} else {
+					internal_handleValue(v.Index(i), buffer)
+				}
+			}
 			fmt.Printf("Slice: %v\n", v)
-			buffer.WriteString(fmt.Sprintf("%v", v))
+
 			return buffer.Bytes()
 		}
 	} else {
@@ -91,27 +103,7 @@ func internal_hashStruct(in interface{}) []byte {
 	}
 	fmt.Printf("Value: %+v\n", v)
 	for i := 0; i < v.NumField(); i++ {
-		val := v.Field(i)
-
-		if val.Kind() == reflect.Struct{
-			buffer.Write(internal_hashStruct(val))
-		} else if val.Kind() == reflect.Ptr {
-		} else if val.Kind() == reflect.Interface {
-			inf := val.Interface()
-			if infVal, ok := inf.(string); ok {
-				buffer.WriteString(infVal)
-			} else if infVal, ok := inf.(int); ok {
-				buffer.WriteByte(byte(infVal))
-			} else if infVal, ok := inf.(int64); ok {
-				buffer.WriteByte(byte(infVal))
-			} else if infVal, ok := inf.(float64); ok {
-				buffer.WriteByte(byte(infVal))
-			} else {
-				buffer.Write(internal_hashStruct(val.Interface()))
-			}
-		} else {
-			buffer.WriteString(fmt.Sprintf("%v", val))
-		}
+		internal_handleValue(v.Field(i), buffer)
 	}
 
 	return buffer.Bytes()
