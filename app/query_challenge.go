@@ -6,7 +6,7 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	//tmtypes "github.com/tendermint/tendermint/types"
+	tmtypes "github.com/tendermint/tendermint/types"
 	"fmt"
 )
 
@@ -97,8 +97,9 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	}
 
 	// TODO: Setup Mempool connection.
-	res := app.CheckTx(stxByteArr)
-	fmt.Printf("CheckTx result: %+v\n", res)
-	//app.TMRpcClients[app.fingerprint].BroadcastTxAsync(tmtypes.Tx(stxByteArr))
+	//res := app.CheckTx(stxByteArr)
+	//fmt.Printf("CheckTx result: %+v\n", res)
+	// Sends the transaction to itself though the RPC client
+	app.TMRpcClients[app.fingerprint].BroadcastTxAsync(tmtypes.Tx(stxByteArr))
 	return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Transaction with proofs sent to mempool. Wait for commit."}
 }

@@ -89,10 +89,13 @@ var challengeCmd = &cobra.Command{
 					// Check if the transaction contains a StorageProofCollection
 					if _, tx, err := types.UnmarshalTransaction([]byte(evt.Block.Txs[i])); err == nil {
 						// Is this an array of StorageChallangeProof ?
+						fmt.Printf("TxData: %+v\n", tx.Data)
 						scpArr, ok := tx.Data.([]crypto.StorageChallengeProof);
 						if !ok {
+							fmt.Println("Continue")
 							continue
 						}
+						fmt.Println("Pass")
 						for _, scp := range scpArr {
 							// A response to our challenge.
 							if hashChal != crypto.HashStruct(scp.Base) {

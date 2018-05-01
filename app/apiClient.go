@@ -26,7 +26,7 @@ func (app *Application) setupTMRpcClients() {
 		}
 		addr := app.GetAccessList().GetAddress(ident)
 		apiAddr := strings.Replace(conf.AppConfig().WebsocketAddr, "$TmNode", addr, 1)
-		app.TMRpcClients[addr] = rpcClient.NewHTTP(apiAddr, conf.AppConfig().WebsocketEndPoint)
+		app.TMRpcClients[ident] = rpcClient.NewHTTP(apiAddr, conf.AppConfig().WebsocketEndPoint)
 	}
 }
 
@@ -115,12 +115,12 @@ func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-
 
 func (app *Application) multicastQuery(path string, data *[]byte, tmNodes []string) map[string]*QueryBroadcastReponse{
 	response := make(map[string]*QueryBroadcastReponse)
-	for _, addr := range tmNodes {
-		if tmClient, ok := app.TMRpcClients[addr]; !ok {
+	for _, ident := range tmNodes {
+		if tmClient, ok := app.TMRpcClients[ident]; !ok {
 			continue // Not connected to node with that address
 		} else {
 			result, err := tmClient.ABCIQuery(path, *data)
-			response[addr] = &QueryBroadcastReponse{Result: result, Err: err}
+			response[ident] = &QueryBroadcastReponse{Result: result, Err: err}
 		}
 	}
 
