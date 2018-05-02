@@ -8,6 +8,7 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"fmt"
+	"github.com/racin/DATMAS_2018_Implementation/rpc"
 )
 
 func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.ResponseQuery{
@@ -55,7 +56,7 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	// Issue the challenge from the Client first
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
-		ipfsResp := app.queryIPFSproxy(addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
+		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
 		fmt.Printf("IpfsResp: %v\n", ipfsResp)
 
 		if (ipfsResp.Codetype != types.CodeType_OK) {
@@ -70,7 +71,7 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	// Then the randomly generated ones
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
-		ipfsResp := app.queryIPFSproxy(addr, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
+		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
 		fmt.Printf("IpfsResp: %v\n", ipfsResp)
 		if (ipfsResp.Codetype != types.CodeType_OK) {
 			continue // Not a valid proof. Do not care about why

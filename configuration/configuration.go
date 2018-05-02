@@ -49,6 +49,7 @@ type ClientConfiguration struct {
 	BasePath 						string		`json:"basePath"`
 	RemoteAddr						string		`json:"remoteAddr"`
 	Metadata						string		`json:"metadata"`
+	Downloads						string		`json:"downloads"`
 	UploadAddr						string		`json:"uploadAddr"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`

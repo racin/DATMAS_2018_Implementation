@@ -8,6 +8,7 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	//"os"
 	"fmt"
+	"github.com/racin/DATMAS_2018_Implementation/rpc"
 )
 
 func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Transaction) *abci.ResponseCheckTx {
@@ -43,7 +44,7 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 	// of the transaction instead.
 
 	cidStx := app.GetSignedTransaction(types.TransactionType_IPFSProxyPin, reqUpload.Cid)
-	ipfsResponse := app.queryIPFSproxy(proverIdent.Address, conf.AppConfig().IpfsStatusEndpoint, cidStx)
+	ipfsResponse := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, proverIdent.Address, conf.AppConfig().IpfsStatusEndpoint, cidStx)
 	fmt.Printf("%+v\n", ipfsResponse)
 	if ipfsResponse.Codetype != types.CodeType_OK {
 		return &abci.ResponseCheckTx{Code: uint32(ipfsResponse.Codetype), Log: "Storage node does not claim to still hold the file. Addr: " +

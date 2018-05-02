@@ -73,7 +73,6 @@ var challengeCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 		foundChallenge := false
-		proof, _ = crypto.HashData([]byte("racin test"))
 		for {
 			select {
 			case b := <-newBlockCh:
@@ -88,17 +87,14 @@ var challengeCmd = &cobra.Command{
 					fmt.Println("Trying to unmarshal Tx")
 					// Check if the transaction contains a StorageProofCollection
 					if _, tx, err := types.UnmarshalTransaction([]byte(evt.Block.Txs[i])); err == nil {
-						// Is this an array of StorageChallangeProof ?
-						fmt.Printf("TxData: %+v\n", tx.Data)
+						// Is this an array of SignedStruct (Base type StorageChallengeProof).
 						signedStructArr, ok := tx.Data.([]crypto.SignedStruct);
 						if !ok {
-							fmt.Println("Continue")
 							continue
 						}
-						fmt.Println("Pass")
+						fmt.Printf("-------------\nBlock height: %v\n", evt.Block.Height)
 						for _, signedStruct := range signedStructArr {
 							scp := signedStruct.Base.(*crypto.StorageChallengeProof)
-							fmt.Printf("-------------\nBlock height: %v\n", evt.Block.Height)
 							// A response to our challenge.
 							if hashChal != crypto.HashStruct(scp.Base) {
 								fmt.Printf("Node: %v. Random challenge. Got proof: %v\n", scp.Identity, scp.Proof)

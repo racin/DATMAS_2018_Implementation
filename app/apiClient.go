@@ -2,19 +2,12 @@ package app
 
 import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"github.com/racin/DATMAS_2018_Implementation/rpc"
 	"strings"
 	"fmt"
 	"io/ioutil"
 	"github.com/pkg/errors"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
 	"github.com/tendermint/tendermint/rpc/core/types"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
-	"github.com/racin/DATMAS_2018_Implementation/types"
-	"encoding/json"
-	"bytes"
-
-	"io"
 )
 
 
@@ -52,45 +45,6 @@ func (app *Application) getIPFSProxyAddr() (string, error) {
 	}
 
 	return "", errors.New("Fatal: Could not connect to IPFS Proxy")
-}
-
-func (app *Application) queryIPFSproxy(ipfsproxy string, endpoint string,
-	input interface{}) (*types.IPFSReponse) {
-	var payload *bytes.Buffer
-	var contentType string
-	res := &types.IPFSReponse{}
-	switch data := input.(type){
-		case *crypto.SignedStruct:
-			if byteArr, err := json.Marshal(data); err != nil {
-				res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
-				return res
-			} else {
-				payload = bytes.NewBuffer(byteArr)
-			}
-			contentType = "application/json"
-		case *map[string]io.Reader:
-			payload, contentType = rpc.GetMultipartValues(data)
-		default:
-			res.AddMessageAndError("Input must be of type *crypto.SignedStruct or *map[string]io.Reader.", types.CodeType_InternalError)
-			return res
-	}
-
-	fmt.Println("Was: " + conf.AppConfig().IpfsProxyAddr)
-	ipfsAddr := strings.Replace(conf.AppConfig().IpfsProxyAddr, "$IpfsNode", ipfsproxy, 1)
-	fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
-	if response, err := app.IpfsHttpClient.Post(ipfsAddr + endpoint, contentType, payload); err == nil{
-		if dat, err := ioutil.ReadAll(response.Body); err == nil{
-			if err := json.Unmarshal(dat, res); err != nil {
-				res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
-			}
-		} else {
-			res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
-		}
-	} else {
-		res.AddMessageAndError(err.Error(), types.CodeType_InternalError)
-	}
-
-	return res
 }
 
 type QueryBroadcastReponse struct {

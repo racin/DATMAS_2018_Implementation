@@ -4,6 +4,7 @@
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
   "metadata": "Metadata/",
+  "downloads": "Downloads/",
 
   "tendermintNodes": ["cc418e456ae72df5bdb39d65bb8945e8"],
   "websocketEndpoint": "/websocket",
