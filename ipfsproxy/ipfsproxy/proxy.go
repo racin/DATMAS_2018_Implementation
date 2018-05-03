@@ -146,8 +146,6 @@ func (proxy *Proxy) CheckProxyAccess(txString string, openForTypes... conf.NodeT
 		return nil, types.CodeType_InternalError, err.Error()
 	}
 
-	fmt.Printf("Stx2: %+v\n", stx)
-	fmt.Printf("Tranc2: %+v\n", tx)
 	// Check for replay attack
 	txHash := crypto.HashStruct(*tx)
 	if proxy.HasSeenTranc(txHash) {

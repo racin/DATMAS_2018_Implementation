@@ -39,6 +39,7 @@ enum CodeType {
   BCFSBeginUploadOK       = 310;
   BCFSInvalidBlock        = 311;
   BCFSInvalidBlockHeight  = 312;
+  BCFSNoAccess            = 313;
 
 }
 
@@ -53,8 +54,11 @@ enum TransactionType {
   VerifyStorage = 3;
   ChangeContentAccess = 4;
 
+  // Tendermint query
+  PrevailingHeight = 5;
+
   // IPFS Proxy
-  IPFSProxyPin = 5;
+  IPFSProxyPin = 6;
 }
 
 message RequestUpload {

@@ -58,14 +58,10 @@ func GetStorageChallengeProofArray(derivedArray []interface{}) []SignedStruct {
 	return scpSlice
 }
 func GetSignedStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *SignedStruct {
-	fmt.Printf("GetSignedStorageChallengeProofFromMap: %+v\n", derivedStruct)
 	if base, ok := derivedStruct["Base"]; ok {
-		fmt.Println("dS: base")
 		if signature, ok := derivedStruct["signature"]; ok {
-			fmt.Println("dS: sig")
 			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
 				ss := &SignedStruct{Base: GetStorageChallengeProofFromMap(base.(map[string]interface{})), Signature: data}
-				fmt.Printf("SS: %+v\n", ss)
 				return ss
 			}
 		}
@@ -73,13 +69,11 @@ func GetSignedStorageChallengeProofFromMap(derivedStruct map[string]interface{})
 	return nil
 }
 func GetStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *StorageChallengeProof {
-	fmt.Printf("GetStorageChallengeProofFromMap: %+v\n", derivedStruct)
 	if proof, ok := derivedStruct["proof"]; ok {
 		if identity, ok := derivedStruct["identity"]; ok {
 			if filesize, ok := derivedStruct["filesize"]; ok {
 				ss := &StorageChallengeProof{SignedStruct: *GetSignedStorageChallengeFromMap(derivedStruct),
 					Proof: proof.(string), Identity: identity.(string), Filesize: int64(filesize.(float64))}
-				fmt.Printf("StorageChallengeProof: %+v\n", ss)
 				return ss
 			}
 		}
@@ -87,12 +81,10 @@ func GetStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *Stor
 	return nil
 }
 func GetSignedStorageChallengeFromMap(derivedStruct map[string]interface{}) *SignedStruct {
-	fmt.Printf("GetSignedStorageChallengeFromMap: %+v\n", derivedStruct)
 	if base, ok := derivedStruct["Base"]; ok {
 		if signature, ok := derivedStruct["signature"]; ok {
 			if data, err := base64.StdEncoding.DecodeString(signature.(string)); err == nil {
 				ss := &SignedStruct{Base: GetStorageChallengeFromMap(base.(map[string]interface{})), Signature: data}
-				fmt.Printf("SignedStruct: %+v\n", ss)
 				return ss
 			}
 		}
@@ -100,7 +92,6 @@ func GetSignedStorageChallengeFromMap(derivedStruct map[string]interface{}) *Sig
 	return nil
 }
 func GetStorageChallengeFromMap(derivedStruct map[string]interface{}) *StorageChallenge {
-	fmt.Printf("GetStorageChallengeFromMap: %+v\n", derivedStruct)
 	if cid, ok := derivedStruct["cid"]; ok {
 		if nonce, ok := derivedStruct["nonce"]; ok {
 			if identity, ok := derivedStruct["identity"]; ok {

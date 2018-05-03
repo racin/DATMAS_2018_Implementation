@@ -71,22 +71,17 @@ func (proxy *Proxy) processNewBlocks(height int64) error {
 }
 
 func (proxy *Proxy) handleBlock(block *tmtypes.Block) types.CodeType{
-	fmt.Println("Handling block height: " + strconv.Itoa(int(block.Height)))
 	if block == nil || block.ValidateBasic() != nil {
-		fmt.Println("Invalid block");
 		return types.CodeType_BCFSInvalidBlock// Could not validate the block. Do not process it.
 	}
 	seenHeight := loadMaxSeenBlockHeight()
 	if seenHeight+1 != block.Height {
-		fmt.Println("Invalid block height");
 		return types.CodeType_BCFSInvalidBlockHeight
 	}
 	for i := int64(0); i < block.NumTxs; i++ {
-		fmt.Println("Trying to unmarshal Tx")
-
 		if _, tx, err := types.UnmarshalTransaction([]byte(block.Txs[i])); err == nil {
 			// Attempt to PIN all new upload transactions
-			if ss, ok := tx.Data.(*crypto.SignedStruct); ok {
+			if ss, ok := tx.Data.(*crypto.SignedStruct); ok && tx.Type == types.TransactionType_UploadData {
 				if ipfsResp, ok := ss.Base.(*types.RequestUpload); ok {
 					if proxy.fingerprint != ipfsResp.IpfsNode {
 					continue
@@ -113,7 +108,6 @@ func (proxy *Proxy) subToNewBlock(newBlockCh chan interface{}) error {
 }
 func (proxy *Proxy) setupTMConnection() error{
 	// Get Tendermint blockchain API
-	fmt.Printf("%+v\n", conf.IPFSProxyConfig().TendermintNodes)
 	for _, ident := range conf.IPFSProxyConfig().TendermintNodes {
 		apiAddr := strings.Replace(conf.IPFSProxyConfig().WebsocketAddr, "$TmNode", proxy.GetAccessList().GetAddress(ident), 1)
 		fmt.Println("Trying to connect to (TM_api: " + apiAddr)

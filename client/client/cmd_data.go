@@ -6,7 +6,7 @@ var dataCmd = &cobra.Command{
 	Use:     "data",
 	Aliases: []string{"data"},
 	Short:   "manage data",
-	Long:    `Upload, download and remove data.`,
+	Long:    `Upload, download, delete and change access on data.`,
 }
 
 func init() {

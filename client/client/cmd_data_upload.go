@@ -22,16 +22,12 @@ var uploadCmd = &cobra.Command{
 	Short: "upload data",
 	Long:  `Upload data.`,
 	Run: func(cmd *cobra.Command, args []string) {
+		// File and Name is required parameters.
 		if len(args) < 2 {
 			log.Fatal("Not enough arguments.")
 		}
-
-
-		fmt.Printf("TheClient: %+v\n", TheClient)
-		// File and Name is required parameters.
 		filePath := args[0];
 
-		// TODO: Figure out if there is a way to only open the file once.
 		file, err := os.Open(filePath)
 		defer file.Close()
 		if err != nil {
@@ -41,11 +37,7 @@ var uploadCmd = &cobra.Command{
 		if err != nil {
 			log.Fatal("Could not get Stat of file. Error: ", err.Error())
 		}
-		file2, err := os.Open(filePath)
-		defer file2.Close()
-		if err != nil {
-			log.Fatal("Could not open file. Error: ", err.Error())
-		}
+
 		fileBytes, err := ioutil.ReadFile(filePath)
 		if err != nil {
 			log.Fatal("Could not get file bytes. Error: " + err.Error())
@@ -55,20 +47,17 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
-
 		// Phase 1. Upload data to one Storage node.
 		ipfsIdentity, ipfsPubKey := crypto.GetIdentityPublicKey(TheClient.IPFSIdent, TheClient.GetAccessList(),
 			conf.ClientConfig().BasePath + conf.ClientConfig().PublicKeys)
-		fmt.Printf("Identity: %+v\n", ipfsIdentity)
 		if ipfsIdentity == nil {
 			log.Fatal("Could not find IPFS node in the access list.")
 		}
 		sentReqUpload := &types.RequestUpload{Cid:fileHash, IpfsNode:TheClient.IPFSIdent, Length:fileStat.Size()}
 		stranc := TheClient.GetSignedTransaction(types.TransactionType_UploadData, sentReqUpload)
-		fmt.Printf("Tranc: %+v\n", stranc.Base.(*types.Transaction))
 		byteArr, _ := json.Marshal(stranc)
 		values := map[string]io.Reader{
-			"file":    file2,
+			"file":    file,
 			"transaction": bytes.NewReader(byteArr),
 		}
 
@@ -84,12 +73,7 @@ var uploadCmd = &cobra.Command{
 		} else if !reqUpload.CompareTo(sentReqUpload) {
 			log.Fatal("Sent upload request is not equal to response.")
 		}
-		z := &types.RequestUpload{Cid:ipfsStx.Base.(*types.RequestUpload).Cid, Length: ipfsStx.Base.(*types.RequestUpload).Length,
-			IpfsNode: ipfsStx.Base.(*types.RequestUpload).IpfsNode}
-		fmt.Printf("IpfsStx: %+v\n", ipfsStx)
-		fmt.Printf("IpfsStx Base: %+v\n", z)
-		fmt.Printf("IpfsStx Base2: %+v\n", ipfsStx.Base.(*types.RequestUpload))
-		fmt.Printf("IpfsPubkey: %+v\n", ipfsPubKey)
+
 		if !ipfsStx.Verify(ipfsPubKey) {
 			log.Fatal("Could not verify IPFS signature.")
 		}
@@ -104,16 +88,13 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
 		}
 
-		fmt.Printf("Getting signed tranc. \n")
 		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
 
 		byteArrTranc, err := json.Marshal(strancTM)
 		if err != nil {
 			log.Fatal("Could not generate a byte array of transaction.")
 		}
-		fmt.Printf("StrancTM: %+v\n", strancTM)
-		fmt.Printf("Hash strancTM: %v\n", crypto.HashStruct(strancTM))
-		fmt.Printf("Hash ipfsStx: %v\n", crypto.HashStruct(ipfsStx))
+
 		if _, err := TheClient.VerifyUpload(strancTM); err != nil {
 			log.Fatal("Error verifying upload. Error: " + err.Error())
 		}
@@ -122,6 +103,7 @@ var uploadCmd = &cobra.Command{
 		castedTx := tmtypes.Tx(byteArrTranc)
 		fileName := args[1];
 		var fileDescription string;
+		var blockHeight int64;
 		if len(args) > 1 {
 			fileDescription = args[2]
 		}
@@ -129,7 +111,6 @@ var uploadCmd = &cobra.Command{
 		select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.EventDataNewBlock)
-				fmt.Printf("New block: %+v\n", evt.Block)
 				// Validate
 				if err := evt.Block.ValidateBasic(); err != nil {
 					// System is broken. Notify administrators
@@ -139,13 +120,14 @@ var uploadCmd = &cobra.Command{
 					// Transaction is put in the latest block.
 					fmt.Println("File successfully uploaded. CID: ", fileHash)
 					fmt.Printf("Block height: %v\n", evt.Block.Height)
-					types.WriteMetadata(fileHash, &types.MetadataEntry{Name:fileName, Description:fileDescription,
-						StorageSample: *storageSample, Blockheight:evt.Block.Height})
+					blockHeight = evt.Block.Height
 				}
 			case <-time.After(time.Duration(conf.ClientConfig().NewBlockTimeout) * time.Second):
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
 					"Try running a status query with CID: " + fileHash)
 		}
+		types.WriteMetadata(fileHash, &types.MetadataEntry{Name:fileName, Description:fileDescription,
+			StorageSample: *storageSample, Blockheight:blockHeight})
 	},
 }
 

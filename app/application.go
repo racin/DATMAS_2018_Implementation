@@ -27,12 +27,16 @@ type Application struct {
 	privKey				*crypto.Keys
 	identity			*conf.Identity
 	fingerprint			string
+
+	prevailingBlock		map[string]int64
+	nextBlockHeight		int64
 }
 
 func NewApplication() *Application {
 	app := &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr,
 		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool),
-		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second}}
+		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second},
+		prevailingBlock: make(map[string]int64), nextBlockHeight:1}
 
 	// Load private keys in order to later digitally sign transactions
 	if myPrivKey, err := crypto.LoadPrivateKey(conf.AppConfig().BasePath + conf.AppConfig().PrivateKey); err != nil {
@@ -106,10 +110,6 @@ func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
 		}
 	}
 }
-/*
-func (app *Application) verifySignatureTx(txBytes []byte, expectedData interface{}) (ident *conf.Identity, pubKey *crypto.Keys, resp *abci.ResponseCheckTx) {
-
-}*/
 
 
 func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
@@ -124,12 +124,6 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
 	}
 
-	/*fmt.Printf("STX asd: %+v olo\n", stx)
-	hash := crypto.HashStruct(stx.Base)
-	fmt.Printf("STX hash: %+v\n", hash)*/
-	fmt.Printf("Verifying STX\n")
-	fmt.Printf("Hash of STX base: %v\n", crypto.HashStruct(stx.Base))
-	fmt.Printf("Hash of TX data: %v\n", stx.Base.(*types.Transaction).Data)
 	// Check if public key exists and if message is signed.
 	if pubKey == nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
@@ -172,8 +166,12 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 }
 
 func (app *Application) Commit() abci.ResponseCommit { //types.Result {
-	fmt.Println("Commit trigger");
-	return abci.ResponseCommit{}
+	app.nextBlockHeight++
+	fmt.Printf("Commit trigger. Next Block height: %v\n",app.nextBlockHeight);
+	// TODO: Why will it endlessly create new blocks if this is put as Data ?
+	/*b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, uint64(app.nextBlockHeight))*/
+	return abci.ResponseCommit{/*Data:b*/}
 }
 
 func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
@@ -186,9 +184,11 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
 		}
 	case "/challenge":
 		{
-			res := app.Query_Challenge(reqQuery)
-			fmt.Printf("Result query: %+v\n", res)
-			return *res
+			return *app.Query_Challenge(reqQuery)
+		}
+	case "/prevailingheight":
+		{
+			return *app.Query_PrevailingHeight(reqQuery)
 		}
 	default:
 		{

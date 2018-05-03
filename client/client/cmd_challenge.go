@@ -84,7 +84,6 @@ var challengeCmd = &cobra.Command{
 					log.Fatal("Could not validate latest block. Error: ", err.Error())
 				}
 				for i := int64(0); i < evt.Block.NumTxs; i++ {
-					fmt.Println("Trying to unmarshal Tx")
 					// Check if the transaction contains a StorageProofCollection
 					if _, tx, err := types.UnmarshalTransaction([]byte(evt.Block.Txs[i])); err == nil {
 						// Is this an array of SignedStruct (Base type StorageChallengeProof).

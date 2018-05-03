@@ -90,35 +90,16 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	}
 
 	stxByteArr, err := json.Marshal(stx)
-	fmt.Printf("TX: %+v\n", tx.Data)
-	fmt.Printf("Stx: %+v\n", stx)
-	fmt.Printf("Stx Base: %+v\n", stx.Base)
-	fmt.Printf("Hash of STX base: %v\n", crypto.HashStruct(stx.Base))
 	if err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Error marshalling: Error: " + err.Error()}
 	}
 
-	// TODO: Setup Mempool connection.
-	//res := app.CheckTx(stxByteArr)
-	//fmt.Printf("CheckTx result: %+v\n", res)
-	// Sends the transaction to itself though the RPC client
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
+	if codetype, err := types.CheckBroadcastResult(app.TMRpcClients[app.fingerprint].BroadcastTxSync(tmtypes.Tx(stxByteArr))); err != nil {
+		return &abci.ResponseQuery{Code: uint32(codetype), Log: "Error broadcasting challenge. Error: " + err.Error()}
+	} else{
+		fmt.Printf("PrevailingBlock: %+v\n", app.prevailingBlock)
+		return &abci.ResponseQuery{Code: uint32(codetype), Log: "Transaction with proofs sent to mempool. Wait for commit."}
+	}
 
-	stx2, tx2, err := types.UnmarshalTransaction(stxByteArr)
-	tx2.Data = proofs
-	fmt.Printf("TX2: %+v\n", tx2.Data)
-	fmt.Printf("Stx2: %+v\n", stx2)
-	fmt.Printf("Hash of STX2 base: %v\n", crypto.HashStruct(stx2.Base))
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
-	fmt.Println("-----------------------------------------------------------")
 
-	codetype, err := types.CheckBroadcastResult(app.TMRpcClients[app.fingerprint].BroadcastTxSync(tmtypes.Tx(stxByteArr)))
-	fmt.Printf("CodeType: %v, Error: %v", codetype, err)
-
-	return &abci.ResponseQuery{Code: uint32(types.CodeType_OK), Log: "Transaction with proofs sent to mempool. Wait for commit."}
 }

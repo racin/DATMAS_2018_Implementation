@@ -70,7 +70,6 @@ func internal_hashStruct(in interface{}) []byte {
 		if v.Kind() == reflect.Invalid {
 			return buffer.Bytes()
 		} else if v.Kind() == reflect.Ptr {
-			fmt.Println("PTR")
 			v = v.Elem()
 			if v.Kind() == reflect.Invalid {
 				return buffer.Bytes()
@@ -93,15 +92,12 @@ func internal_hashStruct(in interface{}) []byte {
 					internal_handleValue(v.Index(i), buffer)
 				}
 			}
-			fmt.Printf("Slice: %v\n", v)
 
 			return buffer.Bytes()
 		}
 	} else {
-		fmt.Println("ELSE...")
 		buffer = bytes.NewBuffer([]byte{})
 	}
-	fmt.Printf("Value: %+v\n", v)
 	for i := 0; i < v.NumField(); i++ {
 		internal_handleValue(v.Field(i), buffer)
 	}
@@ -109,11 +105,8 @@ func internal_hashStruct(in interface{}) []byte {
 	return buffer.Bytes()
 }
 func HashStruct(in interface{}) string {
-	fmt.Printf("Iface: %+v\n", in)
 	bytes := internal_hashStruct(in)
-	fmt.Printf("BYTES: %+v\n", string(bytes))
 	hash, _ := HashData(bytes)
-	fmt.Printf("Hash: %v\n", hash)
 
 	return hash
 }
