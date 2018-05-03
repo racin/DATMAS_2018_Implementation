@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
+	"encoding/json"
 )
 
 func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
@@ -20,7 +20,8 @@ func (proxy *Proxy) StatusAll(w http.ResponseWriter, r *http.Request) {
 	} else if pininfo, err := proxy.client.StatusAll(false); err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
-		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
+		byteArr, _ := json.Marshal(pininfo)
+		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:0})
 
 		// Add transaction to list of known transactions (message contains hash of tranc)
 		proxy.seenTranc[message] = true

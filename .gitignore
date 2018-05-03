@@ -14,3 +14,15 @@ ipfs_config/standalone/datastore/
 tendermint_config/standalone/config/
 
 tendermint_config/standalone/data/
+
+ipfs_config/ipfs_cluster_config/standalone/
+
+*.lock
+
+ipfs_config/standalone/api
+
+client/main
+
+ipfsproxy/main
+
+main

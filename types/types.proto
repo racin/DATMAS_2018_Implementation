@@ -59,6 +59,7 @@ enum TransactionType {
 
   // IPFS Proxy
   IPFSProxyPin = 6;
+  IPFSStatus = 7;
 }
 
 message RequestUpload {

@@ -7,11 +7,10 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
+	"encoding/json"
 )
 
 func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("IPFS STATUS")
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");
@@ -42,7 +41,8 @@ func (proxy *Proxy) Status(w http.ResponseWriter, r *http.Request) {
 	if pininfo, err := proxy.client.Status(cid,false); err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
 	} else {
-		writeResponse(&w, types.CodeType_OK, fmt.Sprintf("%+v", pininfo));
+		byteArr, _ := json.Marshal(pininfo)
+		json.NewEncoder(w).Encode(&types.IPFSReponse{Message:byteArr, Codetype:0})
 		// Add transaction to list of known transactions (message contains hash of tranc)
 		proxy.seenTranc[message] = true
 	}
