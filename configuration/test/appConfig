@@ -3,13 +3,10 @@
   "privateKey": "consensus.pem",
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
-  "tempUploadPath": "/tmp/",
   "storageSamples": "StorageSamples/",
   "simpleMetadata": "SimpleMetadata/",
 
   "listenAddr": "tcp://0.0.0.0:46658",
-  "uploadAddr": ":46659",
-  "uploadEndpoint": "/upload",
   "rpcType": "grpc",
   "appInfo": "__bcfs",
 

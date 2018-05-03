@@ -25,11 +25,9 @@ var dataAccessCmd = &cobra.Command{
 		cid := args[0]
 		readers := strings.Split(args[1], ",")
 		changeAccess := types.ChangeAccess{Cid:cid, Readers:readers}
-		fmt.Printf("ChangeAccess: %+v\n", changeAccess)
 		stx := TheClient.GetSignedTransaction(types.TransactionType_ChangeContentAccess, changeAccess)
-		fmt.Printf("Tx: %+v\n", stx.Base.(*types.Transaction))
+
 		// Start listening for new block
-		// Phase 2. Send metadata to TM
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())

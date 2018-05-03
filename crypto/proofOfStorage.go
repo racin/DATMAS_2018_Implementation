@@ -11,6 +11,7 @@ import (
 	"encoding/base64"
 )
 
+// A simple strawman implementation of the a proof of storage algorithm. Is reliant on storing the actual file bytes locally.
 const (
 	numSamples = 3000; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
 	challengeSamples = 10; // Probability of guessing a correct proof is about: 1 / (2^(8*10)
@@ -205,16 +206,6 @@ func LoadStorageSample(basepath string, cid string) *StorageSample{
 
 	return nil
 }
-/*
-func (sp *StorageSample) getSampleIndices() []uint64 {
-	ret := make([]uint64, len(sp.Samples))
-	i := 0
-	for key, _:= range sp.Samples {
-		ret[i] = key
-		i++
-	}
-	return ret
-}*/
 
 func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStruct, challengeHash string, proof string){
 	nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(2 << 52)) // 9007199254740992
@@ -362,7 +353,6 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	}
 
 	fpProver, err := GetFingerprint(proverPubkey)
-	fmt.Println(fpProver)
 	if err != nil {
 		return errors.New("Could not get fingerprint of Public key.")
 	}
@@ -393,9 +383,6 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	}
 
 	// Check if the proof is signed by the expected prover.
-	fmt.Printf("Hash of StorageChallengeProof: %v\n", HashStruct(sc2.Base))
-	fmt.Printf("The proof: %+v\n", scp)
-	fmt.Printf("The challenge: %+v\n", challenge)
 	if !sc2.Verify(proverPubkey) {
 		return errors.New("Could not verify signature of prover.")
 	}

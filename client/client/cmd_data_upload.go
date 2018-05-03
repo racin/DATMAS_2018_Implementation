@@ -46,7 +46,7 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not hash file. Error: ", err.Error())
 		}
 
-		// Phase 1. Upload data to one Storage node.
+		// Phase 1. Upload data to one Storage node and verify its signature that it received the data.
 		ipfsIdentity, ipfsPubKey := crypto.GetIdentityPublicKey(TheClient.IPFSIdent, TheClient.GetAccessList(),
 			conf.ClientConfig().BasePath + conf.ClientConfig().PublicKeys)
 		if ipfsIdentity == nil {
@@ -60,7 +60,7 @@ var uploadCmd = &cobra.Command{
 			"transaction": bytes.NewReader(byteArr),
 		}
 
-		ipfsResponse := TheClient.UploadDataToIPFS(&values);
+		ipfsResponse := TheClient.sendMultipartFormDataToIPFS(&values);
 		if ipfsResponse.Codetype != types.CodeType_OK {
 			log.Fatal("Error with IPFS upload. ", string(ipfsResponse.Message))
 		}
@@ -88,7 +88,6 @@ var uploadCmd = &cobra.Command{
 		}
 
 		strancTM := TheClient.GetSignedTransaction(types.TransactionType_UploadData, ipfsStx)
-
 		byteArrTranc, err := json.Marshal(strancTM)
 		if err != nil {
 			log.Fatal("Could not generate a byte array of transaction.")
@@ -98,7 +97,7 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Error verifying upload. Error: " + err.Error())
 		}
 
-		// Phase 3. Verify the uploaded data is commited to the ledger
+		// Phase 3. Verify that the metadata for the uploaded data is commited to the ledger.
 		castedTx := tmtypes.Tx(byteArrTranc)
 		fileName := args[1];
 		var fileDescription string;
@@ -110,7 +109,6 @@ var uploadCmd = &cobra.Command{
 		select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.EventDataNewBlock)
-				// Validate
 				if err := evt.Block.ValidateBasic(); err != nil {
 					// System is broken. Notify administrators
 					log.Fatal("Could not validate latest block. Error: ", err.Error())
@@ -125,6 +123,8 @@ var uploadCmd = &cobra.Command{
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
 					"Try running a status query with CID: " + fileHash)
 		}
+
+		// Write the metadata even if a timeout occured.
 		types.WriteMetadata(fileHash, &types.MetadataEntry{Name:fileName, Description:fileDescription,
 			StorageSample: *storageSample, Blockheight:blockHeight})
 	},

@@ -13,10 +13,6 @@ const (
 	Storage		NodeType = 2
 	Consensus   NodeType = 3
 
-	app 	Context = iota
-	ipfs	Context = 1
-	test	Context = 2
-
 	ListPathTest = "test/accessControl_test"
 )
 
@@ -50,14 +46,6 @@ func GetAccessList(path string) (*AccessList){
 	}
 
 	return z[path]
-}
-
-func WriteAccessList(acl *AccessList, path string){
-	return // Do not use this function.
-	if data, err := json.Marshal(acl); err == nil {
-		ioutil.WriteFile(path, data, 0600)
-	}
-	z[path] = acl // Force reloading of access list.
 }
 
 func (acl *AccessList) GetAddress(id string) string {

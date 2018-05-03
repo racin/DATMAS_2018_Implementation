@@ -17,6 +17,7 @@ Written by Racin Nygaard.	`,
 var cfgFile string
 func init() {
 	cobra.OnInitialize(NewClient)
+	fmt.Println(RootCmd.Long)
 	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "Config file (default is $HOME/.bcfs/clientConfig)")
 }
 

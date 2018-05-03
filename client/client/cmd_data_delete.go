@@ -25,7 +25,6 @@ var dataRemoveCmd = &cobra.Command{
 		stx := TheClient.GetSignedTransaction(types.TransactionType_RemoveData, cid)
 
 		// Start listening for new block
-		// Phase 2. Send metadata to TM
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
@@ -45,7 +44,6 @@ var dataRemoveCmd = &cobra.Command{
 		select {
 		case b := <-newBlockCh:
 			evt := b.(tmtypes.EventDataNewBlock)
-			// Validate
 			if err := evt.Block.ValidateBasic(); err != nil {
 				// System is broken. Notify administrators
 				log.Fatal("Could not validate latest block. Error: ", err.Error())

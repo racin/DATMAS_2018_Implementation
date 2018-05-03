@@ -23,6 +23,8 @@ type SignedStruct struct {
 	Signature 	[]byte          `json:"signature"`
 }
 
+// Sorts an array of Map keys in alphabetical order. Required because the order of Map is not guaranteed, and thus
+// the output hash is not deterministic and can cause validation of signatures to fail.
 func sortMapKeys(keys []reflect.Value) []reflect.Value{
 	sortedKeys := make([]reflect.Value,len(keys))
 	strKeys := make([]string, len(keys))
@@ -39,6 +41,8 @@ func sortMapKeys(keys []reflect.Value) []reflect.Value{
 	return sortedKeys
 }
 
+// Handles different kinds of reflect.Value inputs. Not that this function is by no means complete for all possible types,
+// and edge cases, just for the ones used in this project.
 func internal_handleValue(val reflect.Value, buffer *bytes.Buffer){
 	if val.Kind() == reflect.Struct{
 		buffer.Write(internal_hashStruct(val))
@@ -60,11 +64,16 @@ func internal_handleValue(val reflect.Value, buffer *bytes.Buffer){
 		buffer.WriteString(fmt.Sprintf("%v", val))
 	}
 }
+
+// Due to the design choice of using a lot of generic/interface types, we need to have logic to generate a deterministic
+// hash value of any type. If the input is a struct which has a field which also is a struct, this function will be called
+// recursively until it finds a basic type.
 func internal_hashStruct(in interface{}) []byte {
 	var buffer *bytes.Buffer
 	var v reflect.Value
 	var ok bool
 	if v, ok = in.(reflect.Value); !ok {
+		// Start the buffer with an ampersand. Similar to how fmt will print a struct by default.
 		buffer = bytes.NewBuffer([]byte{38})
 		v = reflect.ValueOf(in);
 		if v.Kind() == reflect.Invalid {
@@ -104,6 +113,9 @@ func internal_hashStruct(in interface{}) []byte {
 
 	return buffer.Bytes()
 }
+
+// Generate a deterministic hash of any type. Strictly required with dealing with digital signatures on various types
+// of data.
 func HashStruct(in interface{}) string {
 	bytes := internal_hashStruct(in)
 	hash, _ := HashData(bytes)
@@ -111,6 +123,7 @@ func HashStruct(in interface{}) string {
 	return hash
 }
 
+// Digitally signs any type of input.
 func SignStruct(in interface{}, keys *Keys) (*SignedStruct, error) {
 	if signature, err := keys.Sign(HashStruct(in)); err != nil {
 		return nil, err

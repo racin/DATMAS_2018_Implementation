@@ -19,11 +19,6 @@ const (
 	consensusCertPathFP		= "cc418e456ae72df5bdb39d65bb8945e8"
 	testKeysBits	= 1024
 )
-type RequestUpload struct {
-	Cid      string `protobuf:"bytes,1,opt,name=cid" json:"cid,omitempty"`
-	IpfsNode string `protobuf:"bytes,2,opt,name=ipfsNode" json:"ipfsNode,omitempty"`
-	Length   int64  `protobuf:"varint,3,opt,name=length" json:"length,omitempty"`
-}
 
 func TestSignature(t *testing.T){
 	if _, err := conf.LoadAppConfig("../configuration/test/appConfig"); err != nil {
@@ -77,17 +72,21 @@ func TestSignature(t *testing.T){
 		signature2, err := privKey.Sign(hashData);
 		assert.NotEqual(t, signature, signature2, "Signatures is not properly salted.")
 	})
+
+	// Generate some midly complex structure and attempt to sign and verify it.
 	t.Run("SignHashStruct", func(t *testing.T){
+		subTrans := TestHashStruct{Data:[]byte("444"), Number: 444, Message:"xxxx", Iface:"Hello world"}
+		subSubTrans := TestHashStruct{Data:[]byte("777"), Number: 777, Message:"zzz", Iface:subTrans}
 		sumMap := make(map[string]interface{})
 		sumMap["a"] = "abc"
 		sumMap["b"] = []byte{14,25,69,28,11,66,137,201,105}
 		sumMap["c"] = make(map[string]interface{})
 		sumMap["c"].(map[string]interface{})["a"] = "def"
 		sumMap["c"].(map[string]interface{})["b"] = 789
-		//subTrans := TestHashStruct{Data:[]byte("444"), Number: 444, Message:"xxxx", Iface:sumMap}
-		//subSubTrans := TestHashStruct{Data:[]byte("777"), Number: 777, Message:"zzz", Iface:subTrans}
+		sumMap["c"].(map[string]interface{})["c"] = subTrans
+		sumMap["d"] = subSubTrans
 		trans := TestHashStruct{Data:[]byte("Test data to sign and verify"), Number: 123, Message:"abc", Iface:[]map[string]interface{}{sumMap, sumMap}}
-		//trans := RequestUpload{Cid:"QmWix123Lx9GwSVNZXiGGbU3cE4RtDS2YwdtLP7QpwB9wo", IpfsNode:"96b36b94714693fc6ae4260ef8b0ab8a", Length:7}
+
 		if err != nil {
 			t.Fatal("Could not hash data. Error: " + err.Error())
 		}

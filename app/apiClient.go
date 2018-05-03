@@ -3,7 +3,6 @@ package app
 import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"strings"
-	"fmt"
 	"io/ioutil"
 	"github.com/pkg/errors"
 	rpcClient "github.com/tendermint/tendermint/rpc/client"
@@ -31,7 +30,6 @@ func (app *Application) getIPFSProxyAddr() (string, error) {
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
 		ipfsAddr := strings.Replace(conf.AppConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
-		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
 		if response, err := app.IpfsHttpClient.Get(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint); err != nil {
 			if dat, err := ioutil.ReadAll(response.Body); err == nil && string(dat) == "true" {
@@ -55,7 +53,6 @@ type QueryBroadcastReponse struct {
 
 func (app *Application) broadcastQuery(path string, data *[]byte, outChan chan<-*QueryBroadcastReponse, done chan struct{}){
 	for key, value := range app.TMRpcClients {
-		fmt.Println("Go func to: " + key)
 		go func(k string, v rpcClient.Client) {
 			result, err := v.ABCIQuery(path, *data)
 			select {
@@ -77,6 +74,5 @@ func (app *Application) multicastQuery(path string, data *[]byte, tmNodes []stri
 			response[ident] = &QueryBroadcastReponse{Result: result, Err: err}
 		}
 	}
-
 	return response
 }

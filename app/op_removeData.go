@@ -6,7 +6,6 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"strconv"
-	"fmt"
 )
 
 func (app *Application) CheckTx_RemoveData(signer *conf.Identity, requestTx *types.Transaction) *abci.ResponseCheckTx {
@@ -32,11 +31,9 @@ func (app *Application) CheckTx_RemoveData(signer *conf.Identity, requestTx *typ
 
 	for i := int64(0); i < result.Block.NumTxs; i++ {
 		if _, blockTx, err := types.UnmarshalTransaction([]byte(result.Block.Txs[i])); err == nil {
-			fmt.Printf("BlockTx: %v\n", blockTx)
 			switch blockTx.Type {
 			case types.TransactionType_RemoveData:
 				reqRemoval, ok := blockTx.Data.(string)
-				fmt.Printf("Base: %v\n", blockTx.Data)
 				if ok && reqRemoval == cidStr {
 					return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "File was already removed at block height: " + strconv.Itoa(int(prevailingHeight))}
 				}

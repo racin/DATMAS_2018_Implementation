@@ -3,7 +3,6 @@ package configuration
 import (
 	"testing"
 	"github.com/stretchr/testify/assert"
-	//"fmt"
 )
 
 func TestLoadAppConfig(t *testing.T) {
@@ -22,7 +21,6 @@ func TestLoadAppConfig(t *testing.T) {
 	conf.RpcType = oldVal
 
 	assert.Equal(t, &conf, &conf2, "Pointer not equal")
-	//fmt.Printf("%+v", *AppConfig())
 }
 
 func TestLoadClientConfig(t *testing.T) {
@@ -41,7 +39,6 @@ func TestLoadClientConfig(t *testing.T) {
 	conf.RemoteAddr = oldVal
 
 	assert.Equal(t, &conf, &conf2, "Pointer not equal")
-	//fmt.Printf("%+v", *ClientConfig())
 }
 
 func TestLoadIPFSProxyConfig(t *testing.T) {
@@ -60,5 +57,4 @@ func TestLoadIPFSProxyConfig(t *testing.T) {
 	conf.ListenAddr = oldVal
 
 	assert.Equal(t, &conf, &conf2, "Pointer not equal")
-	//fmt.Printf("%+v", *IPFSProxyConfig())
 }

@@ -9,6 +9,7 @@ import (
 	"os"
 )
 
+// This query is not in use. Will never be triggered.
 func (app *Application) Query_Newsample(reqQuery abci.RequestQuery) *abci.ResponseQuery{
 	if reqQuery.Data == nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Missing data parameter."}

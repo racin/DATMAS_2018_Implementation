@@ -33,11 +33,9 @@ func (app *Application) CheckTx_ChangeContentAccess(signer *conf.Identity, reque
 
 	for i := int64(0); i < result.Block.NumTxs; i++ {
 		if _, blockTx, err := types.UnmarshalTransaction([]byte(result.Block.Txs[i])); err == nil {
-			fmt.Printf("BlockTx: %v\n", blockTx)
 			switch blockTx.Type {
 			case types.TransactionType_RemoveData:
 				reqRemoval, ok := blockTx.Data.(string)
-				fmt.Printf("Base: %v\n", blockTx.Data)
 				if ok && reqRemoval == changeAccess.Cid {
 					return &abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: "File was already removed at block height: " + strconv.Itoa(int(prevailingHeight))}
 				}

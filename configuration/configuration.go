@@ -17,8 +17,6 @@ var appConfig AppConfiguration
 type AppConfiguration struct {
 	BasePath 						string		`json:"basePath"`
 	ListenAddr 						string		`json:"listenAddr"`
-	UploadAddr 						string		`json:"uploadAddr"`
-	UploadEndpoint					string		`json:"uploadEndpoint"`
 	RpcType 						string		`json:"rpcType"`
 	Info							string		`json:"appInfo"`
 	PrivateKey						string		`json:"privateKey"`
@@ -26,7 +24,6 @@ type AppConfiguration struct {
 	AccessList						string		`json:"accessList"`
 	StorageSamples					string		`json:"storageSamples"`
 	SimpleMetadata					string		`json:"simpleMetadata"`
-	TempUploadPath					string		`json:"tempUploadPath"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	TmQueryTimeoutSeconds			int			`json:"tmQueryTimeoutSeconds"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`
@@ -50,11 +47,8 @@ type ClientConfiguration struct {
 	RemoteAddr						string		`json:"remoteAddr"`
 	Metadata						string		`json:"metadata"`
 	Downloads						string		`json:"downloads"`
-	UploadAddr						string		`json:"uploadAddr"`
 	TendermintNodes					[]string	`json:"tendermintNodes"`
 	WebsocketEndPoint				string		`json:"websocketEndpoint"`
-	UploadEndPoint					string		`json:"uploadEndpoint"`
-	UploadTimeoutSeconds			int			`json:"uploadTimeoutSeconds"`
 	PrivateKey						string		`json:"privateKey"`
 	PublicKeys						string		`json:"publicKeys"`
 	AccessList						string		`json:"accessList"`

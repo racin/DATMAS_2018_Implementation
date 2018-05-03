@@ -20,7 +20,7 @@ var dataGetCmd = &cobra.Command{
 		if len(args) < 1 {
 			log.Fatal("Not enough arguments.")
 		}
-		// File and Name is required parameters.
+
 		cid := args[0];
 		stx := TheClient.GetSignedTransaction(types.TransactionType_DownloadData, cid)
 

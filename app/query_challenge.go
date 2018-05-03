@@ -7,12 +7,10 @@ import (
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/rpc"
 )
 
 func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.ResponseQuery{
-	fmt.Println("Query challenge")
 	if reqQuery.Data == nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Missing data parameter."}
 	}
@@ -57,7 +55,6 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
 		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
-		fmt.Printf("IpfsResp: %v\n", ipfsResp)
 
 		if (ipfsResp.Codetype != types.CodeType_OK) {
 			continue // Not a valid proof. Do not care about why
@@ -67,12 +64,11 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 			proofs = append(proofs, *scp)
 		}
 	}
-	fmt.Printf("Proofs: %v\n", proofs)
+
 	// Then the randomly generated ones
 	for _, ident := range conf.AppConfig().IpfsNodes {
 		addr := app.GetAccessList().GetAddress(ident)
 		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
-		fmt.Printf("IpfsResp: %v\n", ipfsResp)
 		if (ipfsResp.Codetype != types.CodeType_OK) {
 			continue // Not a valid proof. Do not care about why
 		}
@@ -92,9 +88,6 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 	if codetype, err := types.CheckBroadcastResult(app.TMRpcClients[app.fingerprint].BroadcastTxSync(tmtypes.Tx(stxByteArr))); err != nil {
 		return &abci.ResponseQuery{Code: uint32(codetype), Log: "Error broadcasting challenge. Error: " + err.Error()}
 	} else{
-		fmt.Printf("PrevailingBlock: %+v\n", app.prevailingBlock)
 		return &abci.ResponseQuery{Code: uint32(codetype), Log: "Transaction with proofs sent to mempool. Wait for commit."}
 	}
-
-
 }

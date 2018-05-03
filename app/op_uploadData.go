@@ -1,13 +1,10 @@
 package app
 
 import (
-	//"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	//"os"
-	"fmt"
 	"github.com/racin/DATMAS_2018_Implementation/rpc"
 )
 
@@ -17,13 +14,11 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_Unauthorized), Log: "Only registered clients can upload data."}
 	}
 
-	fmt.Printf("TxData: %+v\n", tx.Data)
 	stxReq, ok := tx.Data.(*crypto.SignedStruct)
 	if !ok {
 		return &abci.ResponseCheckTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert Data."}
 	}
 
-	fmt.Printf("StxReq Base: %+v\n", stxReq.Base)
 	// Check contents of transaction.
 	reqUpload, ok := stxReq.Base.(*types.RequestUpload)
 	if !ok {
@@ -42,10 +37,8 @@ func (app *Application) CheckTx_UploadData(signer *conf.Identity, tx *types.Tran
 
 	// Issue a simple status check to see if the storage node still claims to have the file. Could use the timestamp
 	// of the transaction instead.
-
 	cidStx := app.GetSignedTransaction(types.TransactionType_IPFSProxyPin, reqUpload.Cid)
 	ipfsResponse := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, proverIdent.Address, conf.AppConfig().IpfsStatusEndpoint, cidStx)
-	fmt.Printf("%+v\n", ipfsResponse)
 	if ipfsResponse.Codetype != types.CodeType_OK {
 		return &abci.ResponseCheckTx{Code: uint32(ipfsResponse.Codetype), Log: "Storage node does not claim to still hold the file. Addr: " +
 			proverIdent.Address + ", Error: " + string(ipfsResponse.Message)}
@@ -71,7 +64,9 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 	types.WriteSimpleMetadata(conf.AppConfig().BasePath + conf.AppConfig().SimpleMetadata, reqUpload.Cid,
 		&types.SimpleMetadataEntry{CID:reqUpload.Cid, FileSize:reqUpload.Length})
 
+	// Update Prevailing block height
 	app.prevailingBlock[reqUpload.Cid] = app.nextBlockHeight
+
 	// All checks passed. Return OK.
 	return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Log: "File uploaded and recorded on the ledger. CID: " + reqUpload.Cid}
 }

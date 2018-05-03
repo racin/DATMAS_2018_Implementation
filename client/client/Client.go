@@ -16,17 +16,12 @@ import (
 	"io/ioutil"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"os"
-	"math/rand"
-	"strconv"
 	"strings"
 	"context"
 )
 
 type Client struct {
 	TMClient        			rpcClient.Client
-
-	TMUploadClient				*http.Client
-	TMUploadAPI					string
 	TMIdent						string
 
 	IPFSClient					*http.Client
@@ -54,7 +49,6 @@ func NewClient() {
 
 	TheClient = &Client {
 		cfgfile: cfgFile,
-		TMUploadClient: &http.Client{Timeout: time.Duration(conf.ClientConfig().UploadTimeoutSeconds) * time.Second},
 		IPFSClient: &http.Client{Timeout: time.Duration(conf.ClientConfig().IpfsProxyTimeoutSeconds) * time.Second},
 	}
 
@@ -67,7 +61,6 @@ func NewClient() {
 		TheClient.fingerprint = fp;
 		TheClient.privKey = myPrivKey
 		TheClient.identity = TheClient.GetAccessList().Identities[fp]
-		fmt.Printf("%+v\n", TheClient)
 	}
 
 	TheClient.setupAPI()
@@ -81,25 +74,6 @@ func (c *Client) GetIdentityPublicKey(ident string) (identity *conf.Identity, pu
 	return crypto.GetIdentityPublicKey(ident, c.GetAccessList(), conf.ClientConfig().BasePath + conf.ClientConfig().PublicKeys)
 }
 
-func (c *Client) sendMultipartFormDataToTM(values *map[string]io.Reader) (*types.ResponseUpload) {
-	buffer, boundary := rpc.GetMultipartValues(values)
-	var result *types.ResponseUpload
-
-	response, err := c.TMUploadClient.Post(c.TMUploadAPI, boundary, buffer)
-	if err == nil {
-		if dat, err := ioutil.ReadAll(response.Body); err == nil {
-			fmt.Printf("Got response: %#v\n", string(dat))
-			if err := json.Unmarshal(dat, &result); err != nil {
-				result = &types.ResponseUpload{Codetype:types.CodeType_InternalError, Message:err.Error()}
-			}
-		}
-	} else {
-		result = &types.ResponseUpload{Codetype:types.CodeType_InternalError, Message:err.Error()}
-	}
-	fmt.Printf("The result: %#v\n", result)
-	return result
-}
-
 func (c *Client) sendMultipartFormDataToIPFS(values *map[string]io.Reader) (*types.IPFSReponse) {
 	buffer, boundary := rpc.GetMultipartValues(values)
 	result := &types.IPFSReponse{}
@@ -107,7 +81,6 @@ func (c *Client) sendMultipartFormDataToIPFS(values *map[string]io.Reader) (*typ
 	response, err := c.IPFSClient.Post(c.IPFSAddr + conf.ClientConfig().IpfsAddnopinEndpoint, boundary, buffer)
 	if err == nil {
 		if dat, err := ioutil.ReadAll(response.Body); err == nil {
-			fmt.Printf("Got response: %#v\n", string(dat))
 			if err := json.Unmarshal(dat, &result); err != nil {
 				result.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 			}
@@ -115,27 +88,22 @@ func (c *Client) sendMultipartFormDataToIPFS(values *map[string]io.Reader) (*typ
 	} else {
 		result.AddMessageAndError(err.Error(), types.CodeType_InternalError)
 	}
-	fmt.Printf("The result: %+v\n", result)
+
 	return result
 }
 
 func (c *Client) setupAPI()  {
-	tmApiFound, tmUplApiFound, ipfsProxyFound := false, false, false
+	tmApiFound, ipfsProxyFound := false, false
 
 	// Get Tendermint blockchain API
-	s1 := rand.NewSource(time.Now().UnixNano())
-	reqNum := strconv.Itoa(rand.New(s1).Int())
 	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, ident := range conf.ClientConfig().TendermintNodes {
 		addr := TheClient.GetAccessList().GetAddress(ident)
 		if !tmApiFound {
 			apiAddr := strings.Replace(conf.ClientConfig().RemoteAddr, "$TmNode", addr, 1)
 
-
-			fmt.Println("Trying to connect to (TM_api: " + apiAddr)
 			c.TMClient = rpcClient.NewHTTP(apiAddr, conf.ClientConfig().WebsocketEndPoint)
 			if _, err := c.TMClient.Status(); err == nil {
-				//conf.ClientConfig().RemoteAddr = apiAddr
 				err := c.TMClient.Start()
 				if err != nil {
 					fmt.Println("Error starting: " + err.Error())
@@ -144,25 +112,9 @@ func (c *Client) setupAPI()  {
 				c.TMIdent = ident
 			}
 		}
-
-		if !tmUplApiFound {
-			uploadAddr := strings.Replace(conf.ClientConfig().UploadAddr, "$TmNode", addr, 1)
-			fmt.Println("Trying to connect to (TM_uplApi): " + uploadAddr)
-
-			values := map[string]io.Reader{
-				"Status":    strings.NewReader(reqNum),
-			}
-
-			c.TMUploadAPI = uploadAddr + conf.ClientConfig().UploadEndPoint
-			response := c.sendMultipartFormDataToTM(&values);
-			if response.Codetype == types.CodeType_OK && response.Message == reqNum{
-				//conf.ClientConfig().UploadAddr = uploadAddr
-				tmUplApiFound = true
-			}
-		}
 	}
 
-	if !tmApiFound || !tmUplApiFound {
+	if !tmApiFound {
 		panic("Fatal: Could not estabilsh connection with Tendermint API.")
 	}
 
@@ -170,12 +122,10 @@ func (c *Client) setupAPI()  {
 	for _, ident := range conf.ClientConfig().IpfsNodes {
 		addr := TheClient.GetAccessList().GetAddress(ident)
 		ipfsAddr := strings.Replace(conf.ClientConfig().IpfsProxyAddr, "$IpfsNode", addr, 1)
-		fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 
 		if response, err := c.IPFSClient.Post(ipfsAddr + conf.ClientConfig().IpfsIsupEndpoint, "application/json", nil); err == nil {
 			dat, _ := ioutil.ReadAll(response.Body);
 			ipfsResp := &types.IPFSReponse{}
-			fmt.Printf("Isup: %s\n",dat)
 			if json.Unmarshal(dat, ipfsResp) == nil && ipfsResp.Codetype == types.CodeType_OK {
 				ipfsProxyFound = true
 				c.IPFSAddr = ipfsAddr
@@ -193,18 +143,6 @@ func (c *Client) setupAPI()  {
 func (c *Client) VerifyUpload(stx *crypto.SignedStruct) (types.CodeType, error) {
 	byteArr, _ := json.Marshal(stx)
 	return types.CheckBroadcastResult(c.TMClient.BroadcastTxSync(tmtypes.Tx(byteArr)))
-}
-func (c *Client) UploadDataToTM(values *map[string]io.Reader) (*types.ResponseUpload) {
-	//data := map[string]io.Reader
-	fmt.Println("Uploadendpoint: " + c.TMUploadAPI)
-	return c.sendMultipartFormDataToTM(values)
-	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
-}
-func (c *Client) UploadDataToIPFS(values *map[string]io.Reader) (*types.IPFSReponse) {
-	//data := map[string]io.Reader
-	fmt.Println("IPFS Upload: " + c.IPFSAddr + conf.ClientConfig().IpfsAddnopinEndpoint)
-	return c.sendMultipartFormDataToIPFS(values)
-	//return checkBroadcastResult(c.TM.BroadcastTxSync(tmtypes.Tx(byteArr)))
 }
 
 func (c *Client) SubToNewBlock(newBlock chan interface{}) error {

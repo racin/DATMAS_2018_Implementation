@@ -1,7 +1,6 @@
 package app
 
 import (
-	"log"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
@@ -16,7 +15,6 @@ type Application struct {
 	abci.BaseApplication
 
 	info 				string
-	uploadAddr 			string
 
 	tempUploads 		map[string]bool
 	seenTranc 			map[string]bool
@@ -33,7 +31,7 @@ type Application struct {
 }
 
 func NewApplication() *Application {
-	app := &Application{info: conf.AppConfig().Info, uploadAddr: conf.AppConfig().UploadAddr,
+	app := &Application{info: conf.AppConfig().Info,
 		tempUploads: make(map[string]bool), seenTranc: make(map[string]bool),
 		IpfsHttpClient: &http.Client{Timeout: time.Duration(conf.AppConfig().IpfsProxyTimeoutSeconds) * time.Second},
 		prevailingBlock: make(map[string]int64), nextBlockHeight:1}
@@ -57,67 +55,12 @@ func (app *Application) Info(abci.RequestInfo) (resInfo abci.ResponseInfo) {
 	fmt.Println("Info trigger");
 	return abci.ResponseInfo{Data: app.info}
 }
-func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
-	stx, tx, err := types.UnmarshalTransaction(txBytes)
-	if err != nil {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
-	}
-	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
-
-	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
-	if signer == nil {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
-	}
-
-	// Check if public key exists and if message is signed.
-	if pubKey == nil {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
-	} else if !stx.Verify(pubKey) {
-		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
-	}
-	switch tx.Type {
-	case types.TransactionType_DownloadData:
-		{
-			fmt.Println("DeliverTx_DownloadData")
-			return *app.DeliverTx_DownloadData(signer, tx)
-		}
-
-	case types.TransactionType_UploadData:
-		{
-			fmt.Println("DeliverTx_UploadData")
-			ret := *app.DeliverTx_UploadData(signer, tx)
-			fmt.Printf("Ret: %+v\n", ret)
-			return ret
-		}
-	case types.TransactionType_RemoveData:
-		{
-			fmt.Println("DeliverTx_RemoveData")
-			return *app.DeliverTx_RemoveData(signer, tx)
-		}
-	case types.TransactionType_VerifyStorage:
-		{
-			fmt.Println("DeliverTx_VerifyStorage")
-			return *app.DeliverTx_VerifyStorage(signer, tx)
-		}
-	case types.TransactionType_ChangeContentAccess:
-		{
-			fmt.Println("DeliverTx_ChangeContentAccess")
-			return *app.DeliverTx_ChangeContentAccess(signer, tx)
-		}
-	default:
-		{
-			return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Info: "Unknown transaction type."};
-		}
-	}
-}
-
 
 func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	stx, tx, err := types.UnmarshalTransaction(txBytes)
 	if err != nil {
 		return abci.ResponseCheckTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
 	}
-	fmt.Printf("Hash of transaction: %s\n",crypto.HashStruct(tx))
 
 	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
 	if signer == nil {
@@ -132,12 +75,6 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	}
 
 	switch tx.Type {
-	case types.TransactionType_DownloadData:
-		{
-			fmt.Println("CheckTx_DownloadData")
-			return *app.CheckTx_DownloadData(signer, tx)
-		}
-
 	case types.TransactionType_UploadData:
 		{
 			fmt.Println("CheckTx_UploadData")
@@ -165,6 +102,52 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	}
 }
 
+func (app *Application) DeliverTx(txBytes []byte)  abci.ResponseDeliverTx {
+	stx, tx, err := types.UnmarshalTransaction(txBytes)
+	if err != nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_InternalError), Log: err.Error()}
+	}
+
+	signer, pubKey := app.GetIdentityPublicKey(tx.Identity)
+	if signer == nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_Unauthorized), Log: "Could not get access list"}
+	}
+
+	// Check if public key exists and if message is signed.
+	if pubKey == nil {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not locate public key"}
+	} else if !stx.Verify(pubKey) {
+		return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not verify signature"}
+	}
+	switch tx.Type {
+	case types.TransactionType_UploadData:
+		{
+			fmt.Println("DeliverTx_UploadData")
+			return *app.DeliverTx_UploadData(signer, tx)
+		}
+	case types.TransactionType_RemoveData:
+		{
+			fmt.Println("DeliverTx_RemoveData")
+			return *app.DeliverTx_RemoveData(signer, tx)
+		}
+	case types.TransactionType_VerifyStorage:
+		{
+			fmt.Println("DeliverTx_VerifyStorage")
+			return *app.DeliverTx_VerifyStorage(signer, tx)
+		}
+	case types.TransactionType_ChangeContentAccess:
+		{
+			fmt.Println("DeliverTx_ChangeContentAccess")
+			return *app.DeliverTx_ChangeContentAccess(signer, tx)
+		}
+	default:
+		{
+			return abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Info: "Unknown transaction type."};
+		}
+	}
+}
+
+
 func (app *Application) Commit() abci.ResponseCommit { //types.Result {
 	app.nextBlockHeight++
 	fmt.Printf("Commit trigger. Next Block height: %v\n",app.nextBlockHeight);
@@ -175,13 +158,12 @@ func (app *Application) Commit() abci.ResponseCommit { //types.Result {
 }
 
 func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
-	fmt.Println("Query trigger");
-	log.Print("query")
 	switch reqQuery.Path {
-	case "/newsample":
+	// Newsample is not in use.
+	/*case "/newsample":
 		{
 			return *app.Query_Newsample(reqQuery)
-		}
+		}*/
 	case "/challenge":
 		{
 			return *app.Query_Challenge(reqQuery)
@@ -195,10 +177,6 @@ func (app *Application) Query(reqQuery abci.RequestQuery) (abci.ResponseQuery) {
 			return abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Invalid query path."}
 		}
 	}
-/*
-	sumBlock := app.EndBlock(abci.RequestEndBlock{Height:-1})
-	fmt.Printf("%+v\n", sumBlock.GetValidatorUpdates())
-	return*/
 }
 
 func (app *Application) GetAccessList() (*conf.AccessList){

@@ -32,16 +32,11 @@ func NewServer(protoAddr, transport string, app abci.Application) (cmn.Service, 
 }
 
 func main(){
-	// Load the configuration.
+	// Load the app configuration.
 	appconf, err := configuration.LoadAppConfig()
 	if err != nil {
 		panic("Could not get configuration. Error: " + err.Error())
 	}
-	/*addrPtr := flag.String("addr", "tcp://0.0.0.0:46658", "Listen address")
-	abciPtr := flag.String("abci", "grpc", "grpc | socket")
-	uploadAddrPtr := flag.String("uploadaddr", ":46659", "Upload address")*/
-	//storePtr := flag.String("store", "app.ldb", "store path")
-	//flag.Parse()
 
 	logger := log.NewTMLogger(log.NewSyncWriter(os.Stdout))
 
@@ -59,11 +54,6 @@ func main(){
 		logger.Error(err.Error())
 		os.Exit(1)
 	}
-	// Start the handler for uploading files in separate go routine.
-	go app.StartUploadHandler()
-
-	fmt.Println("Racin har started en app! Transport: " + appconf.RpcType);
-	fmt.Println("Info om app: " + app.Info(abci.RequestInfo{Version: "123"}).Data)
 
 	// Wait forever
 	common.TrapSignal(func() {
