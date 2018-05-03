@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
+	"os"
 )
 
 /*
@@ -45,6 +46,10 @@ func WriteMetadata(cid string, me *MetadataEntry) error {
 	} else {
 		return err
 	}
+}
+
+func DeleteMetadata(cid string) error {
+	return os.Remove(conf.ClientConfig().BasePath + conf.ClientConfig().Metadata + cid)
 }
 
 func GetSimpleMetadata(path string, cid string) (*SimpleMetadataEntry){

@@ -28,7 +28,6 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	fmt.Printf("Got tranc: %+v\n", txString)
 	// Check access to proxy method
 	tx, codeType, message := proxy.CheckProxyAccess(txString[0], conf.Client)
 	if codeType != types.CodeType_OK {
@@ -75,6 +74,8 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 			strconv.Itoa(int(file.Size)) + ", RS: " + strconv.Itoa(int(reqUpload.Length)));
 		return
 	}
+
+	// TODO: Check if we already store this file!! Else someone can reclaim it for their own.
 
 	if resStr, err := proxy.client.IPFS().AddNoPin(bytes.NewReader(fileBytes)); err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, resStr + ". Error: " + err.Error());

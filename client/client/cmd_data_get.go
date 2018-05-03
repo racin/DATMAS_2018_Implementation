@@ -22,11 +22,7 @@ var dataGetCmd = &cobra.Command{
 		}
 		// File and Name is required parameters.
 		cid := args[0];
-		tx := types.NewTx(cid, TheClient.fingerprint, types.TransactionType_DownloadData)
-		stx, err := crypto.SignStruct(tx, TheClient.privKey)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+		stx := TheClient.GetSignedTransaction(types.TransactionType_DownloadData, cid)
 
 		ipfsResp := rpc.QueryIPFSproxy(TheClient.IPFSClient, conf.ClientConfig().IpfsProxyAddr,
 			TheClient.GetAccessList().GetAddress(TheClient.IPFSIdent), conf.ClientConfig().IpfsGetEndpoint, stx)

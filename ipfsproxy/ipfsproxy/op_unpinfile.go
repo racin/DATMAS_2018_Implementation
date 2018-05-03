@@ -11,6 +11,7 @@ import (
 
 // For removing stored data. Should only be called by a consensus node after the ledger is updated to reflect the removal.
 func (proxy *Proxy) UnPinFile(w http.ResponseWriter, r *http.Request) {
+	return // Disabled
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Missing transaction parameter.");
@@ -44,5 +45,19 @@ func (proxy *Proxy) UnPinFile(w http.ResponseWriter, r *http.Request) {
 		writeResponse(&w, types.CodeType_OK, "File with CID: " + cidStr + " was unpinned.");
 		// Add transaction to list of known transactions (message contains hash of tranc)
 		proxy.seenTranc[message] = true
+	}
+}
+
+func (proxy *Proxy) unPinFile(cidStr string) (types.CodeType, string){
+	// Unpin file.
+	b58, err := mh.FromB58String(cidStr)
+	if err != nil {
+		return types.CodeType_InternalError, err.Error()
+	}
+
+	if err := proxy.client.Unpin(cid2.NewCidV0(b58)); err != nil {
+		return types.CodeType_InternalError, err.Error()
+	} else {
+		return types.CodeType_OK, "File unpinned."
 	}
 }

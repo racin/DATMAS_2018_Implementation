@@ -4,7 +4,6 @@ import (
 	"github.com/spf13/cobra"
 	"log"
 	"fmt"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	tmtypes "github.com/tendermint/tendermint/types"
@@ -23,11 +22,7 @@ var dataRemoveCmd = &cobra.Command{
 		}
 
 		cid := args[0];
-		tx := types.NewTx(cid, TheClient.fingerprint, types.TransactionType_RemoveData)
-		stx, err := crypto.SignStruct(tx, TheClient.privKey)
-		if err != nil {
-			log.Fatal(err.Error())
-		}
+		stx := TheClient.GetSignedTransaction(types.TransactionType_RemoveData, cid)
 
 		// Start listening for new block
 		// Phase 2. Send metadata to TM
@@ -57,7 +52,11 @@ var dataRemoveCmd = &cobra.Command{
 			}
 			if evt.Block.Txs.Index(castedTx) > -1 {
 				// Transaction is put in the latest block.
-				fmt.Println("File was successfully deleted.")
+				if err := types.DeleteMetadata(cid); err == nil {
+					fmt.Println("File was successfully deleted. Metadata deleted.")
+				} else {
+					fmt.Println("File was successfully deleted. Could not delete metadata. Error: " + err.Error())
+				}
 			}
 		case <-time.After(time.Duration(conf.ClientConfig().NewBlockTimeout) * time.Second):
 			fmt.Println("Could not verify the ledger within the timeout.")

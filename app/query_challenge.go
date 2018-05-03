@@ -81,14 +81,9 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 			proofs = append(proofs, *scp)
 		}
 	}
-	fmt.Printf("Proofs: %v\n", proofs)
-	// Now lets send the proofs to the mempool
-	tx := types.NewTx(proofs, app.fingerprint, types.TransactionType_VerifyStorage)
-	stx, err := crypto.SignStruct(tx, app.privKey)
-	if err != nil {
-		return &abci.ResponseQuery{Code: uint32(types.CodeType_BCFSInvalidSignature), Log: "Could not sign StorageChallengeProofs"}
-	}
 
+	// Now lets send the proofs to the mempool
+	stx := app.GetSignedTransaction(types.TransactionType_VerifyStorage, proofs)
 	stxByteArr, err := json.Marshal(stx)
 	if err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Error marshalling: Error: " + err.Error()}

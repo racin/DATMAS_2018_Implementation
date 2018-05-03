@@ -16,11 +16,10 @@ import (
 	"io/ioutil"
 )
 
-// getAccountCmd represents the getAccount command
 var uploadCmd = &cobra.Command{
 	Use:   "upload [file] [name] [description]",
-	Short: "upload data",
-	Long:  `Upload data.`,
+	Short: "Upload data",
+	Long:  `Upload data to the storage network..`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// File and Name is required parameters.
 		if len(args) < 2 {

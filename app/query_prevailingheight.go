@@ -2,7 +2,6 @@ package app
 
 import (
 	"encoding/json"
-	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	abci "github.com/tendermint/abci/types"
 	"fmt"
@@ -21,11 +20,7 @@ func (app *Application) Query_PrevailingHeight(reqQuery abci.RequestQuery) *abci
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "File with requested CID is not found in the system."}
 	}
 
-	tx := types.NewTx(prevBlockHeight, app.fingerprint, types.TransactionType_PrevailingHeight)
-	stx, err := crypto.SignStruct(tx, app.privKey)
-	if err != nil {
-		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Could not sign transaction."}
-	}
+	stx := app.GetSignedTransaction(types.TransactionType_PrevailingHeight, prevBlockHeight)
 	stxByteArr, err := json.Marshal(stx)
 	if err != nil {
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_InternalError), Log: "Error marshalling: Error: " + err.Error()}

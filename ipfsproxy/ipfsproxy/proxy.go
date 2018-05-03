@@ -114,10 +114,12 @@ func (proxy *Proxy) StartHTTPAPI(){
 	router.HandleFunc("/statusall", proxy.StatusAll).Methods("POST")
 
 	// Data parameter contains CID (Request is JSON of SignedTransaction)
-	router.HandleFunc("/pinfile", proxy.PinFile).Methods("POST")
-	router.HandleFunc("/unpinfile", proxy.UnPinFile).Methods("POST")
 	router.HandleFunc("/get", proxy.GetFile).Methods("POST")
 	router.HandleFunc("/status", proxy.Status).Methods("POST")
+
+	// Disabled:
+	//router.HandleFunc("/pinfile", proxy.PinFile).Methods("POST")
+	//router.HandleFunc("/unpinfile", proxy.UnPinFile).Methods("POST")
 
 	// Data parameter contains CID, and has additional parameter file which contains the file.
 	// Request is multipart/form-data. Transaction is in the transaction parameter

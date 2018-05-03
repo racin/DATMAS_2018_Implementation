@@ -36,11 +36,9 @@ func (proxy *Proxy) SubscribeToNewBlocks() {
 	if err := proxy.subToNewBlock(newBlockCh); err != nil {
 		log.Fatal("Could not subscribe to new blocks. Error: " + err.Error())
 	}
-	fmt.Println("Starting listening for new blocks..")
 	for {
 		select {
 		case b := <-newBlockCh:
-			fmt.Println("New block!")
 			evt, ok := b.(tmtypes.EventDataNewBlock)
 			if !ok {
 				// Consensus node shut down
@@ -80,8 +78,14 @@ func (proxy *Proxy) handleBlock(block *tmtypes.Block) types.CodeType{
 	}
 	for i := int64(0); i < block.NumTxs; i++ {
 		if _, tx, err := types.UnmarshalTransaction([]byte(block.Txs[i])); err == nil {
-			// Attempt to PIN all new upload transactions
-			if ss, ok := tx.Data.(*crypto.SignedStruct); ok && tx.Type == types.TransactionType_UploadData {
+			if tx.Type == types.TransactionType_RemoveData {
+				// Attempt to UNPIN all RemoveData transactions.
+				if cidStr, ok := tx.Data.(string); ok {
+					proxy.unPinFile(cidStr)
+					fmt.Println("Unpinning CID: " + cidStr)
+				}
+			} else if ss, ok := tx.Data.(*crypto.SignedStruct); ok && tx.Type == types.TransactionType_UploadData {
+				// Attempt to PIN all new upload transactions
 				if ipfsResp, ok := ss.Base.(*types.RequestUpload); ok {
 					if proxy.fingerprint != ipfsResp.IpfsNode {
 					continue

@@ -7,6 +7,8 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
+	"strconv"
+	"fmt"
 )
 
 func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
@@ -75,21 +77,17 @@ func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
 	var access bool = false
 	for i := int64(0); i < result.Block.NumTxs; i++ {
 		if _, blockTx, err := types.UnmarshalTransaction([]byte(result.Block.Txs[i])); err == nil {
-			signedStruct, ok :=  blockTx.Data.(*crypto.SignedStruct);
-			if !ok {
-				continue
-			}
 			switch blockTx.Type {
 			case types.TransactionType_RemoveData:
-				if reqRemoval, ok := signedStruct.Base.(string); ok {
-					if reqRemoval != cidStr {
-						continue
-					}
-					break
+				reqRemoval, ok := blockTx.Data.(string);
+				if ok && reqRemoval == cidStr {
+					writeResponse(&w, types.CodeType_BCFSInvalidBlockHeight, "File was removed at block height: " + strconv.Itoa(int(prevHeight)))
+					return
 				}
 			case types.TransactionType_UploadData:
-				if reqUpload, ok := signedStruct.Base.(*types.RequestUpload); ok {
-					if reqUpload.Cid != cidStr {
+				if signedStruct, ok :=  blockTx.Data.(*crypto.SignedStruct); ok {
+					reqUpload, ok := signedStruct.Base.(*types.RequestUpload);
+					if !ok || reqUpload.Cid != cidStr {
 						continue
 					}
 					if blockTx.Identity == requestTx.Identity{
@@ -97,18 +95,22 @@ func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
 					}
 					break
 				}
-
 			case types.TransactionType_ChangeContentAccess:
-				changeAccess, ok := signedStruct.Base.(*types.ChangeAccess)
+				changeAccess, ok := blockTx.Data.(*types.ChangeAccess)
 				if !ok || changeAccess.Cid != cidStr {
 					continue
 				}
+				if blockTx.Identity == requestTx.Identity{
+					access = true
+					break
+				}
+				fmt.Printf("ChangeAcc: %+v\n", changeAccess.Readers)
 				for _, reader := range changeAccess.Readers {
-					if blockTx.Identity == reader {
+					if requestTx.Identity == reader {
 						access = true
-						break
 					}
 				}
+				break
 			}
 
 		}

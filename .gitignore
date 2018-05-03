@@ -2,3 +2,15 @@
 \.idea/
 
 crypto/test_pos/Qme7t4vdEBhHYgvBnf8SmHDnhuDYoqm17688RM8vwVmLNP
+
+ipfs_config/ipfs_cluster_config/standalone/ipfs-cluster-data/
+
+*.data
+
+*.ldb
+
+ipfs_config/standalone/datastore/
+
+tendermint_config/standalone/config/
+
+tendermint_config/standalone/data/

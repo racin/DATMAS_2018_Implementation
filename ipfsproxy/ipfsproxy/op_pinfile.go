@@ -11,6 +11,8 @@ import (
 )
 
 func (proxy *Proxy) PinFile(w http.ResponseWriter, r *http.Request) {
+	return // Disabled.
+
 	fmt.Println("IPFS PIN FILE")
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {

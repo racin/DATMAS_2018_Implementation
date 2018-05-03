@@ -43,7 +43,6 @@ var challengeCmd = &cobra.Command{
 			if me == nil {
 				log.Fatal("Could not find stored metadata for CID: " + cid)
 			}
-			fmt.Printf("ME: %+v\n", me)
 			challenge, hashChal, proof = me.StorageSample.GenerateChallenge(TheClient.privKey)
 		} else {
 			nonce, err := rand.Int(rand.Reader, new(big.Int).SetUint64(2 << 52)) // 9007199254740992
@@ -77,7 +76,6 @@ var challengeCmd = &cobra.Command{
 			select {
 			case b := <-newBlockCh:
 				evt := b.(tmtypes.EventDataNewBlock)
-				fmt.Printf("New block: %+v\n", evt.Block)
 				// Validate
 				if err := evt.Block.ValidateBasic(); err != nil {
 					// System is broken. Notify administrators

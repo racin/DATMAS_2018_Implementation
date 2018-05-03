@@ -67,10 +67,10 @@ func (app *Application) DeliverTx_UploadData(signer *conf.Identity, tx *types.Tr
 		return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_BCFSInvalidInput), Log: "Could not type assert StxReq."}
 	}
 
+	// Write Simple Metadata.
 	types.WriteSimpleMetadata(conf.AppConfig().BasePath + conf.AppConfig().SimpleMetadata, reqUpload.Cid,
 		&types.SimpleMetadataEntry{CID:reqUpload.Cid, FileSize:reqUpload.Length})
 
-	fmt.Println("Checked file: " + reqUpload.Cid)
 	app.prevailingBlock[reqUpload.Cid] = app.nextBlockHeight
 	// All checks passed. Return OK.
 	return &abci.ResponseDeliverTx{Code: uint32(types.CodeType_OK), Log: "File uploaded and recorded on the ledger. CID: " + reqUpload.Cid}
