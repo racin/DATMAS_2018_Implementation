@@ -12,7 +12,7 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"encoding/json"
 	"strconv"
-	"github.com/racin/ipfs-cluster/api"
+	"github.com/ipfs/ipfs-cluster/api"
 )
 
 // Adds the file to a single IPFS node. Only a client should be able to do this. (Consensus node can distribute an

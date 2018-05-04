@@ -3,22 +3,36 @@
 ## Incomplete installation:
 * Go version 1.9+
 * IPFS version 0.4.15
+* IPFS Cluster version 
 * Tendermint 0.19.0
 
 ```
+cd $HOME
+curl -o v0.19.1.tar.gz https://codeload.github.com/tendermint/tendermint/tar.gz/v0.19.1
+mkdir $GOPATH/src/github.com/tendermint
+tar -C $GOPATH/src/github.com -xzf v0.19.1.tar.gz
+mv $GOPATH/src/github.com/tendermint/tendermint-0.19.1 $GOPATH/src/github.com/tendermint/tendermint
+```
+```
+cd $HOME
 curl -O https://dl.google.com/go/go1.10.1.linux-amd64.tar.gz
 sudo tar -C /usr/local -xzf go1.10.1.linux-amd64.tar.gz
+
+# Run these two commands and then add them at the end of $HOME/.bashrc
+export GOPATH=$HOME/go
 export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
 
-go get -u -d github.com/ipfs/go-ipfs
+go get -d -u github.com/ipfs/go-ipfs
 cd $GOPATH/src/github.com/ipfs/go-ipfs
 make install
 ipfs init
 
-go get -u -d github.com/ipfs/ipfs-cluster
+go get -d -u github.com/ipfs/ipfs-cluster
 cd $GOPATH/src/github.com/ipfs/ipfs-cluster
 make install
 ipfs-cluster-service init
+
+go get -u github.com/gorilla/mux
 
 go get github.com/tendermint/tendermint/cmd/tendermint
 cd $GOPATH/src/github.com/tendermint/tendermint
