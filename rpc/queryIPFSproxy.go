@@ -7,7 +7,6 @@ import (
 	"encoding/json"
 	"io"
 	"strings"
-	"fmt"
 	"net/http"
 	"io/ioutil"
 )
@@ -33,9 +32,7 @@ func QueryIPFSproxy(httpClient *http.Client, rawProxyAddr string, ipfsproxy stri
 		return res
 	}
 
-	fmt.Println("Was: " + rawProxyAddr)
 	ipfsAddr := strings.Replace(rawProxyAddr, "$IpfsNode", ipfsproxy, 1)
-	fmt.Println("Trying to connect to (IPFS addr): " + ipfsAddr)
 	if response, err := httpClient.Post(ipfsAddr + endpoint, contentType, payload); err == nil{
 		if dat, err := ioutil.ReadAll(response.Body); err == nil{
 			if err := json.Unmarshal(dat, res); err != nil {

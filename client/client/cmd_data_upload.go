@@ -22,7 +22,7 @@ var uploadCmd = &cobra.Command{
 	Long:  `Upload data to the storage network..`,
 	Run: func(cmd *cobra.Command, args []string) {
 		// File and Name is required parameters.
-		if len(args) < 2 {
+		if len(args) < 1 {
 			log.Fatal("Not enough arguments.")
 		}
 		filePath := args[0];
@@ -99,11 +99,16 @@ var uploadCmd = &cobra.Command{
 
 		// Phase 3. Verify that the metadata for the uploaded data is commited to the ledger.
 		castedTx := tmtypes.Tx(byteArrTranc)
-		fileName := args[1];
+		var fileName string;
 		var fileDescription string;
 		var blockHeight int64;
 		if len(args) > 1 {
-			fileDescription = args[2]
+			fileName = args[1]
+			if len(args) > 2 {
+				fileDescription = args[2]
+			}
+		} else {
+			fileName = fileStat.Name()
 		}
 		// Start timeout to wait for the transaction be put on the ledger.
 		select {

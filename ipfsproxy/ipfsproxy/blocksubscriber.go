@@ -114,7 +114,6 @@ func (proxy *Proxy) setupTMConnection() error{
 	// Get Tendermint blockchain API
 	for _, ident := range conf.IPFSProxyConfig().TendermintNodes {
 		apiAddr := strings.Replace(conf.IPFSProxyConfig().WebsocketAddr, "$TmNode", proxy.GetAccessList().GetAddress(ident), 1)
-		fmt.Println("Trying to connect to (TM_api: " + apiAddr)
 		proxy.TMClient = rpcClient.NewHTTP(apiAddr, conf.IPFSProxyConfig().WebsocketEndPoint)
 		if _, err := proxy.TMClient.Status(); err == nil {
 			err := proxy.TMClient.Start()

@@ -8,10 +8,6 @@ import (
 	"os"
 )
 
-/*
-type Metadata struct {
-	Entries		map[string]MetadataEntry	`json:"entries"`
-}*/
 type SimpleMetadataEntry struct {
 	CID							string
 	FileSize					int64
@@ -35,6 +31,8 @@ func GetMetadata(cid string, mePath ...string) (*MetadataEntry){
 	var me *MetadataEntry = &MetadataEntry{}
 	if data, err := ioutil.ReadFile(path + cid); err == nil {
 		json.Unmarshal(data, me)
+	} else {
+		return nil
 	}
 
 	return me

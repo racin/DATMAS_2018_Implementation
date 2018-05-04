@@ -1,21 +1,23 @@
 package ipfsproxy
 
 import (
+	cid2 "gx/ipfs/QmcZfnkapfECQGcLZaf9B79NRg7cRa9EnZh4LSbkCzwNvY/go-cid"
+	mh "gx/ipfs/QmZyZDi491cCNTLfAhwcaDii2Kg4pwKRkhqQzURGDvY6ua/go-multihash"
+
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"io/ioutil"
 	"bytes"
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
 	"encoding/json"
 	"strconv"
+	"github.com/racin/ipfs-cluster/api"
 )
 
 // Adds the file to a single IPFS node. Only a client should be able to do this. (Consensus node can distribute an
 // already uploaded file by pinning it.)
 func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("IPFS ADDNOPIN")
 	err := r.ParseMultipartForm(104857600) // Up to 100MB stored in memory.
 	if err != nil {
 		writeResponse(&w, types.CodeType_InternalError, err.Error());
@@ -59,7 +61,6 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 
 	// Check if the hash of the upload file equals the hash contained in the transaction
 	fileBytes, err := ioutil.ReadAll(fopen)
-	fmt.Printf("Filebytes: %v\n", fileBytes)
 	if err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, "Could not get byte array of input file.");
 		return
@@ -75,7 +76,25 @@ func (proxy *Proxy) AddFileNoPin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// TODO: Check if we already store this file!! Else someone can reclaim it for their own.
+	b58, err := mh.FromB58String(reqUpload.Cid)
+	if err != nil {
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
+		return
+	}
+
+	// Check if we already store this file!! Else someone can reclaim it for their own.
+	pininfo, err := proxy.client.Status(cid2.NewCidV0(b58),false);
+	if err != nil {
+		writeResponse(&w, types.CodeType_InternalError, err.Error());
+		return
+	}
+	for _, info := range pininfo.PeerMap {
+		if info.Status == api.TrackerStatusUnpinned || info.Status == api.TrackerStatusUnpinning || info.Status == api.TrackerStatusUnpinError {
+			break
+		}
+		writeResponse(&w, types.CodeType_BCFSInvalidInput, "The uploaded file is already pinned in the system. Try changing the data.");
+		return
+	}
 
 	if resStr, err := proxy.client.IPFS().AddNoPin(bytes.NewReader(fileBytes)); err != nil {
 		writeResponse(&w, types.CodeType_BCFSInvalidInput, resStr + ". Error: " + err.Error());

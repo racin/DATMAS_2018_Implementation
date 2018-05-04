@@ -7,11 +7,9 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
 )
 
 func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("IPFS CHALLENGE")
 	// Both Clients and Consensus can issue challenges.
 	txString, err := ioutil.ReadAll(r.Body)
 	if err != nil {

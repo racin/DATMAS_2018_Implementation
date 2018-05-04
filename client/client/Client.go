@@ -96,7 +96,6 @@ func (c *Client) setupAPI()  {
 	tmApiFound, ipfsProxyFound := false, false
 
 	// Get Tendermint blockchain API
-	fmt.Printf("%+v\n", conf.ClientConfig().TendermintNodes)
 	for _, ident := range conf.ClientConfig().TendermintNodes {
 		addr := TheClient.GetAccessList().GetAddress(ident)
 		if !tmApiFound {

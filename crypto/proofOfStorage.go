@@ -13,11 +13,12 @@ import (
 
 // A simple strawman implementation of the a proof of storage algorithm. Is reliant on storing the actual file bytes locally.
 const (
-	numSamples = 3000; // Each sample will require approximately 30KB of storage. (Could probably be reduced with another datastructure.)
-	challengeSamples = 10; // Probability of guessing a correct proof is about: 1 / (2^(8*10)
+	numSamples = 16400; // Each sample will require approximately 150KB of storage. This can be drastically decreased by
+	// using Homomorphic Verifiable Tags instead of the actual file bytes.
+	challengeSamples = 460; // Having 460 challenge samples gives >99% probability that if 1% of the file is missing or corrupted it will be detected.
 )
 
-// By using uint64 as the index it is possible to index files up to 2048 Exa bytes.
+// By using uint64 as the index it is possible to index files up to 16 Exa bytes.
 // Identity is the fingerprint of the one that sampled the data. Cid is the identifier for the file.
 type StorageSample struct {
 	Identity				string					`json:"identity"`
@@ -189,8 +190,6 @@ func (sp *SignedStruct) StoreSample(basepath string) error{
 	}
 
 	return ioutil.WriteFile(basepath + storageSample.Cid, bytearr, 0600)
-	// Distribute the sample to the other consensus nodes. (Remember that different layers can not act maliciously
-	// by colluding).
 }
 
 // We store the signature of the sample so that the authenticity of the sample can be proven later. (non-repudiation).

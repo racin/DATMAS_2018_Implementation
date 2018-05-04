@@ -1,5 +1,5 @@
 #!/bin/bash
-mkdir $HOME/.bcfs $HOME/.bcfs/Metadata $HOME/.bcfs/PubKeys $HOME/.bcfs/StorageSamples $HOME/.bcfs/SimpleMetadata
+mkdir $HOME/.bcfs $HOME/.bcfs/Metadata $HOME/.bcfs/PubKeys $HOME/.bcfs/StorageSamples $HOME/.bcfs/SimpleMetadata $HOME/.bcfs/Downloads
 cp configuration/test/clientConfig $HOME/.bcfs
 cp configuration/test/appConfig $HOME/.bcfs
 cp configuration/test/ipfsProxyConfig $HOME/.bcfs

@@ -8,7 +8,6 @@ import (
 	"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
 	"strconv"
-	"fmt"
 )
 
 func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
@@ -104,7 +103,6 @@ func (proxy *Proxy) GetFile(w http.ResponseWriter, r *http.Request) {
 					access = true
 					break
 				}
-				fmt.Printf("ChangeAcc: %+v\n", changeAccess.Readers)
 				for _, reader := range changeAccess.Readers {
 					if requestTx.Identity == reader {
 						access = true

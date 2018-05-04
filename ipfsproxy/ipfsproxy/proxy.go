@@ -5,7 +5,6 @@ import (
 
 	"github.com/ipfs/ipfs-cluster/api/rest/client"
 	"github.com/ipfs/ipfs-cluster/api/rest"
-	"strings"
 
 	ma "gx/ipfs/QmWWQ2Txc2c6tqjsBpzg5Ar652cHPGNsQQp2SejkNmkUMb/go-multiaddr"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
@@ -15,7 +14,6 @@ import (
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	"encoding/json"
 	"github.com/racin/DATMAS_2018_Implementation/crypto"
-	"fmt"
 )
 
 type Proxy struct {
@@ -36,7 +34,6 @@ func writeResponse(w *http.ResponseWriter, codeType types.CodeType, message stri
 	json.NewEncoder(*w).Encode(&types.IPFSReponse{Message:[]byte(message), Codetype:codeType})
 }
 
-
 func getClient(apiAddr ma.Multiaddr) *client.Client {
 	cfg := &client.Config{
 		APIAddr: apiAddr,
@@ -49,24 +46,7 @@ func getClient(apiAddr ma.Multiaddr) *client.Client {
 
 	return c
 }
-func GetAPI() *rest.API {
-	cfg := &rest.Config{}
-	cfg.Default()
 
-	api, err := rest.NewAPI(cfg)
-	if err != nil {
-		panic(err.Error())
-	}
-	return api
-}
-
-func apiMAddr(a *rest.API) ma.Multiaddr {
-	listen, _ := a.HTTPAddress()
-	hostPort := strings.Split(listen, ":")
-
-	addr, _ := ma.NewMultiaddr(fmt.Sprintf("/ip4/127.0.0.1/tcp/%s", hostPort[1]))
-	return addr
-}
 func NewProxy() *Proxy {
 	conf.LoadIPFSProxyConfig()
 	localAPIAddr, _ := ma.NewMultiaddr(rest.DefaultHTTPListenAddr)
@@ -80,9 +60,6 @@ func NewProxy() *Proxy {
 	}
 
 	// Load private keys in order to later digitally sign transactions
-	fmt.Println("racin")
-	fmt.Printf("%+v\n", conf.IPFSProxyConfig())
-	fmt.Println(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PrivateKey)
 	if myPrivKey, err := crypto.LoadPrivateKey(conf.IPFSProxyConfig().BasePath + conf.IPFSProxyConfig().PrivateKey); err != nil {
 		panic("Could not load private key. Error: " + err.Error())
 	} else if fp, err := crypto.GetFingerprint(myPrivKey); err != nil{

@@ -77,22 +77,18 @@ func (app *Application) CheckTx(txBytes []byte) abci.ResponseCheckTx {
 	switch tx.Type {
 	case types.TransactionType_UploadData:
 		{
-			fmt.Println("CheckTx_UploadData")
 			return *app.CheckTx_UploadData(signer, tx)
 		}
 	case types.TransactionType_RemoveData:
 		{
-			fmt.Println("CheckTx_RemoveData")
 			return *app.CheckTx_RemoveData(signer, tx)
 		}
 	case types.TransactionType_VerifyStorage:
 		{
-			fmt.Println("CheckTx_VerifyStorage")
 			return *app.CheckTx_VerifyStorage(signer, tx)
 		}
 	case types.TransactionType_ChangeContentAccess:
 		{
-			fmt.Println("CheckTx_ChangeContentAccess")
 			return *app.CheckTx_ChangeContentAccess(signer, tx)
 		}
 	default:

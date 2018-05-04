@@ -85,7 +85,6 @@ func CheckBroadcastResult(commit interface{}, err error) (CodeType, error) {
 			return code, errors.New("CheckTx. Log: " + c.Log + ", Code: " + CodeType_name[int32(c.Code)])
 		}
 	}
-	/**/
 	return CodeType_InternalError, errors.New("Could not type assert result.")
 }
 
