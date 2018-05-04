@@ -1,18 +1,7 @@
 # DATMAS_2018_Implementation
 
-## Incomplete installation:
-* Go version 1.9+
-* IPFS version 0.4.15
-* IPFS Cluster version 
-* Tendermint 0.19.0
-
-```
-cd $HOME
-curl -o v0.19.1.tar.gz https://codeload.github.com/tendermint/tendermint/tar.gz/v0.19.1
-mkdir $GOPATH/src/github.com/tendermint
-tar -C $GOPATH/src/github.com -xzf v0.19.1.tar.gz
-mv $GOPATH/src/github.com/tendermint/tendermint-0.19.1 $GOPATH/src/github.com/tendermint/tendermint
-```
+## Install Go:
+Version 1.10.1 (1.9+ is required)
 ```
 cd $HOME
 curl -O https://dl.google.com/go/go1.10.1.linux-amd64.tar.gz
@@ -21,7 +10,15 @@ sudo tar -C /usr/local -xzf go1.10.1.linux-amd64.tar.gz
 # Run these two commands and then add them at the end of $HOME/.bashrc
 export GOPATH=$HOME/go
 export PATH=$PATH:/usr/local/go/bin:$GOPATH/bin
+```
 
+## Install latest version of dependencies:
+The following instructions were tested with the following versions:
+* IPFS 0.4.15-rc1
+* IPFS Cluster 0.3.5-a0a08987191b36d610bf1edaf39dd72cd924f0eb
+* Tendermint 0.19.2-64408a40
+
+```
 go get -d -u github.com/ipfs/go-ipfs
 cd $GOPATH/src/github.com/ipfs/go-ipfs
 make install
@@ -41,15 +38,42 @@ make get_vendor_deps
 make install
 tendermint init
 
+cd $GOPATH/src/google.golang.org/grpc
+git reset --hard d11072e7ca9811b1100b80ca0269ac831f06d024
+
+cd $GOPATH/src/github.com/golang/protobuf
+git reset --hard 925541529c1fa6821df4e44ce2723319eb2be768
+
+# See: IPFS import conflicts
+# See: Multiple registrations 
+```
+## Install tested version of dependencies:
+```
+# Warning: You might want to rename or backup your current $GOPATH/src folder.
+curl -O www.ux.uis.no/~racin/TestedDependencies.tar.gz
+tar -C $GOPATH -xzf TestedDependencies.tar.gz 
+
+cd $GOPATH/src/github.com/ipfs/go-ipfs
+make install
+ipfs init
+
+cd $GOPATH/src/github.com/ipfs/ipfs-cluster
+make install
+ipfs-cluster-service init
+
+cd $GOPATH/src/github.com/tendermint/tendermint
+make install
+tendermint init
+```
+
+## Install code from this project:
+```
 cd $GOPATH/src/github.com
 mkdir racin
 cd racin/
 git clone https://github.com/racin/DATMAS_2018_Implementation
 cd DATMAS_2018_Implementation/
 sh install.sh
-
-# See: IPFS import conflicts
-# See: Multiple registrations 
 
 go build main.go
 go build client/main.go
