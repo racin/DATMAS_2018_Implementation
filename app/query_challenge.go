@@ -9,7 +9,6 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/racin/DATMAS_2018_Implementation/rpc"
 	"sync"
-	"fmt"
 )
 
 func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.ResponseQuery{
