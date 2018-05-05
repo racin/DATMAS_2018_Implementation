@@ -7,15 +7,14 @@ import (
 	"io/ioutil"
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
-	"fmt"
 	"encoding/base64"
 )
 
 // A simple strawman implementation of the a proof of storage algorithm. Is reliant on storing the actual file bytes locally.
 const (
-	numSamples = 16400; // Each sample will require approximately 150KB of storage. This can be drastically decreased by
+	numSamples = 3000; // 16400; // Each sample will require approximately 150KB of storage. This can be drastically decreased by
 	// using Homomorphic Verifiable Tags instead of the actual file bytes.
-	challengeSamples = 460; // Having 460 challenge samples gives >99% probability that if 1% of the file is missing or corrupted it will be detected.
+	challengeSamples = 10; // 460; // Having 460 challenge samples gives >99% probability that if 1% of the file is missing or corrupted it will be detected.
 )
 
 // By using uint64 as the index it is possible to index files up to 16 Exa bytes.
@@ -248,7 +247,7 @@ func GenerateRandomChallenge(privkey *Keys, cid string, maxIndex int64) (challen
 	}
 	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid, Nonce:float64(nonce.Int64())}
 	max := big.NewInt(maxIndex)
-	fmt.Printf("Max is: %v\n", max)
+
 	for i := 0; i < challengeSamples; i++ {
 		rndIndex, err := rand.Int(rand.Reader, max)
 		if err != nil {

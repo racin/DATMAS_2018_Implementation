@@ -8,6 +8,8 @@ import (
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"github.com/racin/DATMAS_2018_Implementation/rpc"
+	"sync"
+	"fmt"
 )
 
 func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.ResponseQuery{
@@ -50,33 +52,47 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 
 	//lenStorNodes := len(conf.AppConfig().IpfsNodes)
 	proofs := make([]crypto.SignedStruct, 0)
+	var wg sync.WaitGroup
+	wg.Add(len(conf.AppConfig().IpfsNodes) * 2)
 
 	// Issue the challenge from the Client first
 	for _, ident := range conf.AppConfig().IpfsNodes {
-		addr := app.GetAccessList().GetAddress(ident)
-		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
+		go func(id string) {
+			addr := app.GetAccessList().GetAddress(id)
+			ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signedStruct)
 
-		if (ipfsResp.Codetype != types.CodeType_OK) {
-			continue // Not a valid proof. Do not care about why
-		}
-		scp := &crypto.SignedStruct{Base:&crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
-		if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
-			proofs = append(proofs, *scp)
-		}
+			if (ipfsResp.Codetype != types.CodeType_OK) {
+				wg.Done()
+				return // Not a valid proof. Do not care about why
+			}
+			scp := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base: &crypto.StorageChallenge{}}}}
+			if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
+				proofs = append(proofs, *scp)
+			}
+			wg.Done()
+		}(ident)
 	}
 
 	// Then the randomly generated ones
 	for _, ident := range conf.AppConfig().IpfsNodes {
-		addr := app.GetAccessList().GetAddress(ident)
-		ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
-		if (ipfsResp.Codetype != types.CodeType_OK) {
-			continue // Not a valid proof. Do not care about why
-		}
-		scp := &crypto.SignedStruct{Base:&crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base:&crypto.StorageChallenge{}}}}
-		if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
-			proofs = append(proofs, *scp)
-		}
+		go func(id string) {
+			addr := app.GetAccessList().GetAddress(id)
+			ipfsResp := rpc.QueryIPFSproxy(app.IpfsHttpClient, conf.AppConfig().IpfsProxyAddr, addr, conf.AppConfig().IpfsChallengeEndpoint, signRndChal)
+
+			if (ipfsResp.Codetype != types.CodeType_OK) {
+				wg.Done()
+				return // Not a valid proof. Do not care about why
+			}
+			scp := &crypto.SignedStruct{Base: &crypto.StorageChallengeProof{SignedStruct: crypto.SignedStruct{Base: &crypto.StorageChallenge{}}}}
+			if err := json.Unmarshal(ipfsResp.Message, scp); err == nil {
+				proofs = append(proofs, *scp)
+			}
+			wg.Done()
+		}(ident)
 	}
+
+	// Wait for responses.
+	wg.Wait()
 
 	// Now lets send the proofs to the mempool
 	stx := app.GetSignedTransaction(types.TransactionType_VerifyStorage, proofs)

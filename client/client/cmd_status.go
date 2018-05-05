@@ -21,7 +21,7 @@ var statusCmd = &cobra.Command{
 		if len(args) < 1 {
 			log.Fatal("Not enough arguments.")
 		} else if len(args) > 1 {
-			storageNode = args[1]
+			storageNode = TheClient.GetAccessList().GetAddress(args[1])
 		} else {
 			storageNode = TheClient.GetAccessList().GetAddress(TheClient.IPFSIdent)
 		}
