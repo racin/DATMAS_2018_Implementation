@@ -1,0 +1,74 @@
+{
+	"identities": {
+        "cab4fa317b898a854bb6d2ff2ebead65": {
+            "name": "client 1",
+            "type": 1,
+            "publickey": "client_1.pub"
+        },
+        "17e25dc5568b5caa0285b04baad76f69": {
+            "name": "client 2",
+            "type": 1,
+            "publickey": "client_2.pub"
+        },
+        "bfb47e73433410bb3a1dd73646f6fa8d": {
+            "name": "ipfs 1",
+            "type": 2,
+            "address": "172.31.39.129",
+            "publickey": "storage_1.pub"
+        },
+        "d8cabe7f44756a9d6972b539d84a9912": {
+            "name": "ipfs 2",
+            "type": 2,
+            "address": "172.31.41.30",
+            "publickey": "storage_2.pub"
+        },
+        "24d7eab9a38b130ce11ecd63d4bf76ff": {
+            "name": "ipfs 3",
+            "type": 2,
+            "address": "172.31.46.35",
+            "publickey": "storage_3.pub"
+        },
+        "2a72c7d562d8f2b8c2b7a66df21b8bc6": {
+            "name": "TM App 1",
+            "type": 3,
+            "address": "172.31.34.165",
+            "publickey": "consensus_1.pub"
+        },
+        "9fa061c4fad709240eb9025935a55537": {
+            "name": "TM App 2",
+            "type": 3,
+            "address": "172.31.36.139",
+            "publickey": "consensus_2.pub"
+        },
+        "d09156dfaff3afcd3a20fe7066536815": {
+            "name": "TM App 3",
+            "type": 3,
+            "address": "172.31.41.79",
+            "publickey": "consensus_3.pub"
+        },
+        "e65372da21f6392fc16dbbe5db273d49": {
+            "name": "TM App 4",
+            "type": 3,
+            "address": "172.31.32.120",
+            "publickey": "consensus_4.pub"
+        },
+        "e8098f301e5115cff566420674ecb0a3": {
+            "name": "TM App 5",
+            "type": 3,
+            "address": "172.31.41.90",
+            "publickey": "consensus_5.pub"
+        },
+        "757670c29656ca8ec04bfbcf884a7988": {
+            "name": "TM App 6",
+            "type": 3,
+            "address": "172.31.34.141",
+            "publickey": "consensus_6.pub"
+        },
+        "78b39619531136889bc9d053e3f98369": {
+            "name": "TM App 7",
+            "type": 3,
+            "address": "172.31.32.236",
+            "publickey": "consensus_7.pub"
+        }
+	}
+}

@@ -1,0 +1,15 @@
+{
+    "basePath": "$HOME/.bcfs/",
+    "accessList": "accessList",
+    "privateKey": "storage.pem",
+    "publicKeys": "PubKeys/",
+    "lastSeenBlockHeight": "blockHeight",
+
+    "tendermintNodes": ["2a72c7d562d8f2b8c2b7a66df21b8bc6","9fa061c4fad709240eb9025935a55537","d09156dfaff3afcd3a20fe7066536815","e65372da21f6392fc16dbbe5db273d49", "e8098f301e5115cff566420674ecb0a3", "757670c29656ca8ec04bfbcf884a7988", "78b39619531136889bc9d053e3f98369"],
+    "tmQueryTimeoutSeconds": 20,
+    "websocketEndpoint": "/websocket",
+    "websocketAddr": "http://$TmNode:46657",
+
+    "listenAddr": ":46660",
+    "tempUploadPath": "/tmp/"
+}

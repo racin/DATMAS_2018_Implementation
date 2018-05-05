@@ -1,0 +1,63 @@
+{
+  "genesis_time": "2018-05-05T00:00:00Z",
+  "chain_id": "DATMAS_2018_BCFS",
+  "validators": [
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "5M0yv1M5aq730QnJXd7Wc3l2ToM5wMABoauJDjCRAzI="
+      },
+      "power": 10,
+      "name": "TM App 1"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "3N7Zfk9bhuG3z1lMMYO2x+//Rg87qYitpTurvItXACs="
+      },
+      "power": 10,
+      "name": "TM App 2"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "Cp7lJu94wkr1el3/50A422d6SZuU4ERVzKb7UCqM8+8="
+      },
+      "power": 10,
+      "name": "TM App 3"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "Ux/TLQ+PCUPIWjkSxgmSeVefl9WI0MDDNLIVxgw7dDI="
+      },
+      "power": 10,
+      "name": "TM App 4"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "XemzR4A3xrZNdfRlNJObrW/F4kgfqgJNKuJHNOMF6jU="
+      },
+      "power": 10,
+      "name": "TM App 5"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "igZOhib/rdkPOKHtcso5cKBZiBwn7061uMDtMlQYF9s="
+      },
+      "power": 10,
+      "name": "TM App 6"
+    },
+    {
+      "pub_key": {
+        "type": "AC26791624DE60",
+        "value": "DvasobOxUDOM69RoiwKfgW9bIXz0m0HHT7Bk6jbUHzU="
+      },
+      "power": 10,
+      "name": "TM App 7"
+    }
+  ],
+  "app_hash": ""
+}
