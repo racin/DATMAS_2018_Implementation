@@ -89,9 +89,48 @@ go build ipfsproxy/main.go
 5. Start IPFS proxy with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/ipfsproxy && ./main"
 
 ## Client Commands
-6. Run the client with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/client && ./main"
-7. Example client command: "./main data upload [file] [name] [description]"
-8. After upload is completed, open http://localhost:8080/ipfs/[CID]
+1. Open client directory.
+```
+cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/client
+```
+### Upload data
+_data upload [file] [name] [description]_
+```
+./main data upload /home/ubuntu/Downloads/Transperth_Sets.JPG TrainImg.jpg
+```
+If you have access to the gateway, try opening http://[host]:8080/ipfs/[CID]
+### Download data
+_data get [CID]_
+```
+./main data get QmYTuLefWfQ7BgER73gRUHA7ZVSJ6Y33JybfpuumdBLG25
+```
+### Delete data
+_data delete [CID]_
+```
+./main data delete QmYTuLefWfQ7BgER73gRUHA7ZVSJ6Y33JybfpuumdBLG25
+```
+### Change access on data
+_data access [CID] [READERS]_
+```
+./main data access QmYTuLefWfQ7BgER73gRUHA7ZVSJ6Y33JybfpuumdBLG25 17e25dc5568b5caa0285b04baad76f69,cab4fa317b898a854bb6d2ff2ebead65
+```
+### Verify storage (Challenge)
+_challenge [CID] [challenge] [proof]_
+```
+./main challenge QmYTuLefWfQ7BgER73gRUHA7ZVSJ6Y33JybfpuumdBLG25
+```
+### View blockchain
+_blockchain view [height]_
+```.
+./main blockchain view 5
+```
+### List locally stored metadata
+```./main list```
+### Get storage node status
+_status [CID] [Node]_
+```
+./main status all d8cabe7f44756a9d6972b539d84a9912
+```
 
 ## New protobuf:
 ```
@@ -120,6 +159,8 @@ Make sure $HOME/.tendermint/config/config.toml:
 1. abci = "grpc"
 2. create_empty_blocks = false
 
+### File not getting pinned (IPFS)
+Try restarting the cluster node.
 
 ## Generate certificate:
 ```

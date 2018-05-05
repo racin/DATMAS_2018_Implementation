@@ -14,7 +14,7 @@ import (
 
 // getAccountCmd represents the getAccount command
 var dataAccessCmd = &cobra.Command{
-	Use:   "access [READERS]",
+	Use:   "access [CID] [READERS]",
 	Short: "Share the data with other clients.",
 	Long:  `Enable download of data for the identities given as a comma separated list.`,
 	Run: func(cmd *cobra.Command, args []string) {
