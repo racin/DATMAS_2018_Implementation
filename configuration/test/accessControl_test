@@ -8,13 +8,13 @@
         "64168bb2f7a0a4d67d83471470ce757c": {
             "name": "storageA",
             "type": 2,
-            "address": "",
+            "address": "localhost",
             "publickey": "../crypto/test_certificate/storage_test.pub"
         },
         "cc418e456ae72df5bdb39d65bb8945e8": {
             "name": "consensusA",
             "type": 3,
-            "address": "",
+            "address": "localhost",
             "publickey": "../crypto/test_certificate/consensus_test.pub"
         }
 	}

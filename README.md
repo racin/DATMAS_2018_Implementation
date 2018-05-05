@@ -51,6 +51,7 @@ git reset --hard 925541529c1fa6821df4e44ce2723319eb2be768
 ```
 # Warning: You might want to rename or backup your current $GOPATH/src folder.
 curl -O www.ux.uis.no/~racin/TestedDependencies.tar.gz
+mkdir $GOPATH
 tar -C $GOPATH -xzf TestedDependencies.tar.gz 
 
 cd $GOPATH/src/github.com/ipfs/go-ipfs
@@ -86,6 +87,8 @@ go build ipfsproxy/main.go
 3. Start IPFS with "ipfs daemon"
 4. Start IPFS-cluster with "ipfs-cluster-service"
 5. Start IPFS proxy with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/ipfsproxy && ./main"
+
+## Client Commands
 6. Run the client with "cd $GOPATH/src/github.com/racin/DATMAS_2018_Implementation/client && ./main"
 7. Example client command: "./main data upload [file] [name] [description]"
 8. After upload is completed, open http://localhost:8080/ipfs/[CID]

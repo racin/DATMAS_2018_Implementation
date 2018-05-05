@@ -3,7 +3,6 @@
   "privateKey": "consensus.pem",
   "publicKeys": "PubKeys/",
   "accessList": "accessList",
-  "storageSamples": "StorageSamples/",
   "simpleMetadata": "SimpleMetadata/",
 
   "listenAddr": "tcp://0.0.0.0:46658",
