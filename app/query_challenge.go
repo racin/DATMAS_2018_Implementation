@@ -49,7 +49,6 @@ func (app *Application) Query_Challenge(reqQuery abci.RequestQuery) *abci.Respon
 		return &abci.ResponseQuery{Code: uint32(types.CodeType_Unauthorized), Log: "Could not generate random challenge."}
 	}
 
-	//lenStorNodes := len(conf.AppConfig().IpfsNodes)
 	proofs := make([]crypto.SignedStruct, 0)
 	var wg sync.WaitGroup
 	wg.Add(len(conf.AppConfig().IpfsNodes) * 2)

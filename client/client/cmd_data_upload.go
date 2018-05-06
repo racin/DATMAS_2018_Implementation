@@ -60,6 +60,7 @@ var uploadCmd = &cobra.Command{
 			"transaction": bytes.NewReader(byteArr),
 		}
 
+		// Get confirmation of upload
 		ipfsResponse := TheClient.sendMultipartFormDataToIPFS(&values);
 		if ipfsResponse.Codetype != types.CodeType_OK {
 			log.Fatal("Error with IPFS upload. ", string(ipfsResponse.Message))
@@ -77,11 +78,7 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Could not verify IPFS signature.")
 		}
 
-		// Phase 1b. Generate a sample for the file
-		storageSample := crypto.GenerateStorageSample(&fileBytes)
-		storageSample.Identity = TheClient.fingerprint
-
-		// Phase 2. Send metadata to TM
+		// Phase 2. Send upload request to TM
 		newBlockCh := make(chan interface{}, 1)
 		if err := TheClient.SubToNewBlock(newBlockCh); err != nil {
 			log.Fatal("Could not subscribe to new block events. Error: ", err.Error())
@@ -97,7 +94,7 @@ var uploadCmd = &cobra.Command{
 			log.Fatal("Error verifying upload. Error: " + err.Error())
 		}
 
-		// Phase 3. Verify that the metadata for the uploaded data is commited to the ledger.
+		// Phase 3. Verify that the metadata for the uploaded data is committed to the ledger.
 		castedTx := tmtypes.Tx(byteArrTranc)
 		var fileName string;
 		var fileDescription string;
@@ -128,6 +125,10 @@ var uploadCmd = &cobra.Command{
 				fmt.Println("File was uploaded, but could not verify the ledger within the timeout. " +
 					"Try running a status query with CID: " + fileHash)
 		}
+
+		// Phase 4. Generate a sample for the file
+		storageSample := crypto.GenerateStorageSample(&fileBytes)
+		storageSample.Identity = TheClient.fingerprint
 
 		// Write the metadata even if a timeout occured.
 		types.WriteMetadata(fileHash, &types.MetadataEntry{Name:fileName, Description:fileDescription,

@@ -91,7 +91,7 @@ var challengeCmd = &cobra.Command{
 						fmt.Printf("-------------\nBlock height: %v\n", evt.Block.Height)
 						for _, signedStruct := range signedStructArr {
 							scp := signedStruct.Base.(*crypto.StorageChallengeProof)
-							// A response to our challenge.
+							// A response to the random challenge.
 							if hashChal != crypto.HashStruct(scp.Base) {
 								fmt.Printf("Node: %v. Random challenge. Got proof: %v\n", scp.Identity, scp.Proof)
 								continue

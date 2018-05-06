@@ -35,7 +35,6 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-
 	// Get signers identity and public key
 	signer, pubKey := proxy.GetIdentityPublicKey(storageChallenge.Identity)
 	if signer == nil {
