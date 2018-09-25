@@ -8,6 +8,7 @@ import (
 	"github.com/pkg/errors"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
 	"encoding/base64"
+	"time"
 )
 
 // A simple strawman implementation of the a proof of storage algorithm. Is reliant on storing the actual file bytes locally.
@@ -32,6 +33,7 @@ type StorageChallenge struct {
 	Identity				string					`json:"identity"`
 	Cid						string					`json:"cid"`
 	Nonce					float64					`json:"nonce"` // Must be float64 because of interface conversion and overflow issues. (Could possibly be uint64 if unsafe pointers were used.
+	Timestamp 				string  		     	`json:"timestamp"`
 }
 
 // We can not use map[uint64]byte as the type to represent the samples, as when iterating the map, the order is not guaranteed to
@@ -44,6 +46,7 @@ type StorageChallengeProof struct {
 	Proof					string					`json:"proof"`
 	Identity				string					`json:"identity"`
 	Filesize				int64					`json:"filesize"`
+	Timestamp 				string			       	`json:"timestamp"`
 }
 func GetStorageChallengeProofArray(derivedArray []interface{}) []SignedStruct {
 	scpSlice := make([]SignedStruct, len(derivedArray))
@@ -73,9 +76,12 @@ func GetStorageChallengeProofFromMap(derivedStruct map[string]interface{}) *Stor
 	if proof, ok := derivedStruct["proof"]; ok {
 		if identity, ok := derivedStruct["identity"]; ok {
 			if filesize, ok := derivedStruct["filesize"]; ok {
-				ss := &StorageChallengeProof{SignedStruct: *GetSignedStorageChallengeFromMap(derivedStruct),
-					Proof: proof.(string), Identity: identity.(string), Filesize: int64(filesize.(float64))}
-				return ss
+				if timestamp, ok := derivedStruct["timestamp"]; ok {
+					ss := &StorageChallengeProof{SignedStruct: *GetSignedStorageChallengeFromMap(derivedStruct),
+						Proof: proof.(string), Identity: identity.(string), Filesize: int64(filesize.(float64)),
+						Timestamp: timestamp.(string)}
+					return ss
+				}
 			}
 		}
 	}
@@ -97,14 +103,16 @@ func GetStorageChallengeFromMap(derivedStruct map[string]interface{}) *StorageCh
 		if nonce, ok := derivedStruct["nonce"]; ok {
 			if identity, ok := derivedStruct["identity"]; ok {
 				if challenge, ok := derivedStruct["challenge"]; ok {
-					if clg, ok := challenge.([]interface{}); ok {
-						chal := make([]uint64, len(clg))
-						for i, val := range clg {
-							chal[i] = uint64(val.(float64))
-						}
+					if timestamp, ok := derivedStruct["timestamp"]; ok {
+						if clg, ok := challenge.([]interface{}); ok {
+							chal := make([]uint64, len(clg))
+							for i, val := range clg {
+								chal[i] = uint64(val.(float64))
+							}
 
-						return &StorageChallenge{Cid: cid.(string), Challenge: chal,
-							Identity: identity.(string), Nonce:nonce.(float64)}
+							return &StorageChallenge{Cid: cid.(string), Challenge: chal,
+								Identity: identity.(string), Nonce: nonce.(float64), Timestamp: timestamp.(string)}
+						}
 					}
 				}
 			}
@@ -210,7 +218,8 @@ func (sp *StorageSample) GenerateChallenge(privkey *Keys) (challenge *SignedStru
 	if err != nil {
 		return nil, "", "" // Could not generate nonce.
 	}
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:float64(nonce.Int64())}
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: sp.Cid, Nonce:float64(nonce.Int64()),
+		Timestamp: time.Now().Format(time.RFC3339)}
 	max := new(big.Int).SetUint64(uint64(len(sp.Sampleindices)))
 	proofBytes := make([]byte, challengeSamples)
 	for i := 0; i < challengeSamples; i++ {
@@ -245,7 +254,8 @@ func GenerateRandomChallenge(privkey *Keys, cid string, maxIndex int64) (challen
 	if err != nil {
 		return nil, "" // Could not generate nonce.
 	}
-	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid, Nonce:float64(nonce.Int64())}
+	chal := &StorageChallenge{Challenge: make([]uint64, challengeSamples), Cid: cid, Nonce:float64(nonce.Int64()),
+		Timestamp: time.Now().Format(time.RFC3339)}
 	max := big.NewInt(maxIndex)
 
 	for i := 0; i < challengeSamples; i++ {
@@ -362,9 +372,10 @@ func (signedStruct *SignedStruct) verifyChallengeProof(sampleBase string, challe
 	if !ok {
 		return errors.New("Could not type assert the StorageChallenge.")
 	}
-	sc2 := &SignedStruct{Signature:signedStruct.Signature, Base:&StorageChallengeProof{Identity:scp.Identity, Filesize: scp.Filesize,
-		Proof:scp.Proof, SignedStruct:SignedStruct{Signature:scp.Signature, Base:&StorageChallenge{Identity:challenge.Identity, Cid:challenge.Cid,
-		Nonce:challenge.Nonce, Challenge:challenge.Challenge}}}}
+	sc2 := &SignedStruct{Signature:signedStruct.Signature, Base:&StorageChallengeProof{Identity:scp.Identity,
+		Filesize: scp.Filesize, Proof:scp.Proof, Timestamp: scp.Timestamp,
+		SignedStruct:SignedStruct{Signature:scp.Signature, Base:&StorageChallenge{Identity:challenge.Identity,
+		Cid:challenge.Cid, Nonce:challenge.Nonce, Challenge:challenge.Challenge, Timestamp: challenge.Timestamp}}}}
 
 	// Prevent the Prover of responding with a stored response to a previous issued challenge.
 	if challengeHash != "" && HashStruct(scp.Base) != challengeHash {
@@ -443,7 +454,8 @@ func (signedStruct *SignedStruct) ProveChallenge(privKey *Keys, fileBytes *[]byt
 
 	lenChal := len(challenge.Challenge)
 	file := (*fileBytes)
-	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint,	Filesize: int64(len(file))}
+	proof := &StorageChallengeProof{SignedStruct: *signedStruct, Identity: fingerprint,	Filesize: int64(len(file)),
+		Timestamp: time.Now().Format(time.RFC3339)}
 
 	byteArr := make([]byte, lenChal)
 	for i := 0; i < lenChal; i++ {
