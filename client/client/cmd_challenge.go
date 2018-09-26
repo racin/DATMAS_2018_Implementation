@@ -89,6 +89,7 @@ var challengeCmd = &cobra.Command{
 							continue
 						}
 						fmt.Printf("-------------\nBlock height: %v\n", evt.Block.Height)
+						fmt.Printf("-------------\nTransaction ID:: %v / %v\n", i, evt.Block.NumTxs)
 						for _, signedStruct := range signedStructArr {
 							scp := signedStruct.Base.(*crypto.StorageChallengeProof)
 							// A response to the random challenge.

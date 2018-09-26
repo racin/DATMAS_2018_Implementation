@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"github.com/racin/DATMAS_2018_Implementation/types"
 	conf "github.com/racin/DATMAS_2018_Implementation/configuration"
+	"os"
 )
 
 func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
@@ -51,9 +52,11 @@ func (proxy *Proxy) Challenge(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if err := proxy.client.IPFS().Get(storageChallenge.Cid, conf.IPFSProxyConfig().TempUploadPath); err != nil {
-		writeResponse(&w, types.CodeType_BCFSUnknownAddress, "Could not find file with hash. Error: " + err.Error());
-		return
+	if _, err := os.Stat(conf.IPFSProxyConfig().TempUploadPath + storageChallenge.Cid); os.IsNotExist(err){
+		if err := proxy.client.IPFS().Get(storageChallenge.Cid, conf.IPFSProxyConfig().TempUploadPath); err != nil {
+			writeResponse(&w, types.CodeType_BCFSUnknownAddress, "Could not find file with hash. Error: " + err.Error());
+			return
+		}
 	}
 
 	fileBytes, err := ioutil.ReadFile(conf.IPFSProxyConfig().TempUploadPath + storageChallenge.Cid)
